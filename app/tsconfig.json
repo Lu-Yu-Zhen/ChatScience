@@ -1,0 +1,31 @@
+{
+  /* ChatScience TypeScript 编译配置
+     - 产物直接落回原路径（rootDir=src → outDir=.）：main.js / preload.js / server/*.js /
+       build.js / pack.js / make-icons.js 与迁移前完全同位，Electron / build / pack /
+       verify / start.bat 的全部下游路径保持不变。
+     - module 用 CommonJS：Electron 33 主进程与 preload 均为 CJS 加载。
+     - noEmitOnError：类型检查不过不产出，防止半成品覆盖可用代码。
+     - skipLibCheck：SDK 官方 d.ts（ESM 子路径导出）与 @types 混用时的库间差异不阻塞编译。 */
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "rootDir": "src",
+    "outDir": ".",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "sourceMap": false,
+    "declaration": false,
+    "types": ["node"]
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
+}

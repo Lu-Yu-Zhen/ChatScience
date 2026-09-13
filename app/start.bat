@@ -12,6 +12,14 @@ if not exist node_modules\electron\dist\electron.exe (
   if errorlevel 1 call npm install --no-audit --no-fund
 )
 
+echo [ChatScience] 编译 TypeScript (tsc)...
+"%NODE_EXE%" node_modules\typescript\bin\tsc
+if errorlevel 1 (
+  echo [ChatScience] TypeScript 编译失败（类型错误会阻止产出），请检查上方报错。
+  pause
+  exit /b 1
+)
+
 echo [ChatScience] 构建渲染层...
 "%NODE_EXE%" build.js
 

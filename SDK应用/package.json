@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@qodercn-ai/qodercn-agent-sdk": "^1.0.39"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

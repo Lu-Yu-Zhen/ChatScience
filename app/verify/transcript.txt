@@ -1,0 +1,1595 @@
+【第1轮】
+Q: 这篇论文的标题是什么？介绍了哪两个模型？各自有多少参数（总量与激活量）？支持多长的上下文？
+A: 论文标题是：
+
+**《DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence》**
+
+该论文介绍了 **DeepSeek-V4 系列**中的两个模型：
+
+1. **DeepSeek-V4-Pro**
+   - 总参数量：**1.6T**
+   - 每 token 激活参数量：**49B**
+   - 上下文长度：**1,000,000 tokens（一百万 tokens）**
+
+2. **DeepSeek-V4-Flash**
+   - 总参数量：**284B**
+   - 每 token 激活参数量：**13B**
+   - 上下文长度：**1,000,000 tokens（一百万 tokens）**
+
+这些信息主要来自论文摘要和引言部分，其中明确说明 DeepSeek-V4 系列包含两个 Mixture-of-Experts（MoE）语言模型，并且两者均支持一百万 token 的上下文长度。
+
+【第2轮】
+Q: DeepSeek-V4 的训练目标（预训练目标）是什么？与上一代相比主要改进了什么？
+A: 基于论文全文，DeepSeek-V4 的**预训练目标本身并不是一个全新的损失函数**，而是延续了 DeepSeek-V3 的核心预训练范式：**标准语言建模目标 + Multi-Token Prediction 辅助目标**。与上一代相比，主要改进集中在**架构、优化器、数据构造、长上下文训练策略和基础设施**上，从而在支持 1M token 上下文的同时显著降低推理计算量和 KV cache 开销。
+
+---
+
+## 一、DeepSeek-V4 的预训练目标
+
+### 1. 主目标：标准自回归语言建模损失
+
+论文 Figure 2 的整体架构中明确包含：
+
+- **LM Loss**：语言建模损失，即对下一个 token 的预测损失；
+- **MTP Loss**：Multi-Token Prediction 辅助损失。
+
+也就是说，DeepSeek-V4 的预训练主目标仍然是让模型根据已有上下文预测后续 token。
+
+---
+
+### 2. 辅助目标：Multi-Token Prediction，MTP
+
+论文第 2.1 节指出：
+
+> “Given that the MTP strategy has been validated in DeepSeek-V3, we adopt the same strategy for DeepSeek-V4 series without modification.”
+
+即 DeepSeek-V4 沿用了 DeepSeek-V3 的 **Multi-Token Prediction** 策略，没有修改其基本形式。
+
+在第 4.2.2 节的训练设置中，论文进一步说明 MTP 损失权重：
+
+- 大部分训练阶段：MTP loss weight = **0.3**
+- 学习率衰减开始后：MTP loss weight = **0.1**
+
+因此，DeepSeek-V4 的预训练目标可以概括为：
+
+\[
+\mathcal{L}_{\text{pretrain}}
+=
+\mathcal{L}_{\text{LM}}
++
+\lambda_{\text{MTP}} \mathcal{L}_{\text{MTP}}
+\]
+
+其中论文没有给出显式公式，但 Figure 2 和 4.2.2 明确存在 LM Loss 与 MTP Loss，且 MTP 权重随训练阶段调整。
+
+---
+
+### 3. MoE 负载均衡相关目标
+
+论文第 2.1 节说明 DeepSeek-V4 仍使用 DeepSeekMoE，并采用：
+
+- **auxiliary-loss-free load balancing strategy**：无辅助损失的负载均衡策略；
+- 同时加入一个轻微的 **sequence-wise balance loss**，用于防止单个序列内部出现极端不均衡。
+
+第 4.2.2 节给出该 balance loss 的权重为：
+
+- balance loss weight = **0.0001**
+
+这可以视为预训练过程中的正则化/辅助优化目标，但不是主要语言建模目标。
+
+---
+
+### 4. 数据与预训练规模
+
+论文摘要和第 4.2.2 节说明：
+
+- DeepSeek-V4-Flash：预训练 **32T tokens**
+- DeepSeek-V4-Pro：预训练 **33T tokens**
+- 两者均支持 **1,000,000 token** 上下文
+
+第 4.1 节还提到一个重要训练细节：
+
+> “Different from DeepSeek-V3, we employ sample-level attention masking during pre-training.”
+
+即在预训练中采用样本级 attention mask。这有助于在 packed sequence 中避免不同文档/样本之间产生错误注意力，提高长上下文训练质量。
+
+---
+
+## 二、与上一代相比主要改进了什么？
+
+这里的“上一代”需要区分：
+
+- **DeepSeek-V3**：架构继承与改进的参照对象；
+- **DeepSeek-V3.2**：效率与部分能力比较的参照对象。
+
+论文主要围绕以下方面进行改进。
+
+---
+
+# 1. 架构改进：引入 Hybrid Attention，大幅降低长上下文成本
+
+这是 DeepSeek-V4 最核心的改进。
+
+论文第 1 节和第 2.3 节指出，DeepSeek-V4 引入了两种高效注意力机制：
+
+1. **Compressed Sparse Attention, CSA**
+2. **Heavily Compressed Attention, HCA**
+
+并采用两者交替的 hybrid attention 架构。
+
+---
+
+## 1.1 CSA：压缩 + 稀疏注意力
+
+CSA 的核心思想是：
+
+1. 先压缩 KV cache；
+2. 再使用 DeepSeek Sparse Attention, DSA 选择 top-k 压缩后的 KV entries；
+3. 同时加入 sliding window KV entries 以保留局部细粒度依赖。
+
+论文第 2.3.1 节说明：
+
+> “CSA compresses the KV cache along the sequence dimension and then performs DeepSeek Sparse Attention.”
+
+在 DeepSeek-V4-Flash 和 DeepSeek-V4-Pro 中，CSA 的压缩率设置为：
+
+\[
+m = 4
+\]
+
+也就是说，每 4 个 token 的 KV entries 被压缩为一个 entry。
+
+---
+
+## 1.2 HCA：更重压缩，但保持 dense attention
+
+HCA 的目标是进一步压缩 KV cache，但不使用稀疏选择。
+
+论文第 2.3.2 节说明：
+
+> “HCA applies more aggressive compression to the KV caches but keeps dense attention.”
+
+在 DeepSeek-V4 中，HCA 的压缩率设置为：
+
+\[
+m' = 128
+\]
+
+即每 128 个 token 的 KV entries 被压缩为一个 entry。
+
+---
+
+## 1.3 与 DeepSeek-V3.2 相比的效率提升
+
+论文摘要和 Figure 1 给出了非常关键的结果：
+
+在 **1M token 上下文**下：
+
+### DeepSeek-V4-Pro 相比 DeepSeek-V3.2
+
+- 单 token 推理 FLOPs：仅为 DeepSeek-V3.2 的 **27%**
+- KV cache：仅为 DeepSeek-V3.2 的 **10%**
+
+### DeepSeek-V4-Flash 相比 DeepSeek-V3.2
+
+- 单 token 推理 FLOPs：仅为 DeepSeek-V3.2 的 **10%**
+- KV cache：仅为 DeepSeek-V3.2 的 **7%**
+
+论文第 2.3.4 节还指出，如果以 BF16 GQA8、head dimension 128 作为常见基线，DeepSeek-V4 在 1M 上下文下的 KV cache 大小可降至该基线的约 **2%**。
+
+---
+
+# 2. 残差连接改进：引入 Manifold-Constrained Hyper-Connections, mHC
+
+论文第 2.2 节指出，DeepSeek-V4 引入 **Manifold-Constrained Hyper-Connections, mHC** 来增强传统残差连接。
+
+标准 Hyper-Connections 的残差状态更新为：
+
+\[
+X_{l+1} = B_l X_l + C_l F_l(A_l X_l)
+\]
+
+其中：
+
+- \(A_l\)：输入映射；
+- \(B_l\)：残差变换；
+- \(C_l\)：输出映射；
+- \(F_l\)：第 \(l\) 层模块，例如 MoE 层。
+
+mHC 的关键创新是将残差映射矩阵 \(B_l\) 约束到 **doubly stochastic matrices** 流形上：
+
+\[
+B_l \in \mathcal{M}
+=
+\left\{
+M \in \mathbb{R}^{n \times n}
+\mid
+M \mathbf{1}_n = \mathbf{1}_n,
+\mathbf{1}_n^T M = \mathbf{1}_n^T,
+M \ge 0
+\right\}
+\]
+
+论文解释这样做的意义：
+
+1. 保证残差映射的谱范数不超过 1；
+2. 使残差变换是非扩张的；
+3. 提高前向和反向传播中的数值稳定性；
+4. 在深层堆叠时仍保持稳定。
+
+在 DeepSeek-V4 中，mHC 的配置为：
+
+- expansion factor：\(n_{\text{hc}} = 4\)
+- Sinkhorn-Knopp 迭代次数：\(t_{\max} = 20\)
+
+---
+
+# 3. 优化器改进：引入 Muon optimizer
+
+论文第 2.4 节指出，DeepSeek-V4 在大多数模块中使用 **Muon optimizer**，以获得：
+
+- 更快收敛；
+- 更高训练稳定性。
+
+但并非所有参数都用 Muon。论文说明以下模块仍使用 AdamW：
+
+- embedding module；
+- prediction head module；
+- mHC 的 static biases 和 gating factors；
+- 所有 RMSNorm 模块权重。
+
+Muon 的核心步骤包括：
+
+1. 计算梯度；
+2. 累积 momentum；
+3. 使用 hybrid Newton-Schulz iterations 对更新矩阵进行正交化；
+4. rescale update RMS；
+5. 执行 weight decay 和参数更新。
+
+论文第 2.4 节给出 Newton-Schulz iteration 的形式：
+
+\[
+M_k =
+a M_{k-1}
++
+b (M_{k-1} M_{k-1}^T) M_{k-1}
++
+c (M_{k-1} M_{k-1}^T)^2 M_{k-1}
+\]
+
+DeepSeek-V4 使用 10 步 hybrid Newton-Schulz：
+
+- 前 8 步：\((a,b,c) = (3.4445, -4.7750, 2.0315)\)
+- 后 2 步：\((a,b,c) = (2, -1.5, 0.5)\)
+
+---
+
+# 4. MoE 设计改进：保留 DeepSeekMoE，但做关键调整
+
+论文第 2.1 节说明，DeepSeek-V4 仍采用 DeepSeekMoE，但相比 DeepSeek-V3 有几个重要变化。
+
+### 4.1 激活函数变化
+
+MoE affinity score 的激活函数从：
+
+\[
+\text{Sigmoid}(\cdot)
+\]
+
+改为：
+
+\[
+\text{Sqrt}(\text{Softplus}(\cdot))
+\]
+
+---
+
+### 4.2 负载均衡变化
+
+保留 auxiliary-loss-free load balancing，但增加轻微的 sequence-wise balance loss，防止单个序列内部出现极端不均衡。
+
+---
+
+### 4.3 移除 routing target node 数量限制
+
+论文说明：
+
+> “For DeepSeek-V4, we remove the constraint on the number of routing target nodes.”
+
+---
+
+### 4.4 初始 dense FFN 层改为 Hash-routed MoE 层
+
+相比 DeepSeek-V3，DeepSeek-V4 将初始若干 Transformer block 中的 dense FFN 替换为使用 **Hash routing** 的 MoE 层。
+
+在第 4.2.1 节模型设置中，论文说明：
+
+- DeepSeek-V4-Flash：前 3 个 MoE 层使用 Hash routing；
+- DeepSeek-V4-Pro：前 3 个 MoE 层使用 Hash routing。
+
+---
+
+# 5. 数据与训练策略改进
+
+论文第 4.1 节和第 4.2.2 节说明，DeepSeek-V4 在预训练数据和长上下文训练策略上也有改进。
+
+### 5.1 更多、更高质量、更长上下文数据
+
+预训练语料包含：
+
+- 数学内容；
+- 代码；
+- 网页数据；
+- 长文档；
+- 多语言数据；
+- 其他高质量类别。
+
+论文特别强调：
+
+- 对 web 数据过滤模板化、批量自动生成内容；
+- 增强多语言语料；
+- 重视长文档数据，如科学论文、技术报告；
+- 在 mid-training 阶段加入 agentic data 以增强编码能力。
+
+---
+
+### 5.2 长上下文训练课程
+
+论文第 4.2.2 节说明，训练序列长度逐步扩展：
+
+\[
+4K \rightarrow 16K \rightarrow 64K \rightarrow 1M
+\]
+
+同时，稀疏注意力不是从头开始，而是：
+
+1. 先用 dense attention warm-up；
+2. 在 64K 序列长度阶段引入 sparse attention；
+3. 之后继续训练。
+
+---
+
+### 5.3 样本级 attention masking
+
+第 4.1 节指出，与 DeepSeek-V3 不同，DeepSeek-V4 在预训练中使用 sample-level attention masking，以减少 packed sequence 中跨样本干扰。
+
+---
+
+# 6. 训练稳定性改进
+
+论文第 4.2.3 节指出，训练万亿参数 MoE 模型时存在 loss spike 问题，DeepSeek-V4 提出两个实用技术：
+
+## 6.1 Anticipatory Routing
+
+核心思想是解耦 backbone 网络与 routing 网络的同步更新。
+
+在第 \(t\) 步：
+
+- 特征计算使用当前参数 \(\theta_t\)；
+- routing indices 使用历史参数 \(\theta_{t-\Delta t}\) 计算并提前缓存。
+
+论文说明该机制可显著缓解 loss spike，并且通过基础设施优化，额外 wall-clock time overhead 约 **20%**。
+
+---
+
+## 6.2 SwiGLU Clamping
+
+在 SwiGLU 中对数值范围进行 clamp：
+
+- linear component clamp 到：
+
+\[
+[-10, 10]
+\]
+
+- gate component upper bound capped at：
+
+\[
+10
+\]
+
+论文称这能有效消除 outlier，并稳定训练，同时不损害性能。
+
+---
+
+# 7. 基础设施与系统优化
+
+论文第 3 节说明 DeepSeek-V4 的训练和推理框架也有大量改进。
+
+### 7.1 MoE 通信计算重叠
+
+第 3.1 节提出 fine-grained Expert Parallelism scheme，将 MoE 中的通信和计算融合到一个 pipelined kernel 中。
+
+论文报告：
+
+- 相比非融合基线，一般推理负载加速 **1.50～1.73×**
+- 在 RL rollout、高速 agent serving 等延迟敏感场景最高加速 **1.96×**
+
+---
+
+### 7.2 TileLang kernel 开发
+
+第 3.2 节说明使用 TileLang DSL 开发 fused kernels，减少大量细粒度 Torch ATen operator 调用，并降低 host-side overhead。
+
+---
+
+### 7.3 batch-invariant 与 deterministic kernels
+
+第 3.3 节说明 DeepSeek-V4 实现了端到端 bitwise batch-invariant 和 deterministic kernels，用于：
+
+- 调试；
+- 稳定性分析；
+- 预训练、后训练、推理之间的一致性。
+
+---
+
+### 7.4 长上下文 Contextual Parallelism
+
+第 3.4.3 节说明针对 CSA/HCA 的压缩注意力设计了 two-stage contextual parallelism，以解决压缩边界和不同 rank 上 compressed KV 长度不一致的问题。
+
+---
+
+### 7.5 异构 KV cache 与磁盘 KV cache
+
+第 3.5 节说明 DeepSeek-V4 设计了 heterogeneous KV cache structure，用于管理 CSA、HCA、SWA 等不同类型 KV entries，并支持 on-disk KV cache storage 来复用 shared prefix。
+
+---
+
+# 8. 模型规模与性能表现
+
+论文摘要给出两个模型规模：
+
+| 模型 | 总参数 | 每 token 激活参数 | 上下文长度 |
+|---|---:|---:|---:|
+| DeepSeek-V4-Pro | 1.6T | 49B | 1M |
+| DeepSeek-V4-Flash | 284B | 13B | 1M |
+
+论文第 4.3.2 节 Table 1 显示：
+
+- DeepSeek-V4-Flash-Base 在多数 benchmark 上超过 DeepSeek-V3.2-Base，尽管参数规模更小；
+- DeepSeek-V4-Pro-Base 在知识、推理、代码、长上下文等方面进一步超越 DeepSeek-V3.2-Base 和 DeepSeek-V4-Flash-Base。
+
+论文摘要还指出：
+
+- DeepSeek-V4-Pro-Max 在开放模型中重新定义 SOTA；
+- 在 1M token 场景下，DeepSeek-V4-Pro 只需 DeepSeek-V3.2 的 27% 单 token FLOPs 和 10% KV cache。
+
+---
+
+## 总结
+
+如果用一句话概括：
+
+> **DeepSeek-V4 的预训练目标仍主要是语言建模损失加 Multi-Token Prediction 辅助损失；相比上一代，主要改进不是“换了训练目标”，而是通过 CSA/HCA hybrid attention、mHC 残差连接、Muon optimizer、MoE 调整、长上下文数据与训练策略，以及系统级优化，实现了百万 token 上下文下的大幅效率提升和性能提升。**
+
+【第3轮】
+Q: 论文中提到的核心技术架构有哪些？请给出其中两个技术的中文名称并用一句话解释。
+A: 论文中提到的核心技术架构/训练优化主要包括：
+
+1. **混合注意力架构**：结合  
+   - **Compressed Sparse Attention, CSA**  
+   - **Heavily Compressed Attention, HCA**  
+   用于提升长上下文效率（论文第 2.3 节）。
+
+2. **Manifold-Constrained Hyper-Connections, mHC**  
+   用于增强传统残差连接、提升深层信号传播稳定性（论文第 2.2 节）。
+
+3. **Muon optimizer**  
+   用于更快收敛和更稳定的大规模训练（论文第 2.4 节）。
+
+此外，DeepSeek-V4 还继承并保留了 **DeepSeekMoE** 和 **Multi-Token Prediction, MTP** 等上一代设计（论文第 2.1 节）。
+
+---
+
+其中两个技术的中文名称和一句话解释如下：
+
+1. **压缩稀疏注意力（CSA）**：先压缩 KV 缓存，再只选择少量关键压缩 KV 进行稀疏注意力计算，从而降低长上下文推理成本。
+
+2. **流形约束超连接（mHC）**：将残差映射约束到特定数学流形上，以增强深层 Transformer 中信号传播的稳定性。
+
+【第4轮】
+Q: 我在第 1 轮问过你什么问题？请复述那一轮问题的要点。
+A: 你在第 1 轮问的问题要点是：
+
+1. **论文标题是什么？**  
+2. **论文介绍了哪两个模型？**  
+3. **这两个模型各自的参数量是多少？**  
+   - 总参数量  
+   - 激活参数量  
+4. **这两个模型支持多长的上下文？**  
+
+当时我回答的核心信息是：论文标题为《DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence》，介绍了 DeepSeek-V4-Pro 和 DeepSeek-V4-Flash 两个模型，分别有 1.6T 总参数 / 49B 激活参数、284B 总参数 / 13B 激活参数，均支持一百万 token 上下文。
+
+【第5轮】
+Q: 请用 LaTeX 格式给出论文中一个关键公式（用 $$ 包裹），并解释每个符号的含义。
+A: 可以给出论文第 2.2 节中关于 **Manifold-Constrained Hyper-Connections, mHC** 的关键公式：
+
+$$
+B_l \in \mathcal{M} \coloneqq \left\{ M \in \mathbb{R}^{n \times n} \mid M \mathbf{1}_n = \mathbf{1}_n,\; \mathbf{1}_n^T M = \mathbf{1}_n^T,\; M \ge 0 \right\}
+$$
+
+其中各符号含义如下：
+
+- \(B_l\)：第 \(l\) 层 Transformer 中的**残差变换矩阵**。在 Hyper-Connections 中，它负责混合上一层的残差状态。
+- \(\mathcal{M}\)：一个**流形约束集合**，论文中具体是**双随机矩阵流形**，也称为 Birkhoff polytope。
+- \(M\)：属于该流形的任意一个矩阵，用来表示满足约束的残差映射。
+- \(\mathbb{R}^{n \times n}\)：\(n \times n\) 的实数矩阵空间。这里的 \(n\) 对应残差流的扩展宽度，论文中记为 \(n_{\mathrm{hc}}\)。
+- \(\mathbf{1}_n\)：长度为 \(n\) 的全 1 向量。
+- \(M \mathbf{1}_n = \mathbf{1}_n\)：表示矩阵 \(M\) 的**每一行元素之和等于 1**。
+- \(\mathbf{1}_n^T M = \mathbf{1}_n^T\)：表示矩阵 \(M\) 的**每一列元素之和等于 1**。
+- \(M \ge 0\)：表示矩阵 \(M\) 的**所有元素都非负**。
+
+这个公式的核心意义是：DeepSeek-V4 没有让残差变换矩阵 \(B_l\) 完全自由学习，而是把它约束到**双随机矩阵流形**上。论文指出，这样做可以保证残差映射的谱范数不超过 1，使残差变换具有“非扩张”性质，从而增强深层 Transformer 中信号传播的稳定性。
+
+【第6轮】
+Q: 请给出一段 Python 代码示例，展示如何用伪代码描述论文中的训练流程（用 ``` 代码块）。
+A: 下面给出一段 **Python 伪代码**，用于概括论文中 DeepSeek-V4 的主要训练流程。它不是论文官方代码，而是根据论文第 2.1、2.4、4.2、4.2.3、5.1、5.2 节内容整理出的流程化伪代码。
+
+```python
+# ============================================================
+# DeepSeek-V4 训练流程伪代码
+# 依据论文内容整理：
+# - 预训练：LM Loss + MTP Loss + MoE balance loss
+# - 优化器：Muon 为主，AdamW 用于部分模块
+# - 长上下文训练：4K -> 16K -> 64K -> 1M
+# - 稀疏注意力：先 dense warm-up，再引入 CSA/HCA sparse attention
+# - 稳定性：Anticipatory Routing + SwiGLU Clamping
+# - 后训练：Specialist SFT + GRPO RL + On-Policy Distillation
+# ============================================================
+
+
+class DeepSeekV4Trainer:
+    def __init__(self, model, tokenizer, optimizer_muon, optimizer_adamw,
+                 config):
+        self.model = model
+        self.tokenizer = tokenizer
+        self.optimizer_muon = optimizer_muon
+        self.optimizer_adamw = optimizer_adamw
+        self.config = config
+
+        # 论文第 4.2.2 节：训练序列长度逐步扩展
+        self.seq_length_schedule = [4096, 16384, 65536, 1_000_000]
+
+        # 论文第 4.2.2 节：MTP loss weight
+        # 大部分阶段为 0.3，学习率衰减后为 0.1
+        self.mtp_loss_weight_normal = 0.3
+        self.mtp_loss_weight_decay = 0.1
+
+        # 论文第 2.1 / 4.2.2 节：MoE sequence-wise balance loss weight
+        self.balance_loss_weight = 0.0001
+
+        # 论文第 4.2.3 节：SwiGLU clamping
+        self.swiglu_linear_clamp = (-10.0, 10.0)
+        self.swiglu_gate_upper_bound = 10.0
+
+        # 论文第 4.2.3 节：Anticipatory Routing
+        # routing indices 使用历史参数 theta_{t - delta_t} 提前计算
+        self.anticipatory_routing_delta_t = 1
+        self.cached_routing_indices = None
+
+    # ------------------------------------------------------------
+    # 1. 预训练单步：forward + loss + optimizer update
+    # ------------------------------------------------------------
+    def pretrain_step(self, batch, global_step, lr_schedule_state):
+        input_ids = batch["input_ids"]
+        attention_mask = batch["attention_mask"]
+
+        # 论文第 4.1 节：
+        # DeepSeek-V4 与 DeepSeek-V3 不同，预训练使用 sample-level attention masking
+        attention_mask = build_sample_level_attention_mask(
+            packed_sequence=input_ids,
+            sample_boundaries=batch["sample_boundaries"],
+        )
+
+        # 论文第 4.2.2 节：
+        # 前 1T tokens 使用 dense attention warm-up；
+        # 在 64K 序列长度阶段引入 sparse attention。
+        use_sparse_attention = should_use_sparse_attention(
+            global_step=global_step,
+            current_seq_length=self.current_seq_length(global_step),
+            dense_warmup_tokens=1e12,
+            sparse_start_seq_length=65536,
+        )
+
+        # 论文第 4.2.3 节：
+        # Anticipatory Routing：
+        # 特征计算使用当前参数 theta_t，
+        # routing indices 使用历史参数 theta_{t-delta_t} 计算并缓存。
+        if self.anticipatory_routing_enabled():
+            routing_indices = self.get_or_compute_anticipated_routing_indices(
+                input_ids=input_ids,
+                historical_params=self.model.params_at_step(global_step - self.anticipatory_routing_delta_t),
+            )
+        else:
+            routing_indices = None
+
+        # 前向传播：
+        # 包含 CSA / HCA hybrid attention、DeepSeekMoE、MTP modules
+        outputs = self.model.forward(
+            input_ids=input_ids,
+            attention_mask=attention_mask,
+            use_sparse_attention=use_sparse_attention,
+            routing_indices=routing_indices,
+            swiglu_linear_clamp=self.swiglu_linear_clamp,
+            swiglu_gate_upper_bound=self.swiglu_gate_upper_bound,
+        )
+
+        # 论文 Figure 2：预训练目标包含 LM Loss 和 MTP Loss
+        lm_loss = compute_language_modeling_loss(
+            logits=outputs.next_token_logits,
+            labels=input_ids,
+        )
+
+        mtp_loss = compute_multi_token_prediction_loss(
+            logits=outputs.mtp_logits,
+            labels=outputs.mtp_labels,
+        )
+
+        # 论文第 2.1 / 4.2.2 节：
+        # auxiliary-loss-free load balancing + sequence-wise balance loss
+        moe_balance_loss = compute_sequence_wise_balance_loss(
+            expert_loads=outputs.moe_expert_loads,
+        )
+
+        mtp_weight = (
+            self.mtp_loss_weight_decay
+            if lr_schedule_state["learning_rate_decaying"]
+            else self.mtp_loss_weight_normal
+        )
+
+        total_loss = (
+            lm_loss
+            + mtp_weight * mtp_loss
+            + self.balance_loss_weight * moe_balance_loss
+        )
+
+        total_loss.backward()
+
+        # 论文第 2.4 节：
+        # 大部分模块使用 Muon optimizer；
+        # embedding、prediction head、RMSNorm、mHC static biases/gating factors 使用 AdamW。
+        self.optimizer_muon.step()
+        self.optimizer_adamw.step()
+
+        self.optimizer_muon.zero_grad()
+        self.optimizer_adamw.zero_grad()
+
+        return total_loss
+
+    # ------------------------------------------------------------
+    # 2. Muon optimizer 单步更新
+    # 对应论文 Algorithm 1
+    # ------------------------------------------------------------
+    def muon_update(self, W, grad, momentum_buffer, lr, momentum,
+                    weight_decay, rescale_factor):
+        # G_t = ∇_W L_t(W_{t-1})
+        G_t = grad
+
+        # M_t = μ M_{t-1} + G_t
+        momentum_buffer = momentum * momentum_buffer + G_t
+
+        # O'_t = HybridNewtonSchulz(μ M_t + G_t)
+        # 论文第 2.4 节：
+        # 前 8 步使用快速收敛系数，后 2 步使用稳定系数
+        O_t_prime = hybrid_newton_schulz(
+            matrix=momentum * momentum_buffer + G_t,
+            num_iterations=10,
+            early_coefficients=(3.4445, -4.7750, 2.0315),
+            final_coefficients=(2.0, -1.5, 0.5),
+        )
+
+        # O_t = O'_t * sqrt(max(n, m)) * γ
+        n, m = W.shape
+        O_t = O_t_prime * (max(n, m) ** 0.5) * rescale_factor
+
+        # W_t = W_{t-1} * (1 - ηλ) - η O_t
+        W = W * (1 - lr * weight_decay) - lr * O_t
+
+        return W, momentum_buffer
+
+    # ------------------------------------------------------------
+    # 3. 后训练：Specialist Training
+    # 论文第 5.1.1 节：
+    # 对数学、代码、agent、instruction following 等领域分别训练专家模型
+    # ------------------------------------------------------------
+    def train_specialist(self, domain_name, sft_dataset, rl_dataset):
+        specialist_model = self.model.copy()
+
+        # 第一阶段：Supervised Fine-Tuning
+        # 论文第 5.1.1 节：
+        # base model 先在高质量领域数据上 SFT，建立基础能力
+        specialist_model = supervised_fine_tune(
+            model=specialist_model,
+            dataset=sft_dataset,
+            domain=domain_name,
+        )
+
+        # 第二阶段：Reinforcement Learning with GRPO
+        # 论文第 5.1.1 节：
+        # 使用 Group Relative Policy Optimization 进行领域强化
+        specialist_model = grpo_reinforcement_learning(
+            model=specialist_model,
+            dataset=rl_dataset,
+            reward_model_or_verifier=domain_specific_reward(domain_name),
+            reasoning_mode="think_max",  # 论文 Table 2/3：不同 reasoning effort
+        )
+
+        return specialist_model
+
+    # ------------------------------------------------------------
+    # 4. 后训练：On-Policy Distillation
+    # 论文第 5.1.2 节：
+    # 多个领域专家作为 teacher，统一 student 通过 reverse KL 合并能力
+    # ------------------------------------------------------------
+    def on_policy_distillation(self, student_model, teacher_models,
+                               training_dataset, num_steps):
+        """
+        论文式 (29)：
+            L_OPD(θ) = Σ_i w_i * D_KL(π_θ || π_E_i)
+
+        其中：
+        - π_θ：student policy
+        - π_E_i：第 i 个 domain expert teacher
+        - w_i：teacher 权重
+        - D_KL：reverse KL，即 KL(student || teacher)
+        """
+        student = student_model
+
+        for step in range(num_steps):
+            batch = next_batch(training_dataset)
+
+            # 论文第 5.1.2 节：
+            # 从 student 自身采样 trajectory，保持 on-policy
+            student_trajectories = rollout_student(
+                model=student,
+                prompts=batch["prompts"],
+                context_window=batch["context_window"],
+            )
+
+            total_opd_loss = 0.0
+
+            for teacher_idx, teacher in enumerate(teacher_models):
+                teacher_weight = get_teacher_weight(teacher_idx)
+
+                # 论文第 5.2.2 节：
+                # 使用 full-vocabulary logits distillation，
+                # 而不是 token-level KL estimate，以降低梯度方差
+                student_logits = forward_logits(student, student_trajectories)
+                teacher_logits = forward_logits(teacher, student_trajectories)
+
+                # 论文式 (29)：
+                # w_i * D_KL(π_θ || π_E_i)
+                kl_term = reverse_kl_full_vocabulary(
+                    student_logits=student_logits,
+                    teacher_logits=teacher_logits,
+                )
+
+                total_opd_loss += teacher_weight * kl_term
+
+            total_opd_loss.backward()
+            optimizer_step(student)
+
+        return student
+
+    # ------------------------------------------------------------
+    # 5. 后训练中的 FP4 Quantization-Aware Training
+    # 论文第 5.2.1 节：
+    # 对 MoE expert weights 和 CSA indexer QK path 做 FP4 QAT
+    # ------------------------------------------------------------
+    def fp4_qat_step(self, model, batch):
+        """
+        论文第 5.2.1 节：
+        - FP32 master weights -> FP4 -> FP8 computation
+        - FP4-to-FP8 dequantization 在满足 scale 条件时是 lossless
+        - backward 中通过 STE 将梯度传回 FP32 master weights
+        """
+        for module in model.modules():
+            if is_moe_expert_weight(module) or is_csa_indexer_qk_path(module):
+                # 论文：FP32 master weights quantized to FP4
+                fp4_weights = quantize_to_fp4(module.fp32_master_weights)
+
+                # 论文：dequantized back to FP8 for computation
+                fp8_weights = dequantize_fp4_to_fp8(fp4_weights)
+
+                # 论文：FP4-to-FP8 dequantization is lossless
+                assert fp8_weights_is_lossless(fp4_weights, fp8_weights)
+
+                # 前向使用模拟 FP4/FP8 行为
+                output = module.forward_with_fp8_weights(
+                    fp8_weights=fp8_weights,
+                    inputs=batch["hidden_states"],
+                )
+
+                # 论文：gradients propagated back to FP32 master weights
+                # equivalent to Straight-Through Estimator (STE)
+                gradient = output.backward_ste_through_fp4()
+
+                module.fp32_master_weights.apply_adam_or_muon_update(gradient)
+
+        return model
+```
+
+这段伪代码概括了论文中的主要训练流程：
+
+1. **预训练阶段**：使用语言建模损失、Multi-Token Prediction 损失和 MoE 序列级负载均衡损失。  
+2. **优化器设置**：大部分参数使用 Muon optimizer，embedding、prediction head、RMSNorm、mHC static biases/gating factors 等使用 AdamW。  
+3. **长上下文训练**：序列长度从 4K 扩展到 16K、64K，再到 1M；先 dense attention warm-up，再引入 CSA/HCA sparse attention。  
+4. **训练稳定性**：使用 Anticipatory Routing 和 SwiGLU Clamping 缓解 loss spike。  
+5. **后训练阶段**：先训练领域专家，再通过 On-Policy Distillation 合并多个专家能力。  
+6. **量化训练**：后训练中加入 FP4 Quantization-Aware Training，用于 MoE expert weights 和 CSA indexer QK path。
+
+【第7轮】
+Q: 论文的主要实验结果如何？在哪些基准上与哪些模型对比？效果提升幅度大概是多少？
+A: 论文的实验结果可以分成三条主线：**长上下文效率提升**、**预训练基座模型能力提升**、**后训练模型在知识/推理/代码/Agent/真实任务上的表现**。下面按“在哪些基准、和哪些模型比、提升大概多少”来梳理。
+
+---
+
+## 1. 最核心的实验结果：百万 token 上下文下效率大幅提升
+
+论文摘要和 Figure 1 给出的核心效率结果是：在 **1M token 上下文**下，与 **DeepSeek-V3.2** 相比：
+
+| 模型 | 单 token 推理 FLOPs | KV cache |
+|---|---:|---:|
+| DeepSeek-V4-Pro | 仅为 DeepSeek-V3.2 的 **27%** | 仅为 DeepSeek-V3.2 的 **10%** |
+| DeepSeek-V4-Flash | 仅为 DeepSeek-V3.2 的 **10%** | 仅为 DeepSeek-V3.2 的 **7%** |
+
+Figure 1 右图还给出了近似倍数：
+
+- DeepSeek-V4-Pro 的单 token FLOPs 比 DeepSeek-V3.2 低约 **3.7×**；
+- DeepSeek-V4-Flash 的低约 **9.8×**；
+- DeepSeek-V4-Pro 的 KV cache 比 DeepSeek-V3.2 小约 **9.5×**；
+- DeepSeek-V4-Flash 的小约 **13.7×**。
+
+论文第 2.3.4 节还指出，如果以 BF16 GQA8、head dimension 128 的常见注意力配置作为基线，DeepSeek-V4 在 1M 上下文下的 KV cache 可降到约该基线的 **2%**。
+
+这是论文最重要的实验贡献之一：通过 **CSA + HCA 混合注意力**、低精度存储与计算，使百万 token 上下文在工程上变得可行。
+
+---
+
+## 2. 预训练基座模型评测：Table 1
+
+论文第 4.3.2 节的 **Table 1** 对比了三个 base 模型：
+
+- **DeepSeek-V3.2-Base**
+- **DeepSeek-V4-Flash-Base**
+- **DeepSeek-V4-Pro-Base**
+
+评测维度包括：
+
+1. 世界知识  
+   - AGIEval  
+   - MMLU  
+   - MMLU-Redux  
+   - MMLU-Pro  
+   - MMMLU  
+   - C-Eval  
+   - CMMLU  
+   - MultiLoKo  
+   - Simple-QA verified  
+   - SuperGPQA  
+   - FACTS Parametric  
+   - TriviaQA  
+
+2. 语言理解与推理  
+   - BBH  
+   - DROP  
+   - HellaSwag  
+   - WinoGrande  
+   - CLUEWSC  
+
+3. 代码与数学  
+   - BigCodeBench  
+   - HumanEval  
+   - GSM8K  
+   - MATH  
+   - MGSM  
+   - CMath  
+
+4. 长上下文  
+   - LongBench-V2  
+
+### 主要结果
+
+论文总结是：
+
+- **DeepSeek-V4-Flash-Base** 虽然参数规模明显小于 DeepSeek-V3.2-Base，但在多数 benchmark 上超过 DeepSeek-V3.2-Base，尤其在世界知识和长上下文任务上优势明显。
+- **DeepSeek-V4-Pro-Base** 进一步在知识、推理、代码、长上下文上全面超过 DeepSeek-V3.2-Base 和 DeepSeek-V4-Flash-Base，成为 DeepSeek 系列中最强的 base 模型。
+
+一些代表性数字如下：
+
+| Benchmark | DeepSeek-V3.2-Base | DeepSeek-V4-Flash-Base | DeepSeek-V4-Pro-Base | Pro 相比 V3.2 提升 |
+|---|---:|---:|---:|---:|
+| MMLU-Pro | 65.5 | 68.3 | **73.5** | +8.0 分 |
+| Simple-QA verified | 28.3 | 30.1 | **55.2** | +26.9 分，接近 1.95× |
+| FACTS Parametric | 27.1 | 33.9 | **62.6** | +35.5 分，约 2.31× |
+| MultiLoKo | 38.7 | 42.2 | **51.1** | +12.4 分 |
+| HumanEval | 62.8 | 69.5 | **76.8** | +14.0 分 |
+| MATH | 60.5 | 57.4 | **64.5** | +4.0 分 |
+| LongBench-V2 | 40.2 | 44.7 | **51.5** | +11.3 分 |
+
+需要注意的是，并非所有 benchmark 都提升。例如：
+
+- BigCodeBench：DeepSeek-V3.2-Base 为 **63.9**，DeepSeek-V4-Pro-Base 为 **59.2**，反而下降；
+- CMath：DeepSeek-V3.2-Base 为 **92.6**，DeepSeek-V4-Pro-Base 为 **90.9**，也下降；
+- BBH、GSM8K 等部分任务提升幅度很小，论文说明差距不超过 0.3 分视为同水平。
+
+总体看，预训练阶段的主要提升集中在：
+
+- 世界知识；
+- 长上下文理解；
+- 部分代码与数学任务；
+- 多语言/长尾知识。
+
+---
+
+## 3. 后训练标准 benchmark：Table 6
+
+论文第 5.3.2 节的 **Table 6** 对比了 **DeepSeek-V4-Pro-Max** 与多个闭源/开源模型：
+
+| 模型 | 说明 |
+|---|---|
+| Claude Opus 4.6 Max | 闭源模型 |
+| GPT-5.4 xHigh | 闭源模型 |
+| Gemini 3.1 Pro Thinking | 闭源模型 |
+| Kimi K2.6 | 开源模型 |
+| GLM-5.1 | 开源模型 |
+| DeepSeek-V4-Pro-Max | 本文模型最大推理模式 |
+
+评测基准包括：
+
+1. 知识与推理  
+   - MMLU-Pro  
+   - SimpleQA-Verified  
+   - Chinese-SimpleQA  
+   - GPQA Diamond  
+   - HLE  
+   - LiveCodeBench  
+   - Codeforces  
+   - HMMT 2026 Feb  
+   - IMOAnswerBench  
+   - Apex  
+   - Apex Shortlist  
+
+2. 长上下文  
+   - MRCR 1M  
+   - CorpusQA 1M  
+
+3. Agent 能力  
+   - Terminal Bench 2.0  
+   - SWE Verified  
+   - SWE Pro  
+   - SWE Multilingual  
+   - BrowseComp  
+   - HLE w/ tools  
+   - GDPval-AA  
+   - MCPAtlas Public  
+   - Toolathlon  
+
+### 知识类结果
+
+论文称 DeepSeek-V4-Pro-Max 在开放模型中重新定义知识能力 SOTA，尤其体现在 **SimpleQA-Verified** 上。
+
+| Benchmark | Opus 4.6 | GPT-5.4 | Gemini 3.1 Pro | K2.6 | GLM-5.1 | DeepSeek-V4-Pro-Max |
+|---|---:|---:|---:|---:|---:|---:|
+| MMLU-Pro | 89.1 | 87.5 | **91.0** | 87.1 | 86.0 | 87.5 |
+| SimpleQA-Verified | 46.2 | 45.3 | **75.6** | 36.9 | 38.1 | **57.9** |
+| Chinese-SimpleQA | 76.4 | 76.8 | **85.9** | 75.9 | 75.0 | **84.4** |
+| GPQA Diamond | 91.3 | 93.0 | **94.3** | 90.5 | 86.2 | 90.1 |
+| HLE | **40.0** | 39.8 | 44.4 | 36.4 | 34.7 | 37.7 |
+
+主要提升幅度：
+
+- **SimpleQA-Verified**：DeepSeek-V4-Pro-Max 得 **57.9**，比 Kimi K2.6 的 **36.9** 高约 **21.0 分**，比 GLM-5.1 的 **38.1** 高约 **19.8 分**。论文正文称其超过现有开源基线约 **20 absolute percentage points**。
+- **Chinese-SimpleQA**：DeepSeek-V4-Pro-Max 得 **84.4**，比 GPT-5.4 的 **76.8** 高 **7.6 分**，比 Opus 4.6 的 **76.4** 高 **8.0 分**，但仍略低于 Gemini 3.1 Pro 的 **85.9**。
+- **MMLU-Pro / GPQA / HLE**：DeepSeek-V4-Pro-Max 与开源模型接近或略优，但整体仍落后于最强闭源模型，尤其是 Gemini 3.1 Pro。
+
+论文也明确承认：在知识类评测中，DeepSeek-V4-Pro-Max 与 Gemini-3.1-Pro 仍有差距，但差距已经显著缩小。
+
+---
+
+### 推理与代码结果
+
+| Benchmark | Opus 4.6 | GPT-5.4 | Gemini 3.1 Pro | K2.6 | GLM-5.1 | DeepSeek-V4-Pro-Max |
+|---|---:|---:|---:|---:|---:|---:|
+| LiveCodeBench | 88.8 | - | 91.7 | 89.6 | - | **93.5** |
+| Codeforces Rating | - | 3168 | 3052 | - | - | **3206** |
+| HMMT 2026 Feb | 96.2 | **97.7** | 94.7 | 92.7 | 89.4 | 95.2 |
+| IMOAnswerBench | 75.3 | **91.4** | 81.0 | 86.0 | 83.8 | 89.8 |
+| Apex | 34.5 | 54.1 | **60.9** | 24.0 | 11.5 | 38.3 |
+| Apex Shortlist | 85.9 | 78.1 | 89.1 | 75.5 | 72.4 | **90.2** |
+
+主要提升：
+
+- **LiveCodeBench**：DeepSeek-V4-Pro-Max 得 **93.5**，高于 Gemini 3.1 Pro 的 **91.7** 约 **1.8 分**，高于 K2.6 的 **89.6** 约 **3.9 分**。
+- **Codeforces**：DeepSeek-V4-Pro-Max 得 **3206**，高于 GPT-5.4 的 **3168** 约 **38 分**，高于 Gemini 3.1 Pro 的 **3052** 约 **154 分**。论文称这是开放模型首次在 Codeforces 这类任务上达到与闭源模型可比的水平。
+- **Apex Shortlist**：DeepSeek-V4-Pro-Max 得 **90.2**，高于 Gemini 3.1 Pro 的 **89.1** 约 **1.1 分**，高于 GPT-5.4 的 **78.1** 约 **12.1 分**。
+- **IMOAnswerBench**：DeepSeek-V4-Pro-Max 得 **89.8**，低于 GPT-5.4 的 **91.4** 约 **1.6 分**，但高于 Gemini 3.1 Pro 的 **81.0** 约 **8.8 分**。
+- **HMMT**：DeepSeek-V4-Pro-Max 得 **95.2**，低于 GPT-5.4 的 **97.7** 约 **2.5 分**，但高于 Gemini 3.1 Pro 的 **94.7** 约 **0.5 分**。
+- **Apex**：DeepSeek-V4-Pro-Max 得 **38.3**，明显低于 GPT-5.4 的 **54.1** 和 Gemini 3.1 Pro 的 **60.9**，说明高难推理任务仍有差距。
+
+论文整体判断是：DeepSeek-V4-Pro-Max 在推理任务上超过此前开放模型，接近部分闭源前沿模型，但仍落后 GPT-5.4 和 Gemini 3.1 Pro 一些，论文称其发展轨迹大约落后前沿模型 **3 到 6 个月**。
+
+---
+
+### 长上下文结果
+
+| Benchmark | Opus 4.6 | Gemini 3.1 Pro | DeepSeek-V4-Pro-Max |
+|---|---:|---:|---:|
+| MRCR 1M | **92.9** | 76.3 | 83.5 |
+| CorpusQA 1M | **71.7** | 53.8 | 62.0 |
+
+主要结果：
+
+- DeepSeek-V4-Pro-Max 在 **MRCR 1M** 上得 **83.5**，高于 Gemini 3.1 Pro 的 **76.3** 约 **7.2 分**，但低于 Claude Opus 4.6 的 **92.9** 约 **9.4 分**。
+- 在更偏真实语料分析的 **CorpusQA 1M** 上得 **62.0**，高于 Gemini 3.1 Pro 的 **53.8** 约 **8.2 分**，但低于 Opus 4.6 的 **71.7** 约 **9.7 分**。
+
+Figure 9 还显示：DeepSeek-V4-Pro-Max 在 128K 内检索性能非常稳定，超过约 128K 后出现一定下降，但在 1M token 下仍保持较强能力。
+
+---
+
+### Agent 结果
+
+| Benchmark | Opus 4.6 | GPT-5.4 | Gemini 3.1 Pro | K2.6 | GLM-5.1 | DeepSeek-V4-Pro-Max |
+|---|---:|---:|---:|---:|---:|---:|
+| Terminal Bench 2.0 | 65.4 | **75.1** | 68.5 | 66.7 | 63.5 | 67.9 |
+| SWE Verified | **80.8** | - | 80.6 | 80.2 | - | 80.6 |
+| SWE Pro | 57.3 | **57.7** | 54.2 | 58.6 | 58.4 | 55.4 |
+| SWE Multilingual | **77.5** | - | - | 76.7 | 73.3 | 76.2 |
+| BrowseComp | 83.7 | 82.7 | **85.9** | 83.2 | 79.3 | 83.4 |
+| HLE w/ tools | 53.1 | 52.0 | 51.6 | **54.0** | 50.4 | 48.2 |
+| GDPval-AA | 1619 | **1674** | 1314 | 1482 | 1535 | 1554 |
+| MCPAtlas Public | **73.8** | 67.2 | 69.2 | 66.6 | 71.8 | 73.6 |
+| Toolathlon | 47.2 | **54.6** | 48.8 | 50.0 | 40.7 | 51.8 |
+
+主要提升幅度：
+
+- **Terminal Bench 2.0**：DeepSeek-V4-Pro-Max 得 **67.9**，高于 K2.6 的 **66.7** 约 **1.2 分**，高于 GLM-5.1 的 **63.5** 约 **4.4 分**，但低于 GPT-5.4 的 **75.1** 约 **7.2 分**。
+- **SWE Verified**：DeepSeek-V4-Pro-Max 得 **80.6**，与 Gemini 3.1 Pro 的 **80.6** 持平，略低于 Opus 4.6 的 **80.8**。
+- **Toolathlon**：DeepSeek-V4-Pro-Max 得 **51.8**，高于 Opus 4.6 的 **47.2** 约 **4.6 分**，高于 Gemini 3.1 Pro 的 **48.8** 约 **3.0 分**，高于 K2.6 的 **50.0** 约 **1.8 分**，但低于 GPT-5.4 的 **54.6**。
+- **MCPAtlas Public**：DeepSeek-V4-Pro-Max 得 **73.6**，接近 Opus 4.6 的 **73.8**，明显高于 GPT-5.4、Gemini、K2.6、GLM。
+- **GDPval-AA**：DeepSeek-V4-Pro-Max 得 **1554**，高于 Gemini 3.1 Pro 的 **1314** 约 **240 分**，高于 K2.6 的 **1482** 约 **72 分**，但低于 Opus 4.6 的 **1619** 和 GPT-5.4 的 **1674**。
+
+论文对 Agent 的总体判断是：
+
+- 在公开 benchmark 上，DeepSeek-V4-Pro-Max 与 Kimi K2.6、GLM-5.1 等领先开源模型相当；
+- 相比最强闭源模型仍略弱；
+- 在内部评测中，DeepSeek-V4-Pro-Max 超过 Claude Sonnet 4.5，接近 Claude Opus 4.5。
+
+---
+
+## 4. 不同推理模式的提升：Table 7
+
+论文第 5.3.2 节的 **Table 7** 对比了 DeepSeek-V4-Flash 和 DeepSeek-V4-Pro 的三种模式：
+
+- Non-Think
+- High
+- Max
+
+这体现了论文的“test-time scaling”思路：通过增加推理 token 和上下文预算，模型能力显著提升。
+
+### DeepSeek-V4-Pro 的代表结果
+
+| Benchmark | Non-Think | High | Max | Max 相比 Non-Think 提升 |
+|---|---:|---:|---:|---:|
+| MMLU-Pro | 82.9 | 87.1 | 87.5 | +4.6 |
+| SimpleQA-Verified | 45.0 | 46.2 | 57.9 | +12.9 |
+| Chinese-SimpleQA | 75.8 | 77.7 | 84.4 | +8.6 |
+| GPQA Diamond | 72.9 | 89.1 | 90.1 | +17.2 |
+| HLE | 7.7 | 34.5 | 37.7 | +30.0 |
+| LiveCodeBench | 56.8 | 89.8 | 93.5 | +36.7 |
+| Codeforces | - | 2919 | 3206 | - |
+| HMMT 2026 Feb | 31.7 | 94.0 | 95.2 | +63.5 |
+| IMOAnswerBench | 35.3 | 88.0 | 89.8 | +54.5 |
+| Apex | 0.4 | 27.4 | 38.3 | +37.9 |
+| Apex Shortlist | 9.2 | 85.5 | 90.2 | +81.0 |
+| MRCR 1M | 44.7 | 83.3 | 83.5 | +38.8 |
+| CorpusQA 1M | 35.6 | 56.5 | 62.0 | +26.4 |
+| Terminal Bench 2.0 | 59.1 | 63.3 | 67.9 | +8.8 |
+| SWE Verified | 73.6 | 79.4 | 80.6 | +7.0 |
+| BrowseComp | - | 80.4 | 83.4 | - |
+| Toolathlon | 46.3 | 49.0 | 51.8 | +5.5 |
+
+可以看到，Max 模式相对 Non-Think 的提升非常大，尤其在数学、代码、高难推理任务上。
+
+### DeepSeek-V4-Flash 的代表结果
+
+| Benchmark | Non-Think | High | Max |
+|---|---:|---:|---:|
+| SimpleQA-Verified | 23.1 | 28.9 | 34.1 |
+| HLE | 8.1 | 29.4 | 34.8 |
+| LiveCodeBench | 55.2 | 88.4 | 91.6 |
+| Codeforces | - | 2816 | 3052 |
+| HMMT 2026 Feb | 40.8 | 91.9 | 94.8 |
+| IMOAnswerBench | 41.9 | 85.1 | 88.4 |
+| Apex Shortlist | 9.3 | 72.1 | 85.7 |
+| MRCR 1M | 37.5 | 76.9 | 78.7 |
+| Terminal Bench 2.0 | 49.1 | 56.6 | 56.9 |
+| SWE Verified | 73.7 | 78.6 | 79.0 |
+
+论文总结：
+
+- DeepSeek-V4-Flash 在知识任务上因参数规模较小而弱于 Pro；
+- 但在推理任务上，如果给更大 thinking budget，Flash-Max 可达到与 GPT-5.2、Gemini-3.0-Pro 相当的水平；
+- 在 Agent 任务上，Flash 在部分 benchmark 接近 Pro，但在高难复杂任务上仍落后 Pro。
+
+---
+
+## 5. 真实世界任务结果
+
+论文第 5.4 节还报告了非标准 benchmark 的真实任务评测。
+
+### 5.1 中文写作
+
+论文比较了 DeepSeek-V4-Pro 与 Gemini 3.1 Pro。
+
+#### 功能性写作
+
+Table 12 显示：
+
+- DeepSeek-V4-Pro 总体胜率：**62.7%**
+- Gemini 3.1 Pro 总体胜率：**34.1%**
+
+提升幅度：约 **+28.6 个百分点**的净胜率优势。
+
+#### 创意写作
+
+Table 13 显示，相比 Gemini 3.1 Pro：
+
+- 指令遵循胜率：**60.0%**
+- 写作质量胜率：**77.5%**
+
+但论文也指出，在最难的高复杂度、多轮约束 prompt 上，Claude Opus 4.5 仍优于 DeepSeek-V4-Pro：
+
+- Claude Opus 4.5 胜率：**52.0%**
+- DeepSeek-V4-Pro 胜率：**45.9%**
+
+---
+
+### 5.2 搜索任务
+
+论文第 5.4.2 节说明：
+
+- 在 DeepSeek web/app 中，non-think 模式使用 RAG；
+- thinking 模式使用 agentic search；
+- agentic search 在复杂任务上优于标准 RAG；
+- DeepSeek-V4-Pro 相比 DeepSeek-V3.2 在客观和主观问答中均有明显优势，尤其在 single-value search 和 planning & strategy 任务上。
+
+不过论文没有给出像 Table 1/Table 6 那样完整的逐 benchmark 数字，主要结论是：
+
+- DeepSeek-V4-Pro 在精确事实定位和结构化规划上更强；
+- DeepSeek-V3.2 在比较和推荐类任务上仍有一定竞争力。
+
+---
+
+### 5.3 白领任务
+
+论文构造了 30 个高级中文专业任务，覆盖 13 个行业，并比较：
+
+- DeepSeek-V4-Pro-Max
+- Claude Opus 4.6 Max
+
+Figure 11 显示：
+
+| 任务类型 | DeepSeek 胜率 | 平局 | Opus 胜率 |
+|---|---:|---:|---:|
+| analysis | 55.0% | 8.0% | 37.0% |
+| generation | 52.0% | 10.0% | 38.0% |
+| editing | 47.0% | 18.0% | 35.0% |
+| overall | 53.0% | 10.0% | 37.0% |
+
+论文称 DeepSeek-V4-Pro-Max 对 Opus 4.6 Max 的 **non-loss rate 为 63%**。
+
+Figure 12 的维度分数：
+
+| 维度 | DeepSeek-V4-Pro-Max | Opus 4.6 Max |
+|---|---:|---:|
+| Task Completion | 98.32 | 96.68 |
+| Instruction Following | 87.76 | 88.88 |
+| Content Quality | 83.32 | 78.00 |
+| Formatting Aesthetics | 76.68 | 72.68 |
+| Overall | 86.52 | 84.06 |
+
+主要提升：
+
+- 任务完成度：DeepSeek 高 **1.64 分**；
+- 内容质量：DeepSeek 高 **5.32 分**；
+- 格式美观：DeepSeek 高 **4.00 分**；
+- 总分：DeepSeek 高 **2.46 分**；
+- 指令遵循：DeepSeek 略低 **1.12 分**。
+
+---
+
+### 5.4 代码 Agent
+
+论文第 5.4.4 节 Table 8 给出了内部研发代码任务 benchmark：
+
+| 模型 | Pass Rate |
+|---|---:|
+| Haiku 4.5 | 13% |
+| Sonnet 4.5 | 47% |
+| DeepSeek-V4-Pro-Max | **67%** |
+| Claude Opus 4.5 | 70% |
+| Claude Opus 4.5 Thinking | 73% |
+| Claude Opus 4.6 Thinking | 80% |
+
+提升幅度：
+
+- DeepSeek-V4-Pro-Max 相比 Sonnet 4.5 提升 **20 个百分点**；
+- 相比 Haiku 4.5 提升 **54 个百分点**；
+- 但仍低于 Claude Opus 4.5 Thinking 约 **6 个百分点**，低于 Opus 4.6 Thinking 约 **13 个百分点**。
+
+论文称 DeepSeek-V4-Pro 在代码 Agent 上显著超过 Claude Sonnet 4.5，并接近 Claude Opus 4.5。
+
+---
+
+## 6. 总体提升幅度概括
+
+如果按“相对上一代”和“相对开源/闭源模型”分别看，可以这样概括：
+
+### 6.1 相比 DeepSeek-V3.2：效率提升最显著
+
+| 指标 | DeepSeek-V4-Pro vs V3.2 | DeepSeek-V4-Flash vs V3.2 |
+|---|---:|---:|
+| 1M token 单 token FLOPs | 降至 **27%** | 降至 **10%** |
+| 1M token KV cache | 降至 **10%** | 降至 **7%** |
+| 等价 FLOPs 降低倍数 | 约 **3.7×** | 约 **9.8×** |
+| KV cache 缩小倍数 | 约 **9.5×** | 约 **13.7×** |
+
+这是论文最核心的实验结论：DeepSeek-V4 的主要突破不是单纯刷高 benchmark 分数，而是在保持强能力的同时，把百万 token 上下文推理成本大幅压下来。
+
+---
+
+### 6.2 相比 DeepSeek-V3.2-Base：知识类提升明显
+
+代表性提升：
+
+| Benchmark | V3.2-Base | V4-Pro-Base | 提升 |
+|---|---:|---:|---:|
+| Simple-QA verified | 28.3 | 55.2 | +26.9 |
+| FACTS Parametric | 27.1 | 62.6 | +35.5 |
+| MMLU-Pro | 65.5 | 73.5 | +8.0 |
+| LongBench-V2 | 40.2 | 51.5 | +11.3 |
+| HumanEval | 62.8 | 76.8 | +14.0 |
+
+但代码类部分 benchmark 有下降，例如 BigCodeBench 从 63.9 降到 59.2。
+
+---
+
+### 6.3 相比开源模型：知识、代码、部分 Agent 任务领先
+
+代表性提升：
+
+| Benchmark | DeepSeek-V4-Pro-Max | 最强开源对比 | 提升 |
+|---|---:|---:|---:|
+| SimpleQA-Verified | 57.9 | K2.6 36.9 / GLM-5.1 38.1 | 约 +20 分 |
+| LiveCodeBench | 93.5 | K2.6 89.6 / Gemini 91.7 | +1.8 到 +3.9 分 |
+| Codeforces | 3206 | Gemini 3052 | +154 分 |
+| Apex Shortlist | 90.2 | Gemini 89.1 / GPT 78.1 | +1.1 到 +12.1 分 |
+| Terminal Bench 2.0 | 67.9 | K2.6 66.7 / GLM-5.1 63.5 | +1.2 到 +4.4 分 |
+| Toolathlon | 51.8 | K2.6 50.0 / GLM-5.1 40.7 | +1.8 到 +11.1 分 |
+
+---
+
+### 6.4 相比闭源模型：部分任务追平或超过，但仍有差距
+
+代表性结果：
+
+| Benchmark | DeepSeek-V4-Pro-Max | 闭源模型 | 结论 |
+|---|---:|---:|---|
+| LiveCodeBench | 93.5 | Gemini 91.7 / Opus 88.8 | 超过 |
+| Codeforces | 3206 | GPT 3168 / Gemini 3052 | 超过 |
+| Apex Shortlist | 90.2 | Gemini 89.1 / GPT 78.1 | 超过 |
+| Chinese-SimpleQA | 84.4 | GPT 76.8 / Opus 76.4 | 超过，但低于 Gemini 85.9 |
+| SimpleQA-Verified | 57.9 | Gemini 75.6 | 明显低于 Gemini |
+| GPQA Diamond | 90.1 | Gemini 94.3 / GPT 93.0 | 低于 |
+| HLE | 37.7 | Gemini 44.4 / Opus 40.0 | 低于 |
+| MRCR 1M | 83.5 | Opus 92.9 | 低于 |
+| Terminal Bench 2.0 | 67.9 | GPT 75.1 | 低于 |
+| HLE w/ tools | 48.2 | K2.6 54.0 / Opus 53.1 | 低于 |
+
+总体看，DeepSeek-V4-Pro-Max 在代码竞赛、部分数学竞赛、工具调用、MCPAtlas 等任务上很强；但在高难知识问答、HLE、搜索 Agent、部分复杂 Agent 任务上仍落后最强闭源模型。
+
+---
+
+## 7. 一句话总结
+
+论文的主要实验结果表明：
+
+> DeepSeek-V4 的核心优势是在 1M token 上下文下将推理 FLOPs 和 KV cache 大幅降低，同时预训练和后训练模型在知识、代码、长上下文、部分 Agent 任务上显著超过 DeepSeek-V3.2 和多数开源模型；与 GPT、Gemini、Claude 等闭源前沿模型相比，在代码竞赛、部分数学和工具调用任务上已能追平或超过，但在高难知识、复杂推理和高级 Agent 任务上仍有差距。
+
+【第8轮】
+Q: 结合你前面几轮的回答，这篇论文最核心的创新点用三点概括，每点不超过 30 字。
+A: 1. CSA与HCA混合注意力，降低百万token成本。  
+2. mHC约束残差连接，提升深层训练稳定性。  
+3. Muon优化与系统创新，支撑高效长上下文训练。
+
+【第9轮】
+Q: 论文有哪些局限性（limitations）或未来工作方向？
+A: 论文在 **第 6 节 “Conclusion, Limitations, and Future Directions”** 中明确讨论了局限性与未来方向。结合前文实验结果，可以概括为以下几类。
+
+---
+
+## 一、论文明确承认的局限
+
+### 1. 架构设计较为复杂
+
+论文指出，DeepSeek-V4 为了追求极致的长上下文效率，采用了比较“大胆”的架构设计。但为了降低风险，模型保留了许多此前初步验证过的组件和技巧。
+
+这些设计虽然有效，但代价是架构相对复杂。论文原文大意是：
+
+> 为最小化风险，我们保留了许多初步验证过的组件和技巧，这些设计虽然有效，但使架构相对复杂。
+
+因此，论文将“简化架构”列为未来方向：
+
+> 未来迭代中，将进行更全面、更有原则性的研究，把架构蒸馏到最本质的设计，使其更优雅，同时不牺牲性能。
+
+对应论文：**Section 6**。
+
+---
+
+### 2. 训练稳定性技巧的理论解释不足
+
+论文在预训练中提出了两个缓解 loss spike 的技术：
+
+1. **Anticipatory Routing**
+2. **SwiGLU Clamping**
+
+这两个方法在实践中有效，但论文明确承认它们的底层机制尚不清晰：
+
+> 尽管 Anticipatory Routing 和 SwiGLU Clamping 已被证明能有效缓解训练不稳定，但它们背后的原理仍缺乏充分理解。
+
+因此，未来方向是：
+
+- 研究大规模训练稳定性的基础问题；
+- 加强内部指标监测；
+- 建立更原则性、可预测的稳定训练方法。
+
+对应论文：**Section 4.2.3** 与 **Section 6**。
+
+---
+
+### 3. 与最强闭源模型仍有差距
+
+虽然论文称 DeepSeek-V4-Pro-Max 重新定义了开放模型 SOTA，但在多个高难任务上仍落后于前沿闭源模型。
+
+例如：
+
+#### 知识任务
+
+在 SimpleQA-Verified 上：
+
+- DeepSeek-V4-Pro-Max：**57.9**
+- Gemini-3.1-Pro：**75.6**
+
+差距仍较明显。
+
+#### 推理任务
+
+论文在引言中总结：
+
+> DeepSeek-V4-Pro-Max 的表现略低于 GPT-5.4 和 Gemini-3.1-Pro，说明其发展轨迹大约落后前沿闭源模型 3 到 6 个月。
+
+对应论文：**Section 1**、**Section 5.3.2**。
+
+---
+
+### 4. 长上下文性能在超过一定长度后仍有退化
+
+论文强调 DeepSeek-V4 支持 1M token 上下文，并显著降低 KV cache 与 FLOPs。但在长上下文检索评测中，性能并非完全无损。
+
+Figure 9 对应的讨论指出：
+
+- 在 **128K 以内**，DeepSeek-V4-Pro-Max 的检索性能非常稳定；
+- 超过约 **128K** 后，性能开始出现可见下降；
+- 不过在 **1M token** 下，相比多数闭源和开源模型仍然保持较强能力。
+
+这说明其百万 token 上下文能力很强，但长距离检索仍存在一定退化。
+
+对应论文：**Section 5.3.2**，Figure 9。
+
+---
+
+### 5. DeepSeek-V4-Flash 在知识与复杂 Agent 任务上弱于 Pro
+
+论文在引言中比较了 Pro 与 Flash：
+
+- Flash 由于参数规模较小，在知识评测中表现低于 Pro；
+- 在推理任务上，如果给 Flash 更大的 thinking budget，可以达到接近 Pro 的结果；
+- 但在更复杂、高难度的 Agent 任务上，Flash 仍然落后于 Pro。
+
+例如 Terminal Bench 2.0：
+
+- DeepSeek-V4-Pro-Max：**67.9**
+- DeepSeek-V4-Flash-Max：**56.9**
+
+对应论文：**Section 1**，**Table 6**，**Table 7**。
+
+---
+
+## 二、真实任务评测中体现出的局限
+
+论文第 5.4 节报告了一些非标准 benchmark 的真实任务结果，其中也暴露出若干不足。
+
+---
+
+### 1. 中文写作：最难 prompt 上仍不如 Claude Opus 4.5
+
+论文比较了 DeepSeek-V4-Pro 与 Claude Opus 4.5 在最具挑战性中文写作 prompt 上的表现。
+
+结果：
+
+- Claude Opus 4.5 胜率：**52.0%**
+- DeepSeek-V4-Pro 胜率：**45.9%**
+
+这说明在高复杂度约束或多轮写作场景中，Claude Opus 4.5 仍有优势。
+
+对应论文：**Section 5.4.1**，Table 14。
+
+---
+
+### 2. 白领任务：指令遵循和格式美观仍有提升空间
+
+在 30 个中文专业白领任务中，DeepSeek-V4-Pro-Max 总体优于 Opus-4.6-Max，但论文也指出其不足：
+
+- 偶尔忽略具体格式约束；
+- 指令遵循略逊于 Opus；
+- 不擅长将长文本压缩成简洁摘要；
+- 演示文稿的视觉设计仍有较大提升空间。
+
+Figure 12 的分数也显示：
+
+| 维度 | DeepSeek-V4-Pro-Max | Opus-4.6-Max |
+|---|---:|---:|
+| Task Completion | 98.32 | 96.68 |
+| Instruction Following | 87.76 | 88.88 |
+| Content Quality | 83.32 | 78.00 |
+| Formatting Aesthetics | 76.68 | 72.68 |
+| Overall | 86.52 | 84.06 |
+
+可以看到，Instruction Following 上 DeepSeek 略低，Formatting Aesthetics 分数也最低。
+
+对应论文：**Section 5.4.3**，Figure 11、Figure 12。
+
+---
+
+### 3. 代码 Agent：仍有低级错误、模糊指令误解和过度思考
+
+论文在内部研发代码任务中评测了 DeepSeek-V4-Pro，结果显示它超过 Claude Sonnet 4.5，接近 Claude Opus 4.5。
+
+但论文也引用了内部开发者调查，指出用户仍观察到：
+
+- trivial mistakes，即低级错误；
+- misinterpretation of vague prompts，即对模糊指令理解不准；
+- occasional over-thinking，即偶尔过度思考。
+
+对应论文：**Section 5.4.4**。
+
+---
+
+## 三、评测层面的局限
+
+论文也提到一些实验设置上的限制。
+
+### 1. 部分对比模型结果缺失
+
+论文在标准 benchmark 评测中说明：
+
+- Kimi-K2.6 和 GLM-5.1 的某些条目留空，因为其 API 过于繁忙，无法返回足够响应；
+- GPT-5.4 在部分 1M-token 长上下文任务中未被评测，因为其 API 对大量查询失败。
+
+这说明对比结果并非完全覆盖所有模型和任务。
+
+对应论文：**Section 5.3.1**。
+
+---
+
+### 2. Terminal Bench 2.0 存在环境相关问题
+
+论文承认 Terminal Bench 2.0 存在 GLM-5.1 指出的环境相关问题，但为了与其他模型保持一致，仍报告了原始 Terminal Bench 2.0 上的结果。
+
+对应论文：**Section 5.3.1**。
+
+---
+
+## 四、未来工作方向
+
+论文第 6 节列出了多个未来方向。
+
+---
+
+### 1. 简化架构
+
+未来将更系统地研究架构设计，减少复杂组件，保留最本质、最有效的结构。
+
+目标可以概括为：
+
+> 在保持性能的同时，使 DeepSeek-V4 的架构更简洁、更优雅、更有原则性。
+
+对应论文：**Section 6**。
+
+---
+
+### 2. 更原则性的训练稳定性研究
+
+针对 Anticipatory Routing 和 SwiGLU Clamping，论文计划：
+
+- 研究大规模训练稳定性的底层机制；
+- 建立更可靠的异常检测；
+- 强化内部指标监控；
+- 从经验性技巧转向更可预测的稳定训练方法。
+
+对应论文：**Section 6**。
+
+---
+
+### 3. 探索新的模型稀疏性维度
+
+论文指出，除了 MoE 和稀疏注意力之外，未来还会探索新的稀疏性方向，例如：
+
+> 更稀疏的 embedding modules。
+
+这有望进一步提升计算效率和内存效率，同时不牺牲模型能力。
+
+对应论文：**Section 6**。
+
+---
+
+### 4. 低延迟长上下文部署
+
+论文计划继续研究低延迟架构和系统技术，使长上下文推理和交互更加响应迅速。
+
+这与 DeepSeek-V4 的核心目标一致：不仅支持 1M token 上下文，还要让它在实际服务中足够快、足够便宜。
+
+对应论文：**Section 6**。
+
+---
+
+### 5. 长程、多轮 Agent 任务
+
+论文强调 long-horizon, multi-round agentic tasks 具有重要实际价值，未来将继续迭代和探索。
+
+这与论文开头提出的动机一致：超长上下文效率提升后，复杂 Agent 工作流、跨文档分析、长程任务规划将变得更可行。
+
+对应论文：**Section 1**、**Section 6**。
+
+---
+
+### 6. 多模态能力
+
+论文明确表示：
+
+> 我们也在努力将多模态能力纳入模型。
+
+这说明 DeepSeek-V4 当前仍是语言模型，多模态是后续方向。
+
+对应论文：**Section 6**。
+
+---
+
+### 7. 更好的数据构造与合成策略
+
+论文最后强调，将持续改进数据 curation 和 data synthesis，以提升模型智能、鲁棒性和实际可用性。
+
+对应论文：**Section 6**。
+
+---
+
+## 五、总结
+
+如果用最简短的方式概括，这篇论文的局限和未来方向主要有：
+
+1. **架构复杂**：为了效率保留了很多组件，未来需要更简洁、更有原则的设计。  
+2. **训练稳定性机制尚不完全清楚**：Anticipatory Routing 和 SwiGLU Clamping 有效，但理论解释不足。  
+3. **与最强闭源模型仍有差距**：尤其在高难知识、复杂推理和部分 Agent 任务上。  
+4. **长上下文并非完全无损**：超过约 128K 后检索性能开始下降。  
+5. **Flash 在知识和复杂任务上弱于 Pro**：参数规模更小带来能力限制。  
+6. **真实任务中仍有格式、指令遵循、低级错误和过度思考问题**。  
+7. **未来方向包括架构简化、训练稳定性理论、更稀疏 embedding、低延迟部署、长程 Agent、多模态和更强数据策略**。
+
+【第10轮】
+Q: 最后请生成这篇论文的中文摘要（150 字以内），并注明本对话共进行了几轮。
+A: 中文摘要：
+本文提出DeepSeek-V4系列模型（Pro与Flash），旨在突破超长上下文效率瓶颈。通过引入CSA与HCA混合注意力、流形约束超连接（mHC）及Muon优化器，模型在支持百万token上下文的同时，大幅降低推理计算量与KV缓存开销。实验表明，该系列模型在知识、推理、代码及Agent任务上性能显著超越前代，重新定义了开源模型的最新水平。
+
+本对话共进行了10轮。
+

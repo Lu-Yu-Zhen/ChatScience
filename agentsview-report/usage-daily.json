@@ -1,0 +1,945 @@
+﻿{
+  "schema_version": 6,
+  "pricing": {
+    "source": "fetched",
+    "table_version": "2026-09-12T07:20:25Z",
+    "latest_row_updated_at": "2026-09-12T07:20:25.692Z",
+    "custom_override_count": 0,
+    "effective_row_count": 3454,
+    "digest": "sha256:dd1f217cce3de6406d86aa0fde283c5720ff03bf8ad75c114927e8568641cff6",
+    "cost_source": "computed",
+    "fallback": {
+      "used": true,
+      "models": [
+        "auto"
+      ]
+    },
+    "models": {
+      "deepseek-v4.1-flash": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "deepseek-v4.1-flash",
+            "matched_pattern": "deepseek/deepseek-v4.1-flash",
+            "input_cost_per_mtok": {
+              "microdollars": 150000
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 600000
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 3000
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 211,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "qfmodel": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "qfmodel",
+            "matched_pattern": null,
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 0,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "gfmodel": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "gfmodel",
+            "matched_pattern": null,
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 0,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "glm-5.2": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "glm-5.2",
+            "matched_pattern": "zhipuai/GLM-5.2",
+            "input_cost_per_mtok": {
+              "microdollars": 1103000
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 3862000
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 276000
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 1,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "qoder-custom-8b97b3d3-7da2-4b81-babd-be5692586116/deepseek-v4.1-flash-expires-on-0910": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "qoder-custom-8b97b3d3-7da2-4b81-babd-be5692586116/deepseek-v4.1-flash-expires-on-0910",
+            "matched_pattern": null,
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 0,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "qmodel_38max": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "qmodel_38max",
+            "matched_pattern": null,
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 0,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "auto": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "auto",
+            "matched_pattern": "openrouter/openrouter/auto",
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 844,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "dfmodel": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "dfmodel",
+            "matched_pattern": null,
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 0,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "hy4-preview": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "hy4-preview",
+            "matched_pattern": "tencent/hy4-preview",
+            "input_cost_per_mtok": {
+              "microdollars": 834000
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 2501000
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 42000
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 27,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      },
+      "DeepSeek-V4.1-Flash-Event": {
+        "cost_source": "computed",
+        "resolutions": [
+          {
+            "priced_model": "DeepSeek-V4.1-Flash-Event",
+            "matched_pattern": null,
+            "input_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "output_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_write_1h_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cache_read_cost_per_mtok": {
+              "microdollars": 0
+            },
+            "cost_source": "computed",
+            "bands": [],
+            "application": {
+              "base_request_count": 0,
+              "aggregate_row_count": 0,
+              "bands": []
+            }
+          }
+        ]
+      }
+    }
+  },
+  "projects": {
+    "pl1:sha256:df6811aa4a45b78a57c4ec4560197db9d5f1891794d5028273a50812a8f86c2f": {
+      "display_label": "D__ChatScience",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:337240d15633e6b776860e65aa0f3948db0c3a591438004b3aa71981969a4b86": {
+      "display_label": "D__ChatScience_app",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:98f35200f69348fbac11b94593a9c55481a04e94ea895547f3d97dc6a17e61db": {
+      "display_label": "D__ChatScience_app_data_sandbox_dbg_work",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:005eb67faf2ee7a05a7cff6af342e47303cb9a5e5d15b84c223b245cc3211cbe": {
+      "display_label": "C__Temp_cs_bisect_1788576216769",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:924ce9441d2ab9e429a87b886e76bb77192bbf31f9d692c39827eacbc95151a6": {
+      "display_label": "ChatScience",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:d3e837e33839b9c9886782123ea9cae3aa407004c603d53bfff5bae4201d7260": {
+      "display_label": "D__APP_____",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:fdc535404fcb0a7391d7b561874e2968cc7ecc54c2c66f9a7b5931eb1cc0a5b9": {
+      "display_label": "D__AscendC_Projects",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:8fcbe3ad3d057b6385544e738a412e5eb5f11d9a9dbd236ae225b8f0cf2e6c58": {
+      "display_label": "D__ChatScience_app_data_sandbox_e2e_work",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:304539e9c6eb7e59d71389f24ec1c6fdd94b3bc8cc16b5adb0b693ddbd9ffc3d": {
+      "display_label": "D__ChatScience_app_data_sandbox_verify_work",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:6feb670dc51cac227eb9d00212a6b36f898338115222b43cfb21e6b59aa4115e": {
+      "display_label": "2026_09_12_15_04_34",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:5a5d8faa40c754711c0f24c62a1eb09e9840f82d1ab4c69ee04e7eb2b76a71c9": {
+      "display_label": "D__ChatScience_app_verify",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:5f33a451201c53ebcb64ba426448a076b27c660b168e063943a32786acab2278": {
+      "display_label": "D__ChatScience_app_data_sandbox_global_work",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:21edb98591814e49419977605c6e228cf8c0dd3639a7d4e72cfe60899262391a": {
+      "display_label": "C__Temp_cs_cwdB_1788576782444",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:9eaae517ed1f6b183ea85b517c65c66426eabcfd3a8e5d4422cf37c1aa710c13": {
+      "display_label": "D__ChatScience_app_dist_ChatScience_win32_x64_resources_app_data_sandbox_global_work",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:0e47782b64109a4ec3e52bd688c07494c4a3c2109fb7a5cc25dccd9a863fe9e2": {
+      "display_label": "C__Temp_cs_sdk_smoke_1788575182291",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:d06b638c86656747097178e0d08b75568e45179e1f315b64f07732429f88c2ab": {
+      "display_label": "E_____Qoder_CN",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:ea428ec801f047d8f746a16c12d93cc9f06ca77d4cc9c54dc53e3ea90221cdb0": {
+      "display_label": "C__Temp_cs_cwdA_1788576782444",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:4f1d1efba645658378ef6acab5ea55809ad0e09eebf0f52bb1cb9ba1fa7f6f5d": {
+      "display_label": "C__Temp_cs_sdk_smoke_1788576120505",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:9c45f82c852382665bfc21c64b40e100244f8b445d63c3c80c4ae20337895511": {
+      "display_label": "E__________",
+      "resolution": "resolved",
+      "identity": {
+        "key": "p1:sha256:575ceeef418356fcec9249c3ab10e712d029bd6b8f750c460e013a751dd00169",
+        "kind": "machine_root",
+        "root_key": "r1:sha256:409110fccf8786a21eda376053471a21cda3d570ae2cd620d792796c2362fa78",
+        "repository_key": "repo1:sha256:bf9d9f9cc1da330a3e1b841cc4e34e0b1eb2f3a34032847371fe95a9fc0a8288"
+      }
+    },
+    "pl1:sha256:5f3f2b27bc852653465b6ccf1af6c9e4eeba7b5d306e7180693662cc6cb029dc": {
+      "display_label": "2026_09_12_14_56_22",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:47fc9aa24073babc4ae80ab92cadf6f8e2f4221959c9635034c4668503a2dd42": {
+      "display_label": "C__Temp_cs_sdk_smoke_1788575115435",
+      "resolution": "unknown"
+    },
+    "pl1:sha256:58eb58f0fb606fdca92c7e53ccf4cec2e1aaf59219ef857dac09c0b04c20a72d": {
+      "display_label": "2026_09_01_13_46_26",
+      "resolution": "unknown"
+    }
+  },
+  "daily": [
+    {
+      "date": "2026-08-27",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "gfmodel"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "gfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-08-28",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "auto",
+        "gfmodel",
+        "qmodel_38max"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "auto",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "gfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "qmodel_38max",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-08-29",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "gfmodel",
+        "qfmodel",
+        "qmodel_38max"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "gfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "qfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "qmodel_38max",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-08-30",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "qmodel_38max"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "qmodel_38max",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-01",
+      "inputTokens": 3127266,
+      "outputTokens": 43250,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 2716307
+      },
+      "modelsUsed": [
+        "hy4-preview",
+        "dfmodel"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "hy4-preview",
+          "inputTokens": 3127266,
+          "outputTokens": 43250,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 2716307
+          }
+        },
+        {
+          "modelName": "dfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-02",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "gfmodel"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "gfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-04",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "qmodel_38max"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "qmodel_38max",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-05",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "auto",
+        "gfmodel",
+        "qmodel_38max"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "auto",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "gfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "qmodel_38max",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-06",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "auto",
+        "gfmodel"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "auto",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        },
+        {
+          "modelName": "gfmodel",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-08",
+      "inputTokens": 36259,
+      "outputTokens": 458,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "qoder-custom-8b97b3d3-7da2-4b81-babd-be5692586116/deepseek-v4.1-flash-expires-on-0910"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "qoder-custom-8b97b3d3-7da2-4b81-babd-be5692586116/deepseek-v4.1-flash-expires-on-0910",
+          "inputTokens": 36259,
+          "outputTokens": 458,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-09",
+      "inputTokens": 38821,
+      "outputTokens": 157,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 2688,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "qoder-custom-8b97b3d3-7da2-4b81-babd-be5692586116/deepseek-v4.1-flash-expires-on-0910"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "qoder-custom-8b97b3d3-7da2-4b81-babd-be5692586116/deepseek-v4.1-flash-expires-on-0910",
+          "inputTokens": 38821,
+          "outputTokens": 157,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 2688,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-10",
+      "inputTokens": 0,
+      "outputTokens": 0,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 0
+      },
+      "modelsUsed": [
+        "auto"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "auto",
+          "inputTokens": 0,
+          "outputTokens": 0,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    },
+    {
+      "date": "2026-09-12",
+      "inputTokens": 23978553,
+      "outputTokens": 95258,
+      "cacheCreationTokens": 0,
+      "cacheReadTokens": 0,
+      "totalCost": {
+        "microdollars": 3574881
+      },
+      "modelsUsed": [
+        "deepseek-v4.1-flash",
+        "glm-5.2",
+        "DeepSeek-V4.1-Flash-Event"
+      ],
+      "modelBreakdowns": [
+        {
+          "modelName": "deepseek-v4.1-flash",
+          "inputTokens": 23197272,
+          "outputTokens": 81771,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 3528659
+          }
+        },
+        {
+          "modelName": "glm-5.2",
+          "inputTokens": 40645,
+          "outputTokens": 360,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 46222
+          }
+        },
+        {
+          "modelName": "DeepSeek-V4.1-Flash-Event",
+          "inputTokens": 740636,
+          "outputTokens": 13127,
+          "cacheCreationTokens": 0,
+          "cacheReadTokens": 0,
+          "cost": {
+            "microdollars": 0
+          }
+        }
+      ],
+      "projectBreakdowns": [],
+      "agentBreakdowns": [],
+      "machineBreakdowns": []
+    }
+  ],
+  "totals": {
+    "inputTokens": 27180899,
+    "outputTokens": 139123,
+    "cacheCreationTokens": 0,
+    "cacheReadTokens": 2688,
+    "totalCost": {
+      "microdollars": 6291188
+    },
+    "cacheSavings": {
+      "microdollars": 0
+    }
+  },
+  "sessionCounts": {
+    "total": 161,
+    "byProject": {
+      "pl1:sha256:d3e837e33839b9c9886782123ea9cae3aa407004c603d53bfff5bae4201d7260": 4,
+      "pl1:sha256:47fc9aa24073babc4ae80ab92cadf6f8e2f4221959c9635034c4668503a2dd42": 1,
+      "pl1:sha256:9eaae517ed1f6b183ea85b517c65c66426eabcfd3a8e5d4422cf37c1aa710c13": 5,
+      "pl1:sha256:6feb670dc51cac227eb9d00212a6b36f898338115222b43cfb21e6b59aa4115e": 1,
+      "pl1:sha256:21edb98591814e49419977605c6e228cf8c0dd3639a7d4e72cfe60899262391a": 1,
+      "pl1:sha256:5f3f2b27bc852653465b6ccf1af6c9e4eeba7b5d306e7180693662cc6cb029dc": 1,
+      "pl1:sha256:9c45f82c852382665bfc21c64b40e100244f8b445d63c3c80c4ae20337895511": 13,
+      "pl1:sha256:924ce9441d2ab9e429a87b886e76bb77192bbf31f9d692c39827eacbc95151a6": 3,
+      "pl1:sha256:0e47782b64109a4ec3e52bd688c07494c4a3c2109fb7a5cc25dccd9a863fe9e2": 1,
+      "pl1:sha256:98f35200f69348fbac11b94593a9c55481a04e94ea895547f3d97dc6a17e61db": 1,
+      "pl1:sha256:5f33a451201c53ebcb64ba426448a076b27c660b168e063943a32786acab2278": 7,
+      "pl1:sha256:304539e9c6eb7e59d71389f24ec1c6fdd94b3bc8cc16b5adb0b693ddbd9ffc3d": 10,
+      "pl1:sha256:d06b638c86656747097178e0d08b75568e45179e1f315b64f07732429f88c2ab": 1,
+      "pl1:sha256:58eb58f0fb606fdca92c7e53ccf4cec2e1aaf59219ef857dac09c0b04c20a72d": 1,
+      "pl1:sha256:005eb67faf2ee7a05a7cff6af342e47303cb9a5e5d15b84c223b245cc3211cbe": 6,
+      "pl1:sha256:ea428ec801f047d8f746a16c12d93cc9f06ca77d4cc9c54dc53e3ea90221cdb0": 2,
+      "pl1:sha256:df6811aa4a45b78a57c4ec4560197db9d5f1891794d5028273a50812a8f86c2f": 89,
+      "pl1:sha256:5a5d8faa40c754711c0f24c62a1eb09e9840f82d1ab4c69ee04e7eb2b76a71c9": 4,
+      "pl1:sha256:8fcbe3ad3d057b6385544e738a412e5eb5f11d9a9dbd236ae225b8f0cf2e6c58": 3,
+      "pl1:sha256:337240d15633e6b776860e65aa0f3948db0c3a591438004b3aa71981969a4b86": 5,
+      "pl1:sha256:4f1d1efba645658378ef6acab5ea55809ad0e09eebf0f52bb1cb9ba1fa7f6f5d": 1,
+      "pl1:sha256:fdc535404fcb0a7391d7b561874e2968cc7ecc54c2c66f9a7b5931eb1cc0a5b9": 1
+    },
+    "byAgent": {
+      "qoder": 155,
+      "workbuddy": 6
+    }
+  }
+}

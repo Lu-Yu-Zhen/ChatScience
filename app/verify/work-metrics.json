@@ -1,0 +1,458 @@
+{
+  "sandbox": {
+    "at": "2026-09-05T01:59:44.631Z",
+    "total": 18,
+    "pass": 18,
+    "fail": 0,
+    "results": [
+      {
+        "id": "0",
+        "name": "后端健康检查",
+        "ok": true,
+        "detail": "HTTP 200"
+      },
+      {
+        "id": "1a",
+        "name": "Python 中文输出无乱码",
+        "ok": true,
+        "detail": "中文输出正常 | 15 | 均值 2.5"
+      },
+      {
+        "id": "1b",
+        "name": "numpy 计算正确 (sum=15)",
+        "ok": true,
+        "detail": "中文输出正常\n15\n均值 2.5"
+      },
+      {
+        "id": "2a",
+        "name": "超时被强杀",
+        "ok": true,
+        "detail": "timedOut=true 耗时=3859ms"
+      },
+      {
+        "id": "2b",
+        "name": "ok=false 且 exitCode 非 0",
+        "ok": true,
+        "detail": "ok=false exit=1"
+      },
+      {
+        "id": "2c",
+        "name": "孙子进程无残留",
+        "ok": true,
+        "detail": "grandchildAlive=false"
+      },
+      {
+        "id": "3",
+        "name": "matplotlib 产物回传（Agg 后端不挂起）",
+        "ok": true,
+        "detail": "loss.png 4309B dataUrl=5770 chars"
+      },
+      {
+        "id": "4a",
+        "name": "写 ../server/ 被拒",
+        "ok": true,
+        "detail": "{\"error\":\"invalid sandbox path — 不允许向上穿越: ../../server/evil.txt\",\"code\":\"ERELPATH\"}"
+      },
+      {
+        "id": "4b",
+        "name": "读 ../ 被拒",
+        "ok": true,
+        "detail": "{\"error\":\"invalid sandbox path — 不允许向上穿越: ../_global_/state.json\",\"code\":\"ERELPATH\"}"
+      },
+      {
+        "id": "4c",
+        "name": "正常相对路径可写",
+        "ok": true,
+        "detail": "{\"relPath\":\"sub/dir/ok.txt\",\"size\":5}"
+      },
+      {
+        "id": "4d",
+        "name": "Windows 保留名被拒",
+        "ok": true,
+        "detail": "{\"error\":\"invalid sandbox path — Windows 保留设备名: CON.txt\",\"code\":\"ERELPATH\"}"
+      },
+      {
+        "id": "5",
+        "name": "诚实演示：代码层可访问 C:/Windows（预期可达，证明沙箱非安全边界）",
+        "ok": true,
+        "detail": "True | True"
+      },
+      {
+        "id": "6",
+        "name": "进度条刷屏不吞掉尾部结果",
+        "ok": true,
+        "detail": "stdout 长度=51 含 FINAL=true"
+      },
+      {
+        "id": "7a",
+        "name": "断网策略：import requests 被静态拦截",
+        "ok": true,
+        "detail": "断网策略下禁止导入网络库：requests"
+      },
+      {
+        "id": "7b",
+        "name": "断网策略：socket 被阻断",
+        "ok": true,
+        "detail": "BLOCKED: [ChatScience sandbox] network access blocked by declared policy"
+      },
+      {
+        "id": "7c",
+        "name": "如实记录：blockNetworkImports 默认关时不拦截 import",
+        "ok": true,
+        "detail": "imported=true（urllib 为标准库，不依赖第三方安装；stderr=）"
+      },
+      {
+        "id": "7d",
+        "name": "rm -rf / 被静态拦截",
+        "ok": true,
+        "detail": "rm -rf 根/家目录"
+      },
+      {
+        "id": "8",
+        "name": "并发信号量生效（4 任务 ≈ 两批）",
+        "ok": true,
+        "detail": "耗时=2697ms 全部成功=true"
+      }
+    ]
+  },
+  "qoderN1": {
+    "at": "2026-09-05T02:59:02.880Z",
+    "total": 12,
+    "pass": 12,
+    "results": [
+      {
+        "id": "1a",
+        "name": "隔离生效：工具列表不含本机 MCP（settingSources:[] + strictMcpConfig）",
+        "ok": true,
+        "detail": "工具数=10 泄漏="
+      },
+      {
+        "id": "1b",
+        "name": "科研工具已注入",
+        "ok": true,
+        "detail": "mcp__chatscience__arxiv_search,mcp__chatscience__fetch_url,mcp__chatscience__web_search,mcp__chatscience__kb_search,mcp__chatscience__note_write,mcp__chatscience__run_code"
+      },
+      {
+        "id": "1c",
+        "name": "回合成功",
+        "ok": true,
+        "detail": "turns=4 dur=8815ms"
+      },
+      {
+        "id": "1d",
+        "name": "产物写进沙箱 out/ 且内容正确",
+        "ok": true,
+        "detail": "answer.txt=42"
+      },
+      {
+        "id": "1e",
+        "name": "流式事件与工具轨迹完整",
+        "ok": true,
+        "detail": "delta=12 tool_start=3 tool_end=3 名称=Read,Bash,Write"
+      },
+      {
+        "id": "2a",
+        "name": "canUseTool 拦截危险 Bash",
+        "ok": true,
+        "detail": "已拦截高危命令：rm -rf 根/家目录（静态拦截，防误操作；如确需执行请换方式）"
+      },
+      {
+        "id": "2b",
+        "name": "canUseTool 拦截越界写入",
+        "ok": true,
+        "detail": "路径超出沙箱工作目录，禁止写入：D:\\ChatScience\\app\\server\\qoder.json（产物请写到 cwd 内，图片建议 out/ 子目录）"
+      },
+      {
+        "id": "2c",
+        "name": "canUseTool 放行正常命令与沙箱内写入",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "id": "2d",
+        "name": "会话内拒绝事件可见（模型若发起则回传，不强制）",
+        "ok": true,
+        "detail": "模型未发起危险调用（预期内）"
+      },
+      {
+        "id": "3a",
+        "name": "第一回合返回 sessionId",
+        "ok": true,
+        "detail": "session=93eb721e-92a3-4d3e-9e3b-6cf2fb7eb567"
+      },
+      {
+        "id": "3b",
+        "name": "多轮 resume 上下文延续（回忆 37）",
+        "ok": true,
+        "detail": "回复=37"
+      },
+      {
+        "id": "4",
+        "name": "科研工具 note_write 落盘（source=agent）",
+        "ok": true,
+        "detail": "found=true source=agent"
+      }
+    ]
+  },
+  "skillsN2": {
+    "at": "2026-09-05T03:04:27.165Z",
+    "total": 10,
+    "pass": 10,
+    "results": [
+      {
+        "id": "1a",
+        "name": "内建技能数量 = 12",
+        "ok": true,
+        "detail": "实际 12: ablation-design,data-analysis,experiment-log,figure-plot,formula-derivation,lit-review,loss-curve-analysis,mindspore-repro,model-arch-analysis,paper-deep-read,paper-repro-plan,thesis-audit"
+      },
+      {
+        "id": "1b",
+        "name": "元数据完整（name/description/builtin）",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "id": "1c",
+        "name": "MindSpore / 精读 / 曲线诊断等关键技能在场",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "id": "2a",
+        "name": "自定义技能已列出且标记为自定义",
+        "ok": true,
+        "detail": "验证技能"
+      },
+      {
+        "id": "2b",
+        "name": "SKILL.md 落盘且含 frontmatter 与正文",
+        "ok": true,
+        "detail": "---|name: 验证技能|description: 验证用|---||# 用途|验证 SKILL.md 写入。||#"
+      },
+      {
+        "id": "2c",
+        "name": "文件位于用户技能插件目录",
+        "ok": true,
+        "detail": "data/skills-plugin/skills/verify-custom/SKILL.md"
+      },
+      {
+        "id": "3a",
+        "name": "SDK 会话发现技能包含白名单项（chatscience-skills:mindspore-repro）",
+        "ok": true,
+        "detail": "init.skills=chatscience-skills:ablation-design,chatscience-skills:data-analysis,chatscience-skills:experiment-log,chatscience-skills:figure-plot,chatscience-skills:formula-derivation,chatscience-skills:lit-review,chatscience-skills:loss-curve-analysis,chatscience-skills:mindspore-repro,chatscience-skills:model-arch-analysis,chatscience-skills:paper-deep-read,chatscience-skills:paper-repro-plan,cha"
+      },
+      {
+        "id": "3b",
+        "name": "本应用插件技能全部进入发现列表",
+        "ok": true,
+        "detail": "发现总数=54（含本机用户级技能，仅发现不注入；上下文已由 skills 数组限制为 chatscience-skills:mindspore-repro）"
+      },
+      {
+        "id": "3c",
+        "name": "run_start 工具可见集与技能白名单一致",
+        "ok": true,
+        "detail": "tools=Read,Write,Edit,Glob,Grep,Bash,WebFetch,WebSearch,NotebookEdit,Skill"
+      },
+      {
+        "id": "2d",
+        "name": "删除自定义技能生效",
+        "ok": true,
+        "detail": ""
+      }
+    ],
+    "sdkDiscovered": [
+      "chatscience-skills:ablation-design",
+      "chatscience-skills:data-analysis",
+      "chatscience-skills:experiment-log",
+      "chatscience-skills:figure-plot",
+      "chatscience-skills:formula-derivation",
+      "chatscience-skills:lit-review",
+      "chatscience-skills:loss-curve-analysis",
+      "chatscience-skills:mindspore-repro",
+      "chatscience-skills:model-arch-analysis",
+      "chatscience-skills:paper-deep-read",
+      "chatscience-skills:paper-repro-plan",
+      "chatscience-skills:thesis-audit",
+      "chatscience-skills:verify-custom",
+      "agent-design-studio:agent-design-studio",
+      "agent-design-studio:grade2-math-worksheet",
+      "agent-design-studio:weekly-journal-feedback",
+      "architecture-visualization:architecture-communicator",
+      "architecture-visualization:architecture-health",
+      "architecture-visualization:c4model",
+      "architecture-visualization:dependency-impact-analyzer",
+      "architecture-visualization:deployment-topology-analyzer",
+      "architecture-visualization:drawio",
+      "architecture-visualization:evolution-planner",
+      "architecture-visualization:explore",
+      "architecture-visualization:flow-visualizer",
+      "architecture-visualization:graphviz",
+      "architecture-visualization:legacy-system-visualizer",
+      "architecture-visualization:risk-quality-reviewer",
+      "architecture-visualization:system-modeler",
+      "better-harness:better-harness",
+      "github-project-workflow:github-issue-workflow",
+      "github-project-workflow:github-pr-workflow",
+      "github-project-workflow:github-wiki-workflow",
+      "qmind-knowledge-cn:qmind-knowledge",
+      "qoder-context:qoder-context-knowledge-plan",
+      "qoder-create-plugin:create-plugin",
+      "research-copilot:find-science-skills-mcp",
+      "research-copilot:giiisp-paper-search-apis",
+      "research-copilot:sci-employee-deep-research",
+      "research-copilot:thesis-audit-reviewer",
+      "research-copilot:scispark",
+      "research-copilot:research-baseline-builder",
+      "research-copilot:experiment-design",
+      "research-copilot:academic-writing",
+      "research-copilot:scientific-humanization",
+      "research-copilot:giiisp-scientific-image-generation",
+      "research-copilot:visual-deck-builder",
+      "research-copilot:manim-agent",
+      "research-copilot:practical-course-producer",
+      "research-copilot:papercheck",
+      "research-copilot:cognitive-profile",
+      "research-copilot:world-threads-entry",
+      "research-copilot:mcp-criticagent",
+      "research-copilot:skill-criticagent"
+    ]
+  },
+  "kbN6": {
+    "at": "2026-09-05T03:17:58.778Z",
+    "total": 7,
+    "pass": 7,
+    "results": [
+      {
+        "id": "1",
+        "name": "索引写入（分块完成）",
+        "ok": true,
+        "detail": "{\"kbId\":\"kbv\",\"fileName\":\"attention-survey.md\",\"chunks\":1,\"chars\":131} | {\"kbId\":\"kbv\",\"fileName\":\"mindspore-guide.md\",\"chunks\":1,\"chars\":111}"
+      },
+      {
+        "id": "2",
+        "name": "索引状态可见",
+        "ok": true,
+        "detail": "{\"totalFiles\":2,\"kbs\":{\"kbv\":{\"files\":2,\"chunks\":2}}}"
+      },
+      {
+        "id": "3a",
+        "name": "BM25 命中且注意力文档排前",
+        "ok": true,
+        "detail": "attention-survey.md(3.535)"
+      },
+      {
+        "id": "3b",
+        "name": "中文 bigram 分词命中 MindSpore 文档",
+        "ok": true,
+        "detail": "mindspore-guide.md(3.262)"
+      },
+      {
+        "id": "3c",
+        "name": "无关查询返回空结果（score 过滤生效）",
+        "ok": true,
+        "detail": "results=0"
+      },
+      {
+        "id": "4",
+        "name": "无索引时返回引导文案而非空数组",
+        "ok": true,
+        "detail": "该知识库尚未建立索引。请在「知识和数据库」页向该知识库重新添加文件（添加知识时会自动建立索引）。"
+      },
+      {
+        "id": "5",
+        "name": "Agent 会话内 kb_search 工具真实命中",
+        "ok": true,
+        "detail": "命中 attention-survey.md"
+      }
+    ]
+  },
+  "agentE2E": {
+    "at": "2026-09-05T08:04:17.406Z",
+    "totalMs": 26630,
+    "total": 7,
+    "pass": 7,
+    "results": [
+      {
+        "id": "1a",
+        "name": "任务成功",
+        "ok": true,
+        "detail": "turns=4 toolCalls=4 dur=11887ms"
+      },
+      {
+        "id": "1b",
+        "name": "科研工具经 MCP 通道被调用（run_code 与 note_write）",
+        "ok": true,
+        "detail": "mcp_get,mcp_get,mcp_call,mcp_call → 断言见 1c/1d/1e 的结果证据"
+      },
+      {
+        "id": "1c",
+        "name": "run_code 执行成功（stdout 有数值）",
+        "ok": true,
+        "detail": "{\"name\":\"mcp__chatscience__run_code\",\"description\":\"在独立沙箱进程里执行一段代码（python/node/shell），比直接用 Bash 更隔离：独立工作目录、超时强杀进程树、输出截断、破坏性命令静态拦截。matplotlib 已配置 Agg 后"
+      },
+      {
+        "id": "1d",
+        "name": "最终文本报告了均值",
+        "ok": true,
+        "detail": "两步均已完成：scaled dot-product attention 输出张量的均值为 **-0.1572**，实验笔记已写入笔记本。"
+      },
+      {
+        "id": "1e",
+        "name": "实验笔记落盘（Agent 写入）",
+        "ok": true,
+        "detail": "data/notes/ 中含「最小注意力实验」"
+      },
+      {
+        "id": "2",
+        "name": "多轮 resume 上下文延续（回忆均值）",
+        "ok": true,
+        "detail": "-0.1572"
+      },
+      {
+        "id": "3",
+        "name": "arxiv_search 检索命中（外网）",
+        "ok": true,
+        "detail": "2601.15305v1 Gated Sparse Attention: Combining Comput | 2302.04542v1 Efficient Attention via Control Variates | 2106.05907v4 DAIR: Disentangled Attention Intrinsic R"
+      }
+    ],
+    "note": "网络相关用例（3）失败仅当外网不可达时发生"
+  },
+  "workspaceW5": {
+    "at": "2026-09-05T08:05:45.107Z",
+    "workspace": "E:\\开源模型架构研究",
+    "total": 5,
+    "pass": 5,
+    "results": [
+      {
+        "id": "1",
+        "name": "读取：目录清单 + README 首行",
+        "ok": true,
+        "detail": "**目录清单（根目录下的文件与子目录）：**\n\n| 文件 | 目录 |\n|---|---|\n| `MoE.py` | `AI论文/` |\n| `Muon.py` | `__pycache__/` |\n| `README.md` | `_cs_verify/` |\n| `examp"
+      },
+      {
+        "id": "2",
+        "name": "写入/修改/删除（限定 _cs_verify）",
+        "ok": true,
+        "detail": "hello.txt 已删除=true | **(c) 完成** — `hello.txt` 已删除，`_cs_verify/` 目录现在为空。\n\n---\n\n**三步汇总：**\n\n| 步骤 | 操作 | 结果 |\n|---|---|---|\n| (a) | 创建 `hello.txt"
+      },
+      {
+        "id": "3",
+        "name": "脚本运行 + 环境探测（python 版本 / cwd / 行数）",
+        "ok": true,
+        "detail": "三个结果如下：\n\n| 项目 | 结果 |\n|---|---|\n| **sys.version 第一行** | `3.12.10 (tags/v3.12.10:0cc8128, Apr 8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]` |\n| **os.getcwd()** |"
+      },
+      {
+        "id": "4",
+        "name": "越界写入被 canUseTool 拦截",
+        "ok": true,
+        "detail": "工具拒绝了写入。拒绝原因：\n\n**路径超出沙箱工作目录，禁止写入。** 工具返回的错误信息原文是：\n\n> 路径超出沙箱工作目录，禁止写入：`C:\\escape.txt`（产物请写到 cwd 内，图片建议 `out/` 子目录）\n\nWrite 工具有沙箱限制，只允许在**当前工作区"
+      },
+      {
+        "id": "5",
+        "name": "用户文件（MoE.py/README.md）未被改动",
+        "ok": true,
+        "detail": "MoE.py,README.md"
+      }
+    ]
+  }
+}

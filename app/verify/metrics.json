@@ -1,0 +1,163 @@
+{
+  "rounds": [
+    {
+      "round": 1,
+      "question": "这篇论文的标题是什么？介绍了哪两个模型？各自有多少参数（总量与激活量）？支持多长的上下文？",
+      "ttftMs": 6872,
+      "totalMs": 8943,
+      "chars": 448,
+      "chunksStreamed": 448,
+      "checkKeywords": [
+        "DeepSeek-V4",
+        "1.6T",
+        "284B",
+        "million",
+        "context"
+      ],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "论文标题是：\n\n**《DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence》**\n\n该论文介绍了 **DeepSeek-V4 系列**中的两个模型：\n\n1. **DeepSeek-V4-Pro**\n   - 总参数量：**1.6T**\n   - 每 token 激活参数量：**49B**\n   - 上下文长度：**1,000,000 tokens（一百万 tokens）**\n\n2. **DeepSeek-V4-Flash**\n   - 总参数量：**284B**\n   - 每 token 激活参数量：*"
+    },
+    {
+      "round": 2,
+      "question": "DeepSeek-V4 的训练目标（预训练目标）是什么？与上一代相比主要改进了什么？",
+      "ttftMs": 31555,
+      "totalMs": 72791,
+      "chars": 8019,
+      "chunksStreamed": 8019,
+      "checkKeywords": [],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "基于论文全文，DeepSeek-V4 的**预训练目标本身并不是一个全新的损失函数**，而是延续了 DeepSeek-V3 的核心预训练范式：**标准语言建模目标 + Multi-Token Prediction 辅助目标**。与上一代相比，主要改进集中在**架构、优化器、数据构造、长上下文训练策略和基础设施**上，从而在支持 1M token 上下文的同时显著降低推理计算量和 KV cache 开销。\n\n---\n\n## 一、DeepSeek-V4 的预训练目标\n\n### 1. 主目标：标准自回归语言建模损失\n\n论文 Figure 2 的整体架构中明确包含：\n\n- **LM Loss**：语言"
+    },
+    {
+      "round": 3,
+      "question": "论文中提到的核心技术架构有哪些？请给出其中两个技术的中文名称并用一句话解释。",
+      "ttftMs": 6853,
+      "totalMs": 9824,
+      "chars": 562,
+      "chunksStreamed": 562,
+      "checkKeywords": [],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "论文中提到的核心技术架构/训练优化主要包括：\n\n1. **混合注意力架构**：结合  \n   - **Compressed Sparse Attention, CSA**  \n   - **Heavily Compressed Attention, HCA**  \n   用于提升长上下文效率（论文第 2.3 节）。\n\n2. **Manifold-Constrained Hyper-Connections, mHC**  \n   用于增强传统残差连接、提升深层信号传播稳定性（论文第 2.2 节）。\n\n3. **Muon optimizer**  \n   用于更快收敛和更稳定的大规模训练（论文第 "
+    },
+    {
+      "round": 4,
+      "question": "我在第 1 轮问过你什么问题？请复述那一轮问题的要点。",
+      "ttftMs": 3001,
+      "totalMs": 4575,
+      "chars": 329,
+      "chunksStreamed": 329,
+      "checkKeywords": [
+        "标题",
+        "参数",
+        "上下文"
+      ],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": true,
+      "answerPreview": "你在第 1 轮问的问题要点是：\n\n1. **论文标题是什么？**  \n2. **论文介绍了哪两个模型？**  \n3. **这两个模型各自的参数量是多少？**  \n   - 总参数量  \n   - 激活参数量  \n4. **这两个模型支持多长的上下文？**  \n\n当时我回答的核心信息是：论文标题为《DeepSeek-V4: Towards Highly Efficient Million-Token Context Intelligence》，介绍了 DeepSeek-V4-Pro 和 DeepSeek-V4-Flash 两个模型，分别有 1.6T 总参数 / 49B 激活参数、284B 总参数"
+    },
+    {
+      "round": 5,
+      "question": "请用 LaTeX 格式给出论文中一个关键公式（用 $$ 包裹），并解释每个符号的含义。",
+      "ttftMs": 10020,
+      "totalMs": 15729,
+      "chars": 893,
+      "chunksStreamed": 893,
+      "checkKeywords": [
+        "$$"
+      ],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "可以给出论文第 2.2 节中关于 **Manifold-Constrained Hyper-Connections, mHC** 的关键公式：\n\n$$\nB_l \\in \\mathcal{M} \\coloneqq \\left\\{ M \\in \\mathbb{R}^{n \\times n} \\mid M \\mathbf{1}_n = \\mathbf{1}_n,\\; \\mathbf{1}_n^T M = \\mathbf{1}_n^T,\\; M \\ge 0 \\right\\}\n$$\n\n其中各符号含义如下：\n\n- \\(B_l\\)：第 \\(l\\) 层 Transformer 中的**残差变换矩阵**。在 H"
+    },
+    {
+      "round": 6,
+      "question": "请给出一段 Python 代码示例，展示如何用伪代码描述论文中的训练流程（用 ``` 代码块）。",
+      "ttftMs": 9071,
+      "totalMs": 43911,
+      "chars": 10761,
+      "chunksStreamed": 10761,
+      "checkKeywords": [
+        "```"
+      ],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "下面给出一段 **Python 伪代码**，用于概括论文中 DeepSeek-V4 的主要训练流程。它不是论文官方代码，而是根据论文第 2.1、2.4、4.2、4.2.3、5.1、5.2 节内容整理出的流程化伪代码。\n\n```python\n# ============================================================\n# DeepSeek-V4 训练流程伪代码\n# 依据论文内容整理：\n# - 预训练：LM Loss + MTP Loss + MoE balance loss\n# - 优化器：Muon 为主，AdamW 用于部分模块\n# - 长上下文"
+    },
+    {
+      "round": 7,
+      "question": "论文的主要实验结果如何？在哪些基准上与哪些模型对比？效果提升幅度大概是多少？",
+      "ttftMs": 63129,
+      "totalMs": 148382,
+      "chars": 14043,
+      "chunksStreamed": 14043,
+      "checkKeywords": [],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "论文的实验结果可以分成三条主线：**长上下文效率提升**、**预训练基座模型能力提升**、**后训练模型在知识/推理/代码/Agent/真实任务上的表现**。下面按“在哪些基准、和哪些模型比、提升大概多少”来梳理。\n\n---\n\n## 1. 最核心的实验结果：百万 token 上下文下效率大幅提升\n\n论文摘要和 Figure 1 给出的核心效率结果是：在 **1M token 上下文**下，与 **DeepSeek-V3.2** 相比：\n\n| 模型 | 单 token 推理 FLOPs | KV cache |\n|---|---:|---:|\n| DeepSeek-V4-Pro | 仅为 Dee"
+    },
+    {
+      "round": 8,
+      "question": "结合你前面几轮的回答，这篇论文最核心的创新点用三点概括，每点不超过 30 字。",
+      "ttftMs": 10194,
+      "totalMs": 10699,
+      "chars": 83,
+      "chunksStreamed": 83,
+      "checkKeywords": [],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": true,
+      "answerPreview": "1. CSA与HCA混合注意力，降低百万token成本。  \n2. mHC约束残差连接，提升深层训练稳定性。  \n3. Muon优化与系统创新，支撑高效长上下文训练。"
+    },
+    {
+      "round": 9,
+      "question": "论文有哪些局限性（limitations）或未来工作方向？",
+      "ttftMs": 14029,
+      "totalMs": 41084,
+      "chars": 4688,
+      "chunksStreamed": 4688,
+      "checkKeywords": [],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "论文在 **第 6 节 “Conclusion, Limitations, and Future Directions”** 中明确讨论了局限性与未来方向。结合前文实验结果，可以概括为以下几类。\n\n---\n\n## 一、论文明确承认的局限\n\n### 1. 架构设计较为复杂\n\n论文指出，DeepSeek-V4 为了追求极致的长上下文效率，采用了比较“大胆”的架构设计。但为了降低风险，模型保留了许多此前初步验证过的组件和技巧。\n\n这些设计虽然有效，但代价是架构相对复杂。论文原文大意是：\n\n> 为最小化风险，我们保留了许多初步验证过的组件和技巧，这些设计虽然有效，但使架构相对复杂。\n\n因此，论文将“简"
+    },
+    {
+      "round": 10,
+      "question": "最后请生成这篇论文的中文摘要（150 字以内），并注明本对话共进行了几轮。",
+      "ttftMs": 7435,
+      "totalMs": 8236,
+      "chars": 190,
+      "chunksStreamed": 190,
+      "checkKeywords": [
+        "10"
+      ],
+      "checkPass": true,
+      "missingKeywords": [],
+      "coherence": false,
+      "answerPreview": "中文摘要：\n本文提出DeepSeek-V4系列模型（Pro与Flash），旨在突破超长上下文效率瓶颈。通过引入CSA与HCA混合注意力、流形约束超连接（mHC）及Muon优化器，模型在支持百万token上下文的同时，大幅降低推理计算量与KV缓存开销。实验表明，该系列模型在知识、推理、代码及Agent任务上性能显著超越前代，重新定义了开源模型的最新水平。\n\n本对话共进行了10轮。"
+    }
+  ],
+  "model": "qwen3.8-flash",
+  "paperChars": 170000,
+  "startedAt": "2026-09-04T09:12:11.481Z",
+  "summary": {
+    "roundsTotal": 10,
+    "roundsOk": 10,
+    "successRate": "100.0%",
+    "keywordPassRate": "10/10",
+    "avgTtftMs": 16216,
+    "avgTotalMs": 36417,
+    "avgChars": 4002
+  },
+  "finishedAt": "2026-09-04T09:18:15.671Z"
+}

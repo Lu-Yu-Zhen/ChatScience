@@ -1,0 +1,4 @@
+[pack] node build.js
+[build] i18n 校验通过，词条 173 条
+[build] renderer/index.html 已写出，bytes=425420，work 模块=13 个（00-core.js 10-api.js 20-store.js 30-agents.js 35-skills.js 40-mcp.js 45-sandbox.js 50-notebook.js 55-run.js 60-trace.js 70-agent-chat.js 80-i18n.js 90-boot.js），bridge=ok，断言=通过
+Packaging app for platform win32 x64 using electron v33.4.11

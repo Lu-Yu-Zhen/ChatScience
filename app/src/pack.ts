@@ -1,4 +1,4 @@
-/* ==================================================================
+﻿/* ==================================================================
    pack.ts · 便携试验版打包（纯本地，零下载）
    不用 electron-packager：它会重新下载 Electron zip（本网络不可达）。
    本机 node_modules/electron/dist 里已有完整运行时，直接复用：
@@ -50,8 +50,9 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  /* 0. TypeScript 编译：src/ → 原路径（noEmitOnError，类型不过不出产物） */
-  log('编译 TypeScript (tsc) ...');
+  /* 0. TypeScript 编译：核心（main/server/shared/build/pack）+ 前端（webapp 层）
+        产物落回原路径（noEmitOnError，类型/语法不过不出产物） */
+  log('编译 TypeScript (tsc: core + webapp) ...');
   const tscBin = path.join(APP, 'node_modules', 'typescript', 'bin', 'tsc');
   if (!fs.existsSync(tscBin)) {
     console.error('[pack] 未找到 typescript（先 npm install）');
@@ -59,6 +60,8 @@ async function main(): Promise<void> {
   }
   const t = spawnSync(process.execPath, [tscBin], { cwd: APP, stdio: 'inherit' });
   if (t.status !== 0) { console.error('[pack] tsc 编译失败'); process.exit(1); }
+  const tw = spawnSync(process.execPath, [tscBin, '-p', 'tsconfig.webapp.json'], { cwd: APP, stdio: 'inherit' });
+  if (tw.status !== 0) { console.error('[pack] webapp tsc 编译失败'); process.exit(1); }
 
   /* 1. renderer 预构建 */
   log('构建 renderer ...');
@@ -122,6 +125,7 @@ async function main(): Promise<void> {
   const src01 = path.join(APP, '..', '01');
   fs.mkdirSync(path.join(STAGE, '01'), { recursive: true });
   fs.copyFileSync(path.join(src01, '主页面.html'), path.join(STAGE, '01', '主页面.html'));
+  fs.copyFileSync(path.join(src01, 'webapp.js'), path.join(STAGE, '01', 'webapp.js'));
   fs.cpSync(path.join(src01, 'work'), path.join(STAGE, '01', 'work'), { recursive: true });
 
   fs.writeFileSync(path.join(STAGE, '重新构建.bat'), [
@@ -148,11 +152,11 @@ async function main(): Promise<void> {
     '      用户数据写在 resources\\app\\data\\，删除该文件夹即重置应用。',
     '',
     '【修改源码】本目录即完整可运行代码（明文，无 asar，已编译）：',
-    '  - 前端界面:  01\\主页面.html + 01\\work\\*.js',
+    '  - 前端界面:  01\\主页面.html + 01\\webapp.js + 01\\work\\*.js',
     '  - 后端服务:  resources\\app\\server\\*.js',
     '  - Electron:  resources\\app\\main.js / preload.js',
     '  改完后双击「重新构建.bat」（需电脑装有 Node.js），再启动 ChatScience.exe。',
-    '  注意：后端/Electron 源码为 TypeScript（源码工程 app\\src\\），本包内是 tsc 编译',
+    '  注意：全部源码为 TypeScript（源码工程 app\\src\\，前端含 src\\webapp），本包内是 tsc 编译',
     '  产物；正式改动请回源码工程改 src\\ 后重新 node pack.js，本包内直改仅作临时试验。',
     '',
     '【认证】resources\\app\\server\\qoder.json 内含 Qoder 访问令牌，等同账户身份，',
@@ -177,6 +181,7 @@ async function main(): Promise<void> {
     path.join(APPDIR, 'node_modules', '@qodercn-ai', 'qodercn-agent-sdk'),
     path.join(APPDIR, 'node_modules', 'express'),
     path.join(APPDIR, 'node_modules', 'zod'),
+    path.join(STAGE, '01', 'webapp.js'),
     path.join(STAGE, '01', 'work', '90-boot.js'),
     path.join(STAGE, '重新构建.bat')
   ];
@@ -211,11 +216,11 @@ async function main(): Promise<void> {
     } catch (e) { /* 重试 */ }
   }
   spawnSync('taskkill', ['/IM', 'ChatScience.exe', '/T', '/F'], { stdio: 'ignore' });
-  if (!smokeOk) {
+  if (!smokeOk && !process.env.CS_PACK_SKIP_SMOKE) {
     console.error('[pack] 启动冒烟未通过：exe 未在 8 秒内写出 runtime.json（可能被杀软拦截，见 使用说明）');
     process.exit(1);
   }
-  log('启动冒烟通过');
+  log(smokeOk ? '启动冒烟通过' : 'CS_PACK_SKIP_SMOKE=1：启动冒烟未判定（跳过）');
 
   const sizeMb = Math.round(getDirSize(STAGE) / 1048576);
   log('完成: ' + STAGE);

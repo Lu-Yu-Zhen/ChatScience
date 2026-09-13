@@ -20,6 +20,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
+echo [ChatScience] 编译前端 TypeScript (tsc -p tsconfig.webapp.json)...
+"%NODE_EXE%" node_modules\typescript\bin\tsc -p tsconfig.webapp.json
+if errorlevel 1 (
+  echo [ChatScience] 前端编译失败，请检查上方报错。
+  pause
+  exit /b 1
+)
+
 echo [ChatScience] 构建渲染层...
 "%NODE_EXE%" build.js
 

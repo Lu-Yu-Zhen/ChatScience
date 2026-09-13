@@ -49,8 +49,11 @@ const child_process_1 = require("child_process");
 const SRC = path.join(__dirname, '..', '01', '主页面.html');
 const OUT = path.join(__dirname, 'renderer', 'index.html');
 const WORK_DIR = path.join(__dirname, '..', '01', 'work');
+const MAIN_JS = path.join(__dirname, '..', '01', 'webapp.js');
 /* 标记本身 + 其后紧跟的说明注释一起替换掉，产物里不残留源码注释 */
 const WORK_MARK = /<!--CS_WORK_MODULES-->\s*(?:<!--[\s\S]*?-->\s*)?/;
+/* 主脚本标记：源文件已不含内联 JS（TS 源在 src/webapp/webapp.ts，tsc 编译为 01/webapp.js） */
+const MAIN_MARK = /<!--CS_MAIN_SCRIPT-->\s*/;
 const BRIDGE = `
 <!--CS_DESKTOP_BRIDGE-->
 <script>
@@ -285,6 +288,14 @@ if (html.indexOf('CS_DESKTOP_BRIDGE') > -1)
     throw new Error('[build] 源文件已含桥接标记，疑似把产物当源文件');
 if (!WORK_MARK.test(html))
     throw new Error('[build] 源文件缺少 <!--CS_WORK_MODULES--> 注入标记');
+if (!MAIN_MARK.test(html))
+    throw new Error('[build] 源文件缺少 <!--CS_MAIN_SCRIPT--> 注入标记');
+/* 主脚本注入（tsc 产物 01/webapp.js，源为 src/webapp/webapp.ts）。
+   必须用函数式替换：字符串替换会把 $$ / $& / $' / $` 当特殊模式。 */
+if (!fs.existsSync(MAIN_JS))
+    throw new Error('[build] 缺少 01/webapp.js——请先运行 tsc -p tsconfig.webapp.json');
+const mainBundle = fs.readFileSync(MAIN_JS, 'utf8').trim();
+html = html.replace(MAIN_MARK, function () { return '<script>\n' + mainBundle + '\n</scr' + 'ipt>\n\n'; });
 const built = buildWorkBundle();
 /* 必须用函数式替换：字符串替换会把 $$ / $& / $' / $` 当特殊模式，
    而源文件 KaTeX 定界符配置里就有 '$$'，会把 bundle 改写得面目全非 */
@@ -309,17 +320,21 @@ function assert(cond, msg) { if (!cond) {
     process.exit(1);
 } }
 assert(html.indexOf('CS_WORK_MODULES') === -1, '产物仍含 CS_WORK_MODULES 字面标记');
+assert(html.indexOf('CS_MAIN_SCRIPT') === -1, '产物仍含 CS_MAIN_SCRIPT 字面标记');
 assert(html.split('CS_DESKTOP_BRIDGE').length - 1 === 1, '产物应恰含 1 个 CS_DESKTOP_BRIDGE');
+const iMain = html.indexOf(mainBundle);
+const iw = built ? html.indexOf(built.bundle) : -1;
+const ib = html.indexOf('CS_DESKTOP_BRIDGE');
+assert(iMain > -1 && ib > -1 && iMain < ib, '主脚本必须在桥接脚本之前');
 if (built) {
-    const iw = html.indexOf(built.bundle), ib = html.indexOf('CS_DESKTOP_BRIDGE');
-    assert(iw > -1 && ib > -1 && iw < ib, 'work bundle 必须在桥接脚本之前');
+    assert(iw > -1 && iw < ib, 'work bundle 必须在桥接脚本之前');
     const im = html.indexOf('id="modeSwitcher"');
-    assert(im > -1 && im < iw, 'work bundle 必须在主脚本之后');
+    assert(im > -1 && im < iMain && im < iw, 'work bundle 必须在主脚本之后');
 }
 /* 标题保持纯「ChatScience」（产品要求：不带构建时间） */
 assert(html.indexOf('<title>ChatScience</title>') > -1, '源文件标题被改动');
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html, 'utf8');
 console.log('[build] renderer/index.html 已写出，bytes=' + html.length
-    + '，work 模块=' + (built ? built.files.length + ' 个（' + built.files.join(' ') + '）' : '无')
+    + '，主脚本=01/webapp.js（' + mainBundle.length + ' 字符），work 模块=' + (built ? built.files.length + ' 个（' + built.files.join(' ') + '）' : '无')
     + '，bridge=ok，断言=通过');

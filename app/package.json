@@ -4,8 +4,8 @@
   "description": "ChatScience 桌面便携版（Electron 前后端分离）",
   "main": "main.js",
   "scripts": {
-    "typecheck": "tsc --noEmit",
-    "build:ts": "tsc",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.webapp.json --noEmit && tsc -p tsconfig.verify.json --noEmit",
+    "build:ts": "tsc && tsc -p tsconfig.webapp.json && tsc -p tsconfig.verify.json",
     "start": "npm run build:ts && electron ."
   },
   "license": "MIT",

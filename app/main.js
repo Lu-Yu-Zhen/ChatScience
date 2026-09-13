@@ -51,6 +51,11 @@ const TOKEN = crypto.randomBytes(24).toString('hex');
 let PORT = PORT_CANDIDATES[0];
 const DATA_DIR = path.join(__dirname, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
+/* 验证通道：设置 CS_REMOTE_DEBUGGING_PORT 环境变量时启用 CDP 远程调试，
+   供打包版自动化 UI 验证连接（普通用户不受影响） */
+if (process.env.CS_REMOTE_DEBUGGING_PORT) {
+    electron_1.app.commandLine.appendSwitch('remote-debugging-port', process.env.CS_REMOTE_DEBUGGING_PORT);
+}
 let win = null;
 let tray = null;
 let alwaysOnTop = false;

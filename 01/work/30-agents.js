@@ -1,285 +1,308 @@
+// @ts-nocheck
+/* 前端全局脚本层：按字节精确迁移自 JS（见 app/TypeScript迁移说明.md），
+   本文件关闭逐行类型检查；环境与第三方库声明见 ambient.d.ts。 */
 /* ==================================================================
    30-agents.js · 智能体搭建页（wide）
    agentDef 字段与 server/qoder.js 的 query options 映射一一对应：
    systemPrompt / model(SDK五档) / permissionMode / maxTurns /
    tools{sdk[],builtin[],mcp{}} / skills[] / sandbox.scope
    ================================================================== */
-
 const AGENT_ROLES = ['research', 'code', 'analysis', 'writing', 'custom'];
 const AGENT_ROLE_COLORS = {
-  research: ['#2563EB', 'rgba(37,99,235,0.10)'],
-  code: ['#16A34A', 'rgba(22,163,74,0.10)'],
-  analysis: ['#7C3AED', 'rgba(124,58,237,0.10)'],
-  writing: ['#EA580C', 'rgba(234,88,12,0.10)'],
-  custom: ['#64748B', 'rgba(100,116,139,0.10)']
+    research: ['#2563EB', 'rgba(37,99,235,0.10)'],
+    code: ['#16A34A', 'rgba(22,163,74,0.10)'],
+    analysis: ['#7C3AED', 'rgba(124,58,237,0.10)'],
+    writing: ['#EA580C', 'rgba(234,88,12,0.10)'],
+    custom: ['#64748B', 'rgba(100,116,139,0.10)']
 };
-
 function agentModelLabel(m) { return m === 'auto' ? tt('wModelAuto') : m; }
-
 function buildAgentsPage() {
-  const shell = Work.pageShell({ wide: true });
-  shell.bar.appendChild(Work.pillBtn(tt('wAgentNew'), Work.ICONS.plus, function () { agentEditModal(null); }, { primary: true }));
-  const holder = Work.el('div', 'display: flex; flex-direction: column; gap: 14px;');
-  shell.body.appendChild(holder);
-
-  if (!Work.api.available()) { holder.appendChild(noBackendCard()); return { node: shell.root, title: tt('wAgents'), desc: tt('wAgentsDesc'), wide: true }; }
-
-  Promise.all([
-    Work.store.ready(),
-    Work.api.fetch('/api/work/skills'),
-    Work.api.fetch('/api/work/mcp/servers'),
-    Work.api.fetch('/api/work/qoder/config')
-  ]).then(function (all) {
-    WorkState.skillsList = (all[1] && all[1].skills) || [];
-    WorkState.mcpList = (all[2] && all[2].servers) || [];
-    holder.replaceChildren();
-    renderAgents(holder, WorkState.agents || []);
-  }).catch(function (e) {
-    holder.replaceChildren();
-    holder.appendChild(Work.noticeBox(tt('wErrLoadFail'), e.message, 'warn'));
-  });
-
-  return { node: shell.root, title: tt('wAgents'), desc: tt('wAgentsDesc'), wide: true };
-}
-
-function renderAgents(holder, agents) {
-  /* 说明收敛到页头副标题 */
-  const grid = Work.grid(300);
-  agents.forEach(function (a) {
-    grid.appendChild(agentCard(a, agents));
-  });
-  const newCard = Work.dashedCard(tt('wAgentNew'), Work.ICONS.plus, function () { agentEditModal(null); });
-  grid.appendChild(newCard);
-  holder.appendChild(grid);
-}
-
-function agentCard(a, agents) {
-  const color = AGENT_ROLE_COLORS[a.role] || AGENT_ROLE_COLORS.custom;
-  const card = Work.card({ gap: '8px', pad: '16px' });
-  const head = Work.el('div', 'display: flex; align-items: center; gap: 10px;');
-  const avatar = Work.el('div', 'width: 38px; height: 38px; border-radius: 12px; background: ' + color[1]
-    + '; color: ' + color[0] + '; display: flex; justify-content: center; align-items: center; flex-shrink: 0;');
-  avatar.appendChild(Work.icon(Work.ICONS.agent, 19, color[0]));
-  head.appendChild(avatar);
-  const col = Work.el('div', 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px;');
-  const nameRow = Work.el('div', 'display: flex; align-items: center; gap: 7px;');
-  nameRow.appendChild(Work.el('div', 'color: var(--text-1); font-size: 14px; font-weight: 700;'
-    + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', a.name || 'Agent'));
-  nameRow.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; flex-shrink: 0;',
-    (tt('wRole_' + a.role) || a.role) + (a.builtin ? ' · ' + tt('wSkillBuiltin') : '')));
-  col.appendChild(nameRow);
-  col.appendChild(Work.el('div', 'color: var(--text-2); font-size: 11.5px; line-height: 17px;'
-    + ' display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;', a.description || ''));
-  head.appendChild(col);
-  card.appendChild(head);
-
-  /* 能力摘要：单行弱化文本（去彩色 tag 堆砌） */
-  const sdkN = a.tools && a.tools.sdk ? a.tools.sdk.length : -1;
-  const sciOn = !!(a.tools && a.tools.builtin && a.tools.builtin.indexOf('science') > -1);
-  const mcpN = a.tools && a.tools.mcp ? Object.keys(a.tools.mcp).length : 0;
-  const metaParts = [
-    agentModelLabel(a.model || 'performance'),
-    'maxTurns ' + (a.maxTurns || 12),
-    sdkN < 0 ? tt('wToolsAll') : tt('wToolsN').replace('{n}', String(sdkN))
-  ];
-  if (sciOn) metaParts.push(tt('wScienceTools'));
-  if (mcpN) metaParts.push('MCP ' + mcpN);
-  if (a.skills && a.skills.length) metaParts.push(tt('wSkillsN').replace('{n}', String(a.skills.length)));
-  if (a.sandbox && a.sandbox.scope === 'agent') metaParts.push(tt('wSandboxScope'));
-  card.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; margin-top: 2px;'
-    + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', metaParts.join(' · ')));
-
-  /* 操作行 */
-  const foot = Work.el('div', 'display: flex; gap: 8px; align-items: center; margin-top: 4px;');
-  foot.appendChild(Work.smallBtn(tt('wAgentChat'), function () { Work.Agents.startConversation(a); }, { primary: true }));
-  foot.appendChild(Work.smallBtn(tt('wEdit'), function () { agentEditModal(a); }));
-  foot.appendChild(Work.smallBtn(tt('wAgentCopy'), function () {
-    const copy = JSON.parse(JSON.stringify(a));
-    copy.id = Work.uid('agent');
-    copy.name = a.name + ' · 副本';
-    copy.builtin = false;
-    copy.createdAt = Date.now();
-    agents.push(copy);
-    saveAgents(agents, true);
-  }));
-  foot.appendChild(Work.el('div', 'flex: 1 1 0;'));
-  foot.appendChild(Work.smallBtn(tt('del'), function () {
-    Work.confirm(tt('wAgentDelConfirm'), function () {
-      const i = agents.indexOf(a);
-      if (i > -1) agents.splice(i, 1);
-      saveAgents(agents, true);
+    const shell = Work.pageShell({ wide: true });
+    shell.bar.appendChild(Work.pillBtn(tt('wAgentNew'), Work.ICONS.plus, function () { agentEditModal(null); }, { primary: true }));
+    const holder = Work.el('div', 'display: flex; flex-direction: column; gap: 14px;');
+    shell.body.appendChild(holder);
+    if (!Work.api.available()) {
+        holder.appendChild(noBackendCard());
+        return { node: shell.root, title: tt('wAgents'), desc: tt('wAgentsDesc'), wide: true };
+    }
+    Promise.all([
+        Work.store.ready(),
+        Work.api.fetch('/api/work/skills'),
+        Work.api.fetch('/api/work/mcp/servers'),
+        Work.api.fetch('/api/work/qoder/config')
+    ]).then(function (all) {
+        WorkState.skillsList = (all[1] && all[1].skills) || [];
+        WorkState.mcpList = (all[2] && all[2].servers) || [];
+        holder.replaceChildren();
+        renderAgents(holder, WorkState.agents || []);
+    }).catch(function (e) {
+        holder.replaceChildren();
+        holder.appendChild(Work.noticeBox(tt('wErrLoadFail'), e.message, 'warn'));
     });
-  }, { danger: true }));
-  card.appendChild(foot);
-  return card;
+    return { node: shell.root, title: tt('wAgents'), desc: tt('wAgentsDesc'), wide: true };
 }
-
+function renderAgents(holder, agents) {
+    /* 说明收敛到页头副标题 */
+    const grid = Work.grid(300);
+    agents.forEach(function (a) {
+        grid.appendChild(agentCard(a, agents));
+    });
+    const newCard = Work.dashedCard(tt('wAgentNew'), Work.ICONS.plus, function () { agentEditModal(null); });
+    grid.appendChild(newCard);
+    holder.appendChild(grid);
+}
+function agentCard(a, agents) {
+    const color = AGENT_ROLE_COLORS[a.role] || AGENT_ROLE_COLORS.custom;
+    const card = Work.card({ gap: '8px', pad: '16px' });
+    const head = Work.el('div', 'display: flex; align-items: center; gap: 10px;');
+    const avatar = Work.el('div', 'width: 38px; height: 38px; border-radius: 12px; background: ' + color[1]
+        + '; color: ' + color[0] + '; display: flex; justify-content: center; align-items: center; flex-shrink: 0;');
+    avatar.appendChild(Work.icon(Work.ICONS.agent, 19, color[0]));
+    head.appendChild(avatar);
+    const col = Work.el('div', 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px;');
+    const nameRow = Work.el('div', 'display: flex; align-items: center; gap: 7px;');
+    nameRow.appendChild(Work.el('div', 'color: var(--text-1); font-size: 14px; font-weight: 700;'
+        + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', a.name || 'Agent'));
+    nameRow.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; flex-shrink: 0;', (tt('wRole_' + a.role) || a.role) + (a.builtin ? ' · ' + tt('wSkillBuiltin') : '')));
+    col.appendChild(nameRow);
+    col.appendChild(Work.el('div', 'color: var(--text-2); font-size: 11.5px; line-height: 17px;'
+        + ' display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;', a.description || ''));
+    head.appendChild(col);
+    card.appendChild(head);
+    /* 能力摘要：单行弱化文本（去彩色 tag 堆砌） */
+    const sdkN = a.tools && a.tools.sdk ? a.tools.sdk.length : -1;
+    const sciOn = !!(a.tools && a.tools.builtin && a.tools.builtin.indexOf('science') > -1);
+    const mcpN = a.tools && a.tools.mcp ? Object.keys(a.tools.mcp).length : 0;
+    const metaParts = [
+        agentModelLabel(a.model || 'performance'),
+        'maxTurns ' + (a.maxTurns || 12),
+        sdkN < 0 ? tt('wToolsAll') : tt('wToolsN').replace('{n}', String(sdkN))
+    ];
+    if (sciOn)
+        metaParts.push(tt('wScienceTools'));
+    if (mcpN)
+        metaParts.push('MCP ' + mcpN);
+    if (a.skills && a.skills.length)
+        metaParts.push(tt('wSkillsN').replace('{n}', String(a.skills.length)));
+    if (a.sandbox && a.sandbox.scope === 'agent')
+        metaParts.push(tt('wSandboxScope'));
+    card.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; margin-top: 2px;'
+        + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', metaParts.join(' · ')));
+    /* 操作行 */
+    const foot = Work.el('div', 'display: flex; gap: 8px; align-items: center; margin-top: 4px;');
+    foot.appendChild(Work.smallBtn(tt('wAgentChat'), function () { Work.Agents.startConversation(a); }, { primary: true }));
+    foot.appendChild(Work.smallBtn(tt('wEdit'), function () { agentEditModal(a); }));
+    foot.appendChild(Work.smallBtn(tt('wAgentCopy'), function () {
+        const copy = JSON.parse(JSON.stringify(a));
+        copy.id = Work.uid('agent');
+        copy.name = a.name + ' · 副本';
+        copy.builtin = false;
+        copy.createdAt = Date.now();
+        agents.push(copy);
+        saveAgents(agents, true);
+    }));
+    foot.appendChild(Work.el('div', 'flex: 1 1 0;'));
+    foot.appendChild(Work.smallBtn(tt('del'), function () {
+        Work.confirm(tt('wAgentDelConfirm'), function () {
+            const i = agents.indexOf(a);
+            if (i > -1)
+                agents.splice(i, 1);
+            saveAgents(agents, true);
+        });
+    }, { danger: true }));
+    card.appendChild(foot);
+    return card;
+}
 function saveAgents(agents, rerenderAfter) {
-  Work.api.fetch('/api/work/agents', { method: 'PUT', body: { agents: agents } })
-    .then(function () {
-      WorkState.agents = agents;   /* runTurn 立即可用 */
-      Work.toast(tt('saved2'));
-      if (rerenderAfter) Work.rerender();
+    Work.api.fetch('/api/work/agents', { method: 'PUT', body: { agents: agents } })
+        .then(function () {
+        WorkState.agents = agents; /* runTurn 立即可用 */
+        Work.toast(tt('saved2'));
+        if (rerenderAfter)
+            Work.rerender();
     })
-    .catch(function (e) { Work.toast(e.message); });
+        .catch(function (e) { Work.toast(e.message); });
 }
-
 /* ---------------- 编辑器弹窗 ---------------- */
 function agentEditModal(existing) {
-  const isNew = !existing;
-  const a = existing ? JSON.parse(JSON.stringify(existing)) : {
-    id: Work.uid('agent'), name: '', role: 'custom', description: '',
-    systemPrompt: '', model: 'performance', permissionMode: 'default', maxTurns: 12,
-    tools: { sdk: WorkState._sdkDefaults || ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebFetch', 'WebSearch', 'NotebookEdit'], builtin: ['science'], mcp: {} },
-    skills: [], sandbox: { scope: 'global' }
-  };
-  const skillsList = WorkState.skillsList || [];
-  const mcpList = WorkState.mcpList || [];
-
-  const m = Work.modal({
-    title: isNew ? tt('wAgentNew') : (tt('wEdit') + ' · ' + (existing.name || '')),
-    width: 640, okText: tt('saved2'),
-    onOk: function (api) {
-      a.name = fName.input.value.trim();
-      a.description = fDesc.input.value.trim();
-      a.systemPrompt = fSys.input.value;
-      const mt = parseInt(fTurns.input.value, 10);
-      a.maxTurns = isNaN(mt) ? 12 : Math.min(Math.max(mt, 1), 40);
-      if (!a.name) { Work.toast(tt('wAgentNameBad')); return; }
-      /* MCP 白名单：只保留勾选的 server（全选 server 时记录为空数组=全部） */
-      const mcpWanted = {};
-      mcpList.forEach(function (s) {
-        const arr = a.tools.mcp && a.tools.mcp[s.key];
-        if (arr && arr.length) mcpWanted[s.key] = arr;
-      });
-      a.tools.mcp = mcpWanted;
-      a.updatedAt = Date.now();
-      Work.api.fetch('/api/work/agents').then(function (d) {
-        const list = (d && d.agents) || [];
-        const hit = list.find(function (x) { return x.id === a.id; });
-        if (hit) { const i = list.indexOf(hit); list[i] = a; } else list.push(a);
-        return Work.api.fetch('/api/work/agents', { method: 'PUT', body: { agents: list } });
-      }).then(function () {
-        WorkState.agents = WorkState.agents || [];
-        const i = WorkState.agents.findIndex(function (x) { return x.id === a.id; });
-        if (i > -1) WorkState.agents[i] = a; else WorkState.agents.push(a);
-        api.close(); Work.toast(tt('saved2')); Work.rerender();
-      }).catch(function (e) { Work.toast(e.message); });
-    }
-  });
-
-  const fName = Work.field({ label: tt('wAgentName'), value: a.name, placeholder: '我的科研智能体' });
-  m.body.appendChild(fName);
-  const fDesc = Work.field({ label: tt('wAgentDescLabel'), value: a.description });
-  m.body.appendChild(fDesc);
-
-  /* 角色 / 模型 / 权限 / maxTurns */
-  m.body.appendChild(Work.row(tt('wAgentRole'), Work.seg(
-    AGENT_ROLES.map(function (r) { return { value: r, label: tt('wRole_' + r) || r }; }),
-    function () { return a.role; }, function (v) { a.role = v; })));
-  m.body.appendChild(Work.row(tt('wAgentModel'), Work.seg(
-    ['auto', 'ultimate', 'performance', 'efficient', 'lite'].map(function (t) { return { value: t, label: agentModelLabel(t) }; }),
-    function () { return a.model || 'performance'; }, function (v) { a.model = v; })));
-  m.body.appendChild(Work.hint('档位即思考强度：lite ≈ 关闭 · efficient ≈ 低 · performance ≈ 中 · ultimate ≈ 高；auto 由系统自动。'));
-  m.body.appendChild(Work.row(tt('wAgentPerm'), Work.seg(
-    ['default', 'acceptEdits', 'auto', 'plan'].map(function (p) { return { value: p, label: p }; }),
-    function () { return a.permissionMode || 'default'; }, function (v) { a.permissionMode = v; })));
-  const fTurns = Work.field({ label: tt('wAgentTurns'), value: String(a.maxTurns || 12), type: 'number', inputStyle: 'max-width: 120px;' });
-  m.body.appendChild(Work.row(tt('wAgentTurns'), fTurns.input, { sub: tt('wAgentTurnsSub') }));
-  m.body.appendChild(Work.row(tt('wAgentScope'), Work.seg([
-    { value: 'global', label: tt('wScopeGlobal') }, { value: 'agent', label: tt('wScopeAgent') }
-  ], function () { return (a.sandbox && a.sandbox.scope) || 'global'; }, function (v) {
-    a.sandbox = a.sandbox || {}; a.sandbox.scope = v;
-  })));
-
-  /* 系统提示词 */
-  const fSys = Work.field({ label: tt('wAgentSys'), multiline: true, rows: 5, value: a.systemPrompt || '' });
-  m.body.appendChild(fSys);
-
-  /* 工具：SDK 内建复选 */
-  const sdkAll = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebFetch', 'WebSearch', 'NotebookEdit'];
-  if (a.tools.sdk === undefined) a.tools.sdk = sdkAll.slice();
-  const toolBox = Work.card({ gap: '6px', pad: '12px' });
-  toolBox.appendChild(Work.sectionLabel(tt('wAgentTools')));
-  toolBox.appendChild(Work.hint(tt('wAgentToolsHint')));
-  sdkAll.forEach(function (name) {
-    toolBox.appendChild(checkRow(name, function () { return a.tools.sdk.indexOf(name) > -1; }, function (v) {
-      if (v) { if (a.tools.sdk.indexOf(name) === -1) a.tools.sdk.push(name); }
-      else { const i = a.tools.sdk.indexOf(name); if (i > -1) a.tools.sdk.splice(i, 1); }
-    }));
-  });
-  toolBox.appendChild(checkRow(tt('wScienceTools') + '（arxiv_search / run_code / kb_search / note_write …）',
-    function () { return a.tools.builtin.indexOf('science') > -1; }, function (v) {
-      const i = a.tools.builtin.indexOf('science');
-      if (v && i === -1) a.tools.builtin.push('science');
-      if (!v && i > -1) a.tools.builtin.splice(i, 1);
-    }));
-  /* MCP 白名单（整 server 粒度：勾选 = 该 server 全部工具可用） */
-  mcpList.forEach(function (s) {
-    toolBox.appendChild(checkRow('mcp · ' + s.key, function () { return !!(a.tools.mcp && a.tools.mcp[s.key]); }, function (v) {
-      a.tools.mcp = a.tools.mcp || {};
-      if (v) a.tools.mcp[s.key] = [];        /* [] = 该 server 全部工具 */
-      else delete a.tools.mcp[s.key];
-    }, s.enabled === false));
-  });
-  if (!mcpList.length) toolBox.appendChild(Work.hint(tt('wAgentNoMcp')));
-  m.body.appendChild(toolBox);
-
-  /* 技能复选 */
-  const skillBox = Work.card({ gap: '6px', pad: '12px' });
-  skillBox.appendChild(Work.sectionLabel(tt('wAgentSkills')));
-  skillBox.appendChild(Work.hint(tt('wAgentSkillsHint')));
-  if (!skillsList.length) skillBox.appendChild(Work.hint(tt('wAgentNoSkills')));
-  skillsList.forEach(function (s) {
-    skillBox.appendChild(checkRow(s.name + '（' + s.slug + '）', function () { return a.skills.indexOf(s.slug) > -1; }, function (v) {
-      if (v) { if (a.skills.indexOf(s.slug) === -1) a.skills.push(s.slug); }
-      else { const i = a.skills.indexOf(s.slug); if (i > -1) a.skills.splice(i, 1); }
-    }));
-  });
-  m.body.appendChild(skillBox);
-}
-
-function checkRow(label, get, set, disabled) {
-  const row = Work.el('div', 'display: flex; align-items: center; gap: 8px; padding: 6px 8px;'
-    + ' border-radius: 8px; cursor: pointer; background: var(--accent-soft);' + (disabled ? ' opacity: 0.45;' : ''));
-  const box = Work.el('div', 'width: 15px; height: 15px; border-radius: 5px; flex-shrink: 0;'
-    + ' border: 1px solid ' + (get() ? 'var(--accent-text)' : 'var(--border)') + ';'
-    + ' background: ' + (get() ? 'var(--accent-text)' : 'transparent') + ';'
-    + ' color: #fff; display: flex; justify-content: center; align-items: center;');
-  if (get()) box.appendChild(Work.icon(Work.ICONS.check, 10, '#fff'));
-  row.appendChild(box);
-  row.appendChild(Work.el('div', 'color: var(--text-1); font-size: 12px; flex: 1 1 0; min-width: 0;'
-    + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', label));
-  if (!disabled) {
-    row.addEventListener('click', function () {
-      set(!get());
-      box.style.borderColor = get() ? 'var(--accent-text)' : 'var(--border)';
-      box.style.background = get() ? 'var(--accent-text)' : 'transparent';
-      box.replaceChildren();
-      if (get()) box.appendChild(Work.icon(Work.ICONS.check, 10, '#fff'));
+    const isNew = !existing;
+    const a = existing ? JSON.parse(JSON.stringify(existing)) : {
+        id: Work.uid('agent'), name: '', role: 'custom', description: '',
+        systemPrompt: '', model: 'performance', permissionMode: 'default', maxTurns: 12,
+        tools: { sdk: WorkState._sdkDefaults || ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebFetch', 'WebSearch', 'NotebookEdit'], builtin: ['science'], mcp: {} },
+        skills: [], sandbox: { scope: 'global' }
+    };
+    const skillsList = WorkState.skillsList || [];
+    const mcpList = WorkState.mcpList || [];
+    const m = Work.modal({
+        title: isNew ? tt('wAgentNew') : (tt('wEdit') + ' · ' + (existing.name || '')),
+        width: 640, okText: tt('saved2'),
+        onOk: function (api) {
+            a.name = fName.input.value.trim();
+            a.description = fDesc.input.value.trim();
+            a.systemPrompt = fSys.input.value;
+            const mt = parseInt(fTurns.input.value, 10);
+            a.maxTurns = isNaN(mt) ? 12 : Math.min(Math.max(mt, 1), 40);
+            if (!a.name) {
+                Work.toast(tt('wAgentNameBad'));
+                return;
+            }
+            /* MCP 白名单：只保留勾选的 server（全选 server 时记录为空数组=全部） */
+            const mcpWanted = {};
+            mcpList.forEach(function (s) {
+                const arr = a.tools.mcp && a.tools.mcp[s.key];
+                if (arr && arr.length)
+                    mcpWanted[s.key] = arr;
+            });
+            a.tools.mcp = mcpWanted;
+            a.updatedAt = Date.now();
+            Work.api.fetch('/api/work/agents').then(function (d) {
+                const list = (d && d.agents) || [];
+                const hit = list.find(function (x) { return x.id === a.id; });
+                if (hit) {
+                    const i = list.indexOf(hit);
+                    list[i] = a;
+                }
+                else
+                    list.push(a);
+                return Work.api.fetch('/api/work/agents', { method: 'PUT', body: { agents: list } });
+            }).then(function () {
+                WorkState.agents = WorkState.agents || [];
+                const i = WorkState.agents.findIndex(function (x) { return x.id === a.id; });
+                if (i > -1)
+                    WorkState.agents[i] = a;
+                else
+                    WorkState.agents.push(a);
+                api.close();
+                Work.toast(tt('saved2'));
+                Work.rerender();
+            }).catch(function (e) { Work.toast(e.message); });
+        }
     });
-  }
-  return row;
+    const fName = Work.field({ label: tt('wAgentName'), value: a.name, placeholder: '我的科研智能体' });
+    m.body.appendChild(fName);
+    const fDesc = Work.field({ label: tt('wAgentDescLabel'), value: a.description });
+    m.body.appendChild(fDesc);
+    /* 角色 / 模型 / 权限 / maxTurns */
+    m.body.appendChild(Work.row(tt('wAgentRole'), Work.seg(AGENT_ROLES.map(function (r) { return { value: r, label: tt('wRole_' + r) || r }; }), function () { return a.role; }, function (v) { a.role = v; })));
+    m.body.appendChild(Work.row(tt('wAgentModel'), Work.seg(['auto', 'ultimate', 'performance', 'efficient', 'lite'].map(function (t) { return { value: t, label: agentModelLabel(t) }; }), function () { return a.model || 'performance'; }, function (v) { a.model = v; })));
+    m.body.appendChild(Work.hint('档位即思考强度：lite ≈ 关闭 · efficient ≈ 低 · performance ≈ 中 · ultimate ≈ 高；auto 由系统自动。'));
+    m.body.appendChild(Work.row(tt('wAgentPerm'), Work.seg(['default', 'acceptEdits', 'auto', 'plan'].map(function (p) { return { value: p, label: p }; }), function () { return a.permissionMode || 'default'; }, function (v) { a.permissionMode = v; })));
+    const fTurns = Work.field({ label: tt('wAgentTurns'), value: String(a.maxTurns || 12), type: 'number', inputStyle: 'max-width: 120px;' });
+    m.body.appendChild(Work.row(tt('wAgentTurns'), fTurns.input, { sub: tt('wAgentTurnsSub') }));
+    m.body.appendChild(Work.row(tt('wAgentScope'), Work.seg([
+        { value: 'global', label: tt('wScopeGlobal') }, { value: 'agent', label: tt('wScopeAgent') }
+    ], function () { return (a.sandbox && a.sandbox.scope) || 'global'; }, function (v) {
+        a.sandbox = a.sandbox || {};
+        a.sandbox.scope = v;
+    })));
+    /* 系统提示词 */
+    const fSys = Work.field({ label: tt('wAgentSys'), multiline: true, rows: 5, value: a.systemPrompt || '' });
+    m.body.appendChild(fSys);
+    /* 工具：SDK 内建复选 */
+    const sdkAll = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebFetch', 'WebSearch', 'NotebookEdit'];
+    if (a.tools.sdk === undefined)
+        a.tools.sdk = sdkAll.slice();
+    const toolBox = Work.card({ gap: '6px', pad: '12px' });
+    toolBox.appendChild(Work.sectionLabel(tt('wAgentTools')));
+    toolBox.appendChild(Work.hint(tt('wAgentToolsHint')));
+    sdkAll.forEach(function (name) {
+        toolBox.appendChild(checkRow(name, function () { return a.tools.sdk.indexOf(name) > -1; }, function (v) {
+            if (v) {
+                if (a.tools.sdk.indexOf(name) === -1)
+                    a.tools.sdk.push(name);
+            }
+            else {
+                const i = a.tools.sdk.indexOf(name);
+                if (i > -1)
+                    a.tools.sdk.splice(i, 1);
+            }
+        }));
+    });
+    toolBox.appendChild(checkRow(tt('wScienceTools') + '（arxiv_search / run_code / kb_search / note_write …）', function () { return a.tools.builtin.indexOf('science') > -1; }, function (v) {
+        const i = a.tools.builtin.indexOf('science');
+        if (v && i === -1)
+            a.tools.builtin.push('science');
+        if (!v && i > -1)
+            a.tools.builtin.splice(i, 1);
+    }));
+    /* MCP 白名单（整 server 粒度：勾选 = 该 server 全部工具可用） */
+    mcpList.forEach(function (s) {
+        toolBox.appendChild(checkRow('mcp · ' + s.key, function () { return !!(a.tools.mcp && a.tools.mcp[s.key]); }, function (v) {
+            a.tools.mcp = a.tools.mcp || {};
+            if (v)
+                a.tools.mcp[s.key] = []; /* [] = 该 server 全部工具 */
+            else
+                delete a.tools.mcp[s.key];
+        }, s.enabled === false));
+    });
+    if (!mcpList.length)
+        toolBox.appendChild(Work.hint(tt('wAgentNoMcp')));
+    m.body.appendChild(toolBox);
+    /* 技能复选 */
+    const skillBox = Work.card({ gap: '6px', pad: '12px' });
+    skillBox.appendChild(Work.sectionLabel(tt('wAgentSkills')));
+    skillBox.appendChild(Work.hint(tt('wAgentSkillsHint')));
+    if (!skillsList.length)
+        skillBox.appendChild(Work.hint(tt('wAgentNoSkills')));
+    skillsList.forEach(function (s) {
+        skillBox.appendChild(checkRow(s.name + '（' + s.slug + '）', function () { return a.skills.indexOf(s.slug) > -1; }, function (v) {
+            if (v) {
+                if (a.skills.indexOf(s.slug) === -1)
+                    a.skills.push(s.slug);
+            }
+            else {
+                const i = a.skills.indexOf(s.slug);
+                if (i > -1)
+                    a.skills.splice(i, 1);
+            }
+        }));
+    });
+    m.body.appendChild(skillBox);
 }
-
+function checkRow(label, get, set, disabled) {
+    const row = Work.el('div', 'display: flex; align-items: center; gap: 8px; padding: 6px 8px;'
+        + ' border-radius: 8px; cursor: pointer; background: var(--accent-soft);' + (disabled ? ' opacity: 0.45;' : ''));
+    const box = Work.el('div', 'width: 15px; height: 15px; border-radius: 5px; flex-shrink: 0;'
+        + ' border: 1px solid ' + (get() ? 'var(--accent-text)' : 'var(--border)') + ';'
+        + ' background: ' + (get() ? 'var(--accent-text)' : 'transparent') + ';'
+        + ' color: #fff; display: flex; justify-content: center; align-items: center;');
+    if (get())
+        box.appendChild(Work.icon(Work.ICONS.check, 10, '#fff'));
+    row.appendChild(box);
+    row.appendChild(Work.el('div', 'color: var(--text-1); font-size: 12px; flex: 1 1 0; min-width: 0;'
+        + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', label));
+    if (!disabled) {
+        row.addEventListener('click', function () {
+            set(!get());
+            box.style.borderColor = get() ? 'var(--accent-text)' : 'var(--border)';
+            box.style.background = get() ? 'var(--accent-text)' : 'transparent';
+            box.replaceChildren();
+            if (get())
+                box.appendChild(Work.icon(Work.ICONS.check, 10, '#fff'));
+        });
+    }
+    return row;
+}
 /* 对话入口：切到 Work 模式 → 绑定 agentId 的草稿 → 输入框就绪 */
 Work.Agents = {
-  startConversation: function (agent) {
-    if (typeof setSidebarMode === 'function') {
-      if (sidebarMode !== 'work') setSidebarMode('work');
-      else if (!draft || (draft.messages && draft.messages.length)) startDraft(null);
+    startConversation: function (agent) {
+        if (typeof setSidebarMode === 'function') {
+            if (sidebarMode !== 'work')
+                setSidebarMode('work');
+            else if (!draft || (draft.messages && draft.messages.length))
+                startDraft(null);
+        }
+        if (draft) {
+            draft.agentId = agent.id;
+        }
+        activeConvId = 'draft';
+        view = 'chat';
+        renderConversations();
+        renderMessages();
+        playSwap();
+        chatInput.focus();
+        Work.toast(tt('wAgentReady').replace('{n}', agent.name || 'Agent'));
     }
-    if (draft) {
-      draft.agentId = agent.id;
-    }
-    activeConvId = 'draft';
-    view = 'chat';
-    renderConversations();
-    renderMessages();
-    playSwap();
-    chatInput.focus();
-    Work.toast(tt('wAgentReady').replace('{n}', agent.name || 'Agent'));
-  }
 };
-
 Work.pages.agents = buildAgentsPage;

@@ -141,9 +141,19 @@ async function main() {
     if (fs.existsSync(icoSrc)) {
         log('写入 exe 图标（rcedit）...');
         (0, child_process_1.spawnSync)('taskkill', ['/IM', 'ChatScience.exe', '/T', '/F'], { stdio: 'ignore' });
+        (0, child_process_1.spawnSync)(process.execPath, ['-e', 'setTimeout(function(){},1200)']); /* 等待进程树退出与文件锁释放，避免 rcedit 部分写入静默失败 */
         const rcedit = require('rcedit');
+        /* version-string：Windows 通知/任务栏/资源管理器显示的应用身份。
+           FileDescription 决定系统通知横幅顶部名称（配合 main.ts 的 AUMID=exe 路径）。 */
         try {
-            await rcedit(path.join(STAGE, 'ChatScience.exe'), { icon: icoSrc });
+            await rcedit(path.join(STAGE, 'ChatScience.exe'), {
+                icon: icoSrc,
+                'version-string': {
+                    FileDescription: 'ChatScience',
+                    ProductName: 'ChatScience',
+                    OriginalFilename: 'ChatScience.exe'
+                }
+            });
         }
         catch (e) {
             console.error('[pack] rcedit 失败: ' + e.message);
@@ -162,6 +172,7 @@ async function main() {
     if (fs.existsSync(icoSrc))
         fs.copyFileSync(icoSrc, path.join(APPDIR, 'app.ico'));
     copyTree(path.join(APP, 'server'), path.join(APPDIR, 'server'));
+    copyTree(path.join(APP, 'shared'), path.join(APPDIR, 'shared'));
     copyTree(path.join(APP, 'renderer'), path.join(APPDIR, 'renderer'));
     if (!skipHeavy) {
         log('复制 node_modules（排除 electron 运行时本体与 TS 工具链）...');
@@ -221,6 +232,8 @@ async function main() {
         path.join(APPDIR, 'tray.png'),
         path.join(APPDIR, 'renderer', 'index.html'),
         path.join(APPDIR, 'server', 'qoder.js'),
+        path.join(APPDIR, 'shared', 'qoder-sdk.js'),
+        path.join(APPDIR, 'shared', 'domain.js'),
         path.join(APPDIR, 'server', 'skills-plugin', 'skills', 'mindspore-repro', 'SKILL.md'),
         path.join(APPDIR, 'node_modules', '@qodercn-ai', 'qodercn-agent-sdk'),
         path.join(APPDIR, 'node_modules', 'express'),
@@ -245,9 +258,13 @@ async function main() {
     const rt = path.join(APPDIR, 'data', 'runtime.json');
     const rtBefore = fs.existsSync(rt) ? fs.statSync(rt).mtimeMs : 0;
     /* 注意：spawnSync 会等子进程退出（detached 对它无效），便携 exe 是常驻应用，
-       必须用 spawn + unref 异步拉起 */
+       必须用 spawn + unref 异步拉起。
+       关键：若宿主环境泄漏 ELECTRON_RUN_AS_NODE=1（Electron 宿主如 WorkBuddy 的
+       沙箱常见），electron.exe 会退化为纯 Node 运行、应用无法启动——必须剥掉。 */
+    const smokeEnv = Object.assign({}, process.env);
+    delete smokeEnv.ELECTRON_RUN_AS_NODE;
     const child = (0, child_process_1.spawn)(path.join(STAGE, 'ChatScience.exe'), [], {
-        cwd: STAGE, detached: true, stdio: 'ignore'
+        cwd: STAGE, detached: true, stdio: 'ignore', env: smokeEnv
     });
     child.unref();
     let smokeOk = false;

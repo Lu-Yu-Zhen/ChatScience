@@ -1,6 +1,6 @@
 {
   /* ChatScience 验证与工具脚本编译配置（verify 层）
-     - 覆盖：verify/*.ts（验证脚本，产物落回 verify/*.js）、_cdp_eval.ts、
+     - 覆盖：verify/*.ts（验证脚本，产物落回 verify/*.js）、
        server/skills-plugin/build.ts（技能包生成器）。
      - 验证脚本是行为安全网，按宽松配置编译（允许隐式 any，require 返回 any），
        与迁移前 JS 版语义逐行一致；noEmitOnError 仍然生效。 */
@@ -22,7 +22,6 @@
   },
   "include": [
     "src/verify/**/*.ts",
-    "src/_cdp_eval.ts",
     "src/server/skills-plugin/build.ts"
   ],
   "exclude": ["node_modules", "dist"]

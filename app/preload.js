@@ -25,5 +25,6 @@ electron_1.contextBridge.exposeInMainWorld('csDesktop', {
     winMinimize: () => electron_1.ipcRenderer.send('win:minimize'),
     winMaximizeToggle: () => electron_1.ipcRenderer.send('win:maximize-toggle'),
     winClose: () => electron_1.ipcRenderer.send('win:close'),
-    selectDirectory: () => electron_1.ipcRenderer.invoke('cs:select-directory')
+    selectDirectory: () => electron_1.ipcRenderer.invoke('cs:select-directory'),
+    openPath: (p) => electron_1.ipcRenderer.invoke('cs:open-path', p)
 });

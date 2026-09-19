@@ -351,6 +351,9 @@ export interface AgentDefRecord {
   description?: string;
   systemPrompt?: string;
   model?: string;
+  /* 绑定的模型实例 key（前端模型实例清单）；'byok' = 跟随全局 BYOK 模型（激活实例）。
+     运行时前端按此 key 查实例凭据随请求携带，模型调用走用户 API Key。 */
+  modelKey?: string;
   thinkingStrength?: string;
   permissionMode?: string;
   maxTurns?: number | string;
@@ -358,6 +361,22 @@ export interface AgentDefRecord {
   skills?: string[];
   sandbox?: { scope?: string };
   /* 用户经 UI 编辑产生的其他字段原样透传 */
+  [k: string]: unknown;
+}
+
+/* 墨道子智能体（经 options.agents 注册委派；管理页可编辑/可添加，不可删除） */
+export interface SubagentRecord {
+  id: string;
+  name: string;
+  whenToUse: string;         /* 委派路由依据（AgentDefinition.description） */
+  prompt: string;            /* 子智能体系统提示词 */
+  sdkTools: string[];        /* SDK 内建工具白名单（不得含 Agent——不可嵌套派生） */
+  scienceTools: string[];    /* chatscience 科研工具子集 */
+  skills: string[];
+  maxTurns: number;
+  permissionMode: string;
+  model?: string;            /* 'inherit'（默认，跟随墨道）或平台档位 */
+  builtin?: boolean;
   [k: string]: unknown;
 }
 
@@ -382,15 +401,29 @@ export interface RunHistoryItem {
   [k: string]: unknown;
 }
 
+/* 设置页偏好（真实后端持久化，替代原 localStorage cs-set-*）：
+   memory 开关联动 SDK options.memory scope（会话记忆读写）；
+   git 偏好注入墨道系统提示（分支前缀/强制推送/提交说明约束）。 */
+export interface WorkPrefs {
+  memory: { globalOn: boolean; projectOn: boolean };
+  git: { prefix: string; force: boolean; instr: string };
+  worktrees: { fetchBeforeCreate: boolean; autoDelete: boolean; limit: number };
+  appearance: { width: string };
+}
+
 export interface WorkState {
   version: number;
   agents: AgentDefRecord[];
+  subagents: SubagentRecord[];
   skills: Record<string, SkillState>;
   mcpServers: McpServerEntry[];
   sandboxPolicy: SandboxPolicyOverride;
   modelToolSupport: Record<string, string>;
   runHistory: RunHistoryItem[];
   seeded: boolean;
+  /* 领域插件启用开关：key=插件目录名；未记录=启用，显式 false=停用 */
+  domainPlugins: Record<string, boolean>;
+  prefs: WorkPrefs;
 }
 export type WorkSectionName = keyof WorkState;
 
@@ -433,14 +466,17 @@ export interface WorkTurnResult {
   error?: string;
 }
 
-/* runWorkTurn 桥接到前端 SSE 的事件负载 */
+/* runWorkTurn 桥接到前端 SSE 的事件负载
+   N2 预留（04 策划案 14.13/14.19）：tool_start/tool_end 增加可选 parentToolUseId ——
+   多智能体嵌套时间线的唯一依据（null=主会话；非 null=子智能体消息，指向父子间
+   那次 Agent 工具调用）。既有字段全部保持，前端不读取新字段时行为完全不变。 */
 export interface WorkRunEventMap {
   run_start: { runId: string; agentId?: string; model?: string; permissionMode?: string; tools: string[] };
   notice: { runId: string; code: string; message: string; skills?: string[]; mcpServers?: { name: string; status: string }[] };
   delta: { runId: string; delta: string };
   reasoning: { runId: string; delta: string };
-  tool_start: { runId: string; callId: string; name: string; args: string };
-  tool_end: { runId: string; callId: string; ok: boolean; durationMs?: number; result: string; error?: string };
+  tool_start: { runId: string; callId: string; name: string; args: string; parentToolUseId?: string | null };
+  tool_end: { runId: string; callId: string; ok: boolean; durationMs?: number; result: string; error?: string; parentToolUseId?: string | null };
   tool_stream: { kind: string; delta: string };
   error: { runId: string; message: string; fatal?: boolean };
   run_end: { runId: string; ok: boolean; text?: string; metrics?: { totalMs?: number; toolCalls?: number; turns?: number } };
@@ -465,6 +501,16 @@ export interface QoderConfigFile {
   permissionMode?: string;
 }
 
+/* 用户在 Qoder 注册的 BYOK（自带模型）配置——模型 id 可直接作为 SDK options.model */
+export interface ByokModelInfo {
+  key: string;          /* 注册配置 key（uuid） */
+  provider: string;
+  model: string;        /* BYOK 模型 id（可直接作 options.model） */
+  displayName?: string;
+  contextWindow?: number;
+  maxInputTokens?: number;
+}
+
 export interface QoderApi {
   runWorkTurn(params: WorkTurnParams, onEvent?: WorkRunEventHandler, externalSignal?: AbortSignal): Promise<WorkTurnResult>;
   listSkills(): SkillInfo[];
@@ -474,8 +520,41 @@ export interface QoderApi {
   ensureSkillPlugin(): string | null;
   ping(): Promise<{ ok: true; ms: number; reply: string } | { ok: false; ms: number; error: string }>;
   config(): { model: string; permissionMode: string; hasToken: boolean };
-  MODEL_TIERS: readonly string[];
   SDK_BUILTIN_DEFAULT: readonly string[];
+  /* 墨道子智能体注册表（主智能体经 options.agents 委派的七类科研子智能体） */
+  subagents(): Array<{ id: string; name: string; description: string; tools: string[]; skills: string[]; maxTurns: number }>;
+  /* 领域插件（科研外挂）：app/server/plugins/<domain>/，agents/skills/commands/.mcp.json */
+  domainPlugins(): DomainPluginInfo[];
+  setDomainPluginEnabled(key: string, enabled: boolean): Promise<DomainPluginInfo[]>;
+  /* 用户上传插件：写入 data/plugins/<key>/（路径白名单校验） */
+  createPlugin(key: string, files: Array<{ path: string; content: string }>): { key: string; files: number };
+  /* 用户在 Qoder 注册的 BYOK 模型配置（启动异步缓存；未就绪返回 null） */
+  byokModels(): ByokModelInfo[] | null;
+  byokModelsReady(timeoutMs?: number): Promise<ByokModelInfo[] | null>;
+  /* 工具调用审计记录（A4；jsonl 落盘 data/work-audit.jsonl） */
+  readAudit(limit?: number): Array<Record<string, unknown>>;
+}
+
+/* ---------------- 领域插件信息（科研外挂） ---------------- */
+export interface DomainPluginInfo {
+  key: string;
+  dir: string;
+  description: string;
+  version: string;
+  enabled: boolean;
+  agents: string[];
+  skills: string[];
+  commands: string[];
+  hasMcp: boolean;
+  /* tools.json 声明的 MCP 工具（精确名 mcp__<server>__<tool>，用于主会话与插件子智能体白名单） */
+  mcpTools: string[];
+  /* tools.json 的裸工具名（前端展示用） */
+  tools: string[];
+  /* 合并后生效配置（config.json 覆盖 configSchema.json 默认值） */
+  config: Record<string, unknown>;
+  /* 参数声明（含默认值与说明，前端展示） */
+  configSchema: Record<string, unknown> | null;
+  hasReadme: boolean;
 }
 
 /* ---------------- 服务端装配上下文（index.ts → routes/qoder） ---------------- */
@@ -523,6 +602,7 @@ export interface CsDesktopBridge {
   winMaximizeToggle(): void;
   winClose(): void;
   selectDirectory(): Promise<string | null | { error: string }>;
+  openPath(p: string): Promise<{ ok?: boolean; error?: string }>;
 }
 
 /* ---------------- SDK 五档权限模式的运行时收窄 ---------------- */

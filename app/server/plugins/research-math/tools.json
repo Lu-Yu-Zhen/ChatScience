@@ -1,0 +1,4 @@
+{
+  "server": "research-math-tools",
+  "tools": ["arith_eval", "frac_eval", "matrix_det"]
+}

@@ -4,8 +4,9 @@
 /* ==================================================================
    30-agents.js · 智能体搭建页（wide）
    agentDef 字段与 server/qoder.js 的 query options 映射一一对应：
-   systemPrompt / model(SDK五档) / permissionMode / maxTurns /
+   systemPrompt / modelKey(BYOK 模型) / permissionMode / maxTurns /
    tools{sdk[],builtin[],mcp{}} / skills[] / sandbox.scope
+   模型调用一律走用户自有 API Key（BYOK-only），平台订阅档位已移除。
    ================================================================== */
 
 const AGENT_ROLES = ['research', 'code', 'analysis', 'writing', 'custom'];
@@ -17,11 +18,9 @@ const AGENT_ROLE_COLORS = {
   custom: ['#64748B', 'rgba(100,116,139,0.10)']
 };
 
-function agentModelLabel(m) { return m === 'auto' ? tt('wModelAuto') : m; }
-
 function buildAgentsPage() {
   const shell = Work.pageShell({ wide: true });
-  shell.bar.appendChild(Work.pillBtn(tt('wAgentNew'), Work.ICONS.plus, function () { agentEditModal(null); }, { primary: true }));
+  shell.bar.appendChild(Work.pillBtn(tt('wAgentNewSub'), Work.ICONS.plus, function () { subagentEditModal(null); }, { primary: true }));
   const holder = Work.el('div', 'display: flex; flex-direction: column; gap: 14px;');
   shell.body.appendChild(holder);
 
@@ -36,7 +35,7 @@ function buildAgentsPage() {
     WorkState.skillsList = (all[1] && all[1].skills) || [];
     WorkState.mcpList = (all[2] && all[2].servers) || [];
     holder.replaceChildren();
-    renderAgents(holder, WorkState.agents || []);
+    renderAgents(holder, WorkState.agents || [], WorkState.subagents || []);
   }).catch(function (e) {
     holder.replaceChildren();
     holder.appendChild(Work.noticeBox(tt('wErrLoadFail'), e.message, 'warn'));
@@ -45,15 +44,138 @@ function buildAgentsPage() {
   return { node: shell.root, title: tt('wAgents'), desc: tt('wAgentsDesc'), wide: true };
 }
 
-function renderAgents(holder, agents) {
-  /* 说明收敛到页头副标题 */
-  const grid = Work.grid(300);
-  agents.forEach(function (a) {
-    grid.appendChild(agentCard(a, agents));
+function renderAgents(holder, agents, subagents) {
+  /* 主智能体区：墨道（主Agent）与墨析（仅对话）——固定不可删除，可编辑 */
+  holder.appendChild(Work.sectionLabel('主智能体'));
+  const mainGrid = Work.grid(300);
+  (agents || []).forEach(function (a) { mainGrid.appendChild(agentCard(a, agents)); });
+  holder.appendChild(mainGrid);
+
+  /* 子智能体区：听命于墨道，可编辑、可添加、不可删除 */
+  holder.appendChild(Work.el('div', 'height: 1px; background: var(--border); margin: 4px 0;'));
+  holder.appendChild(Work.sectionLabel('子智能体（由墨道调度委派，不可删除）'));
+  const subGrid = Work.grid(300);
+  (subagents || []).forEach(function (s) { subGrid.appendChild(subagentCard(s)); });
+  subGrid.appendChild(Work.dashedCard(tt('wAgentNewSub'), Work.ICONS.plus, function () { subagentEditModal(null); }));
+  holder.appendChild(subGrid);
+}
+
+function subagentCard(s) {
+  const card = Work.card({ gap: '8px', pad: '16px' });
+  const head = Work.el('div', 'display: flex; align-items: center; gap: 10px;');
+  const avatar = Work.el('div', 'width: 38px; height: 38px; border-radius: 12px; background: rgba(100,116,139,0.10);'
+    + ' color: #64748B; display: flex; justify-content: center; align-items: center; flex-shrink: 0;');
+  avatar.appendChild(Work.icon(Work.ICONS.agent, 19, '#64748B'));
+  head.appendChild(avatar);
+  const col = Work.el('div', 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px;');
+  const nameRow = Work.el('div', 'display: flex; align-items: center; gap: 7px;');
+  nameRow.appendChild(Work.el('div', 'color: var(--text-1); font-size: 14px; font-weight: 700;'
+    + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', s.name || '子智能体'));
+  nameRow.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; flex-shrink: 0;',
+    (s.builtin ? '内建' : '自定义') + ' · 跟随墨道模型'));
+  col.appendChild(nameRow);
+  col.appendChild(Work.el('div', 'color: var(--text-2); font-size: 11.5px; line-height: 17px;'
+    + ' display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;', s.whenToUse || ''));
+  head.appendChild(col);
+  card.appendChild(head);
+
+  const toolsN = (s.sdkTools || []).length + (s.scienceTools || []).length;
+  card.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; margin-top: 2px;'
+    + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;',
+    '模型 ' + (s.model || 'inherit') + ' · maxTurns ' + (s.maxTurns || 12) + ' · 工具 ' + toolsN
+    + ' · 技能 ' + ((s.skills || []).length)));
+
+  const foot = Work.el('div', 'display: flex; gap: 8px; align-items: center; margin-top: 4px;');
+  foot.appendChild(Work.smallBtn(tt('wEdit'), function () { subagentEditModal(s); }, { primary: true }));
+  if (!s.builtin) {
+    foot.appendChild(Work.smallBtn(tt('wSubDelete'), function () {
+      if (!window.confirm(tt('wSubDelConfirm'))) return;
+      Work.api.fetch('/api/work/subagents?id=' + encodeURIComponent(s.id), { method: 'DELETE' })
+        .then(function (d) {
+          WorkState.subagents = (d && d.subagents) || WorkState.subagents;
+          Work.toast(tt('saved2'));
+          Work.rerender();
+        })
+        .catch(function (e) { Work.toast(e.message); });
+    }));
+  }
+  foot.appendChild(Work.el('div', 'flex: 1 1 0;'));
+  foot.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px;', '听命于墨道'));
+  card.appendChild(foot);
+  return card;
+}
+
+function subagentEditModal(existing) {
+  const isNew = !existing;
+  const s = existing ? JSON.parse(JSON.stringify(existing)) : {
+    id: '', name: '', whenToUse: '', prompt: '',
+    sdkTools: ['Read', 'Glob', 'Grep'], scienceTools: ['kb_search'],
+    skills: [], maxTurns: 12, permissionMode: 'default', model: 'inherit', builtin: false
+  };
+  const skillsList = WorkState.skillsList || [];
+  const sdkAll = ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebFetch', 'WebSearch', 'NotebookEdit'];
+  const sciAll = ['arxiv_search', 'fetch_url', 'web_search', 'kb_search', 'note_write', 'run_code',
+    'doi_cite', 'keyword_expand', 'latex_check', 'unit_convert', 'figure_caption'];
+
+  const m = Work.modal({
+    title: isNew ? tt('wAgentNewSub') : (tt('wEdit') + ' · ' + (existing.name || '')),
+    width: 640, okText: tt('saved2'),
+    onOk: function (api) {
+      s.name = fName.input.value.trim();
+      s.whenToUse = fWhen.input.value.trim();
+      s.prompt = fPrompt.input.value;
+      const mt = parseInt(fTurns.input.value, 10);
+      s.maxTurns = isNaN(mt) ? 12 : Math.min(Math.max(mt, 1), 64);
+      if (!s.name) { Work.toast(tt('wAgentNameBad')); return; }
+      if (!s.whenToUse) { Work.toast('委派时机（description）必填——模型据此决定是否委派'); return; }
+      Work.api.fetch('/api/work/subagents', { method: 'PUT', body: { subagent: s } }).then(function (d) {
+        WorkState.subagents = (d && d.subagents) || WorkState.subagents;
+        api.close(); Work.toast(tt('saved2')); Work.rerender();
+      }).catch(function (e) { Work.toast(e.message); });
+    }
   });
-  const newCard = Work.dashedCard(tt('wAgentNew'), Work.ICONS.plus, function () { agentEditModal(null); });
-  grid.appendChild(newCard);
-  holder.appendChild(grid);
+
+  const fName = Work.field({ label: '名称', value: s.name, placeholder: '如：专利检索' });
+  m.body.appendChild(fName);
+  const fWhen = Work.field({ label: '委派时机（模型据此路由，务必具体）', value: s.whenToUse || '',
+    placeholder: '当任务需要……时用我。只做……，不做……' });
+  m.body.appendChild(fWhen);
+  const fPrompt = Work.field({ label: '子智能体提示词（角色 / 边界 / 输出要求）', multiline: true, rows: 5, value: s.prompt || '' });
+  m.body.appendChild(fPrompt);
+
+  m.body.appendChild(Work.row('权限模式', Work.seg(
+    ['default', 'acceptEdits', 'plan'].map(function (p) { return { value: p, label: p }; }),
+    function () { return s.permissionMode || 'default'; }, function (v) { s.permissionMode = v; })));
+  const fTurns = Work.field({ label: tt('wAgentTurns'), value: String(s.maxTurns || 12), type: 'number', inputStyle: 'max-width: 120px;' });
+  m.body.appendChild(Work.row(tt('wAgentTurns'), fTurns.input, { sub: '模型跟随墨道（inherit）；maxTurns 设执行轮次上限' }));
+
+  const toolBox = Work.card({ gap: '6px', pad: '12px' });
+  toolBox.appendChild(Work.sectionLabel(tt('wAgentTools')));
+  toolBox.appendChild(Work.hint('SDK 工具与科研工具（mcp__chatscience__*）；Agent 委派工具不可加入（子智能体不可嵌套派生）。'));
+  sdkAll.forEach(function (name) {
+    toolBox.appendChild(checkRow(name, function () { return s.sdkTools.indexOf(name) > -1; }, function (v) {
+      if (v) { if (s.sdkTools.indexOf(name) === -1) s.sdkTools.push(name); }
+      else { const i = s.sdkTools.indexOf(name); if (i > -1) s.sdkTools.splice(i, 1); }
+    }));
+  });
+  sciAll.forEach(function (name) {
+    toolBox.appendChild(checkRow('mcp · ' + name, function () { return s.scienceTools.indexOf(name) > -1; }, function (v) {
+      if (v) { if (s.scienceTools.indexOf(name) === -1) s.scienceTools.push(name); }
+      else { const i = s.scienceTools.indexOf(name); if (i > -1) s.scienceTools.splice(i, 1); }
+    }));
+  });
+  m.body.appendChild(toolBox);
+
+  const skillBox = Work.card({ gap: '6px', pad: '12px' });
+  skillBox.appendChild(Work.sectionLabel(tt('wAgentSkills')));
+  if (!skillsList.length) skillBox.appendChild(Work.hint(tt('wAgentNoSkills')));
+  skillsList.forEach(function (sk) {
+    skillBox.appendChild(checkRow(sk.name + '（' + sk.slug + '）', function () { return s.skills.indexOf(sk.slug) > -1; }, function (v) {
+      if (v) { if (s.skills.indexOf(sk.slug) === -1) s.skills.push(sk.slug); }
+      else { const i = s.skills.indexOf(sk.slug); if (i > -1) s.skills.splice(i, 1); }
+    }));
+  });
+  m.body.appendChild(skillBox);
 }
 
 function agentCard(a, agents) {
@@ -80,8 +202,9 @@ function agentCard(a, agents) {
   const sdkN = a.tools && a.tools.sdk ? a.tools.sdk.length : -1;
   const sciOn = !!(a.tools && a.tools.builtin && a.tools.builtin.indexOf('science') > -1);
   const mcpN = a.tools && a.tools.mcp ? Object.keys(a.tools.mcp).length : 0;
+  const modelDisp = (a.modelKey && a.modelKey !== 'byok') ? 'API·绑定实例' : 'API·跟随全局';
   const metaParts = [
-    agentModelLabel(a.model || 'performance'),
+    modelDisp,
     'maxTurns ' + (a.maxTurns || 12),
     sdkN < 0 ? tt('wToolsAll') : tt('wToolsN').replace('{n}', String(sdkN))
   ];
@@ -92,7 +215,7 @@ function agentCard(a, agents) {
   card.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; margin-top: 2px;'
     + ' white-space: nowrap; overflow: hidden; text-overflow: ellipsis;', metaParts.join(' · ')));
 
-  /* 操作行 */
+  /* 操作行：墨道/墨析固定不可删除（仅编辑/复制/对话） */
   const foot = Work.el('div', 'display: flex; gap: 8px; align-items: center; margin-top: 4px;');
   foot.appendChild(Work.smallBtn(tt('wAgentChat'), function () { Work.Agents.startConversation(a); }, { primary: true }));
   foot.appendChild(Work.smallBtn(tt('wEdit'), function () { agentEditModal(a); }));
@@ -106,13 +229,7 @@ function agentCard(a, agents) {
     saveAgents(agents, true);
   }));
   foot.appendChild(Work.el('div', 'flex: 1 1 0;'));
-  foot.appendChild(Work.smallBtn(tt('del'), function () {
-    Work.confirm(tt('wAgentDelConfirm'), function () {
-      const i = agents.indexOf(a);
-      if (i > -1) agents.splice(i, 1);
-      saveAgents(agents, true);
-    });
-  }, { danger: true }));
+  foot.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px;', '固定'));
   card.appendChild(foot);
   return card;
 }
@@ -132,7 +249,7 @@ function agentEditModal(existing) {
   const isNew = !existing;
   const a = existing ? JSON.parse(JSON.stringify(existing)) : {
     id: Work.uid('agent'), name: '', role: 'custom', description: '',
-    systemPrompt: '', model: 'performance', permissionMode: 'default', maxTurns: 12,
+    systemPrompt: '', modelKey: 'byok', permissionMode: 'default', maxTurns: 12,
     tools: { sdk: WorkState._sdkDefaults || ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash', 'WebFetch', 'WebSearch', 'NotebookEdit'], builtin: ['science'], mcp: {} },
     skills: [], sandbox: { scope: 'global' }
   };
@@ -180,10 +297,19 @@ function agentEditModal(existing) {
   m.body.appendChild(Work.row(tt('wAgentRole'), Work.seg(
     AGENT_ROLES.map(function (r) { return { value: r, label: tt('wRole_' + r) || r }; }),
     function () { return a.role; }, function (v) { a.role = v; })));
-  m.body.appendChild(Work.row(tt('wAgentModel'), Work.seg(
-    ['auto', 'ultimate', 'performance', 'efficient', 'lite'].map(function (t) { return { value: t, label: agentModelLabel(t) }; }),
-    function () { return a.model || 'performance'; }, function (v) { a.model = v; })));
-  m.body.appendChild(Work.hint('档位即思考强度：lite ≈ 关闭 · efficient ≈ 低 · performance ≈ 中 · ultimate ≈ 高；auto 由系统自动。'));
+  /* 模型：从用户在 Qoder 注册的 BYOK 模型中选择（凭据存 Qoder 服务端） */
+  const byokList = WorkState.byokModels || [];
+  const modelOpts = [{ value: 'byok', label: '跟随全局（激活模型）' }];
+  byokList.forEach(function (bm) {
+    modelOpts.push({ value: bm.model, label: (bm.displayName || bm.model) + '（' + bm.provider + '）' });
+  });
+  if (byokList.length) {
+    m.body.appendChild(Work.row(tt('wAgentModel') + '（API）', Work.seg(
+      modelOpts, function () { return a.modelKey || 'byok'; }, function (v) { a.modelKey = v; })));
+    m.body.appendChild(Work.hint('API 模型：调用走你在 Qoder 注册的 BYOK 凭据，不消耗平台 credits。'));
+  } else {
+    m.body.appendChild(Work.hint('尚未检测到已注册的 API Key 模型——请在 Qoder 客户端「设置 → 模型」配置自带模型后重启应用；在此之前智能体无法执行任务。'));
+  }
   m.body.appendChild(Work.row(tt('wAgentPerm'), Work.seg(
     ['default', 'acceptEdits', 'auto', 'plan'].map(function (p) { return { value: p, label: p }; }),
     function () { return a.permissionMode || 'default'; }, function (v) { a.permissionMode = v; })));
@@ -276,6 +402,8 @@ Work.Agents = {
       draft.agentId = agent.id;
     }
     activeConvId = 'draft';
+    /* 设置页内挂载：先关设置页再进入对话（否则视图切换发生在遮罩之后，看似"点了没反应"） */
+    if (typeof settingsOpen !== 'undefined' && settingsOpen && typeof closeSettings === 'function') closeSettings();
     view = 'chat';
     renderConversations();
     renderMessages();

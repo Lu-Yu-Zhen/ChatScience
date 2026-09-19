@@ -83,7 +83,7 @@ function renderMcp(holder, servers) {
         const row = Work.el('div', 'display: flex; align-items: center; gap: 10px; padding: 10px 12px;'
             + ' background: var(--surface); border: 1px solid var(--border); border-radius: 10px;'
             + ' transition: border-color 0.15s ease;');
-        row.addEventListener('mouseenter', function () { row.style.borderColor = '#94A3B8'; });
+        row.addEventListener('mouseenter', function () { row.style.borderColor = 'var(--focus-border)'; });
         row.addEventListener('mouseleave', function () { row.style.borderColor = 'var(--border)'; });
         row.appendChild(Work.statusDot(s.enabled === false ? 'idle' : 'ok'));
         row.appendChild(Work.el('div', 'color: var(--text-1); font-size: 12.5px; font-weight: 600; font-family: var(--mono); flex-shrink: 0;', s.key));

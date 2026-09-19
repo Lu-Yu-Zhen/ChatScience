@@ -273,7 +273,10 @@ function createSandbox(appRoot, opts) {
         }
         else {
             cmd = proc.IS_WIN ? (process.env.ComSpec || 'cmd.exe') : '/bin/sh';
-            args = proc.IS_WIN ? ['/d', '/s', '/c', '"' + scriptPath + '"'] : [scriptPath];
+            /* 修正：不再手写外层引号——node 会按需为含空格参数加引号；
+               手写引号会被 node 的命令行转义变成 \"...\"，导致 cmd 找不到脚本
+               （验证 exe 时发现的遗留 bug，dev/node 环境同样存在） */
+            args = proc.IS_WIN ? ['/d', '/s', '/c', scriptPath] : [scriptPath];
         }
         if (req.args && req.args.length)
             args = args.concat(req.args.map(String));

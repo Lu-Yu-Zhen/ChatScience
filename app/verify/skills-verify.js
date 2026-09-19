@@ -63,7 +63,9 @@ async function main() {
     /* ① 列表 */
     const list = await api('GET', '/api/work/skills');
     const skills = list.skills || [];
-    record('1a', '内建技能数量 = 12', skills.length === 12, '实际 ' + skills.length + ': ' + skills.map(function (s) { return s.slug; }).join(','));
+    /* 基线更新（04 策划案 C2 落地）：12 内建 + 5 新增（research-decompose / causal-variables /
+       simulation-assumption / stats-interpretation / academic-writing）= 17 */
+    record('1a', '内建技能数量 = 17', skills.length === 17, '实际 ' + skills.length + ': ' + skills.map(function (s) { return s.slug; }).join(','));
     record('1b', '元数据完整（name/description/builtin）', skills.every(function (s) { return s.name && s.description && s.builtin === true; }), '');
     const slugs = skills.map(function (s) { return s.slug; });
     record('1c', 'MindSpore / 精读 / 曲线诊断等关键技能在场', ['mindspore-repro', 'paper-deep-read', 'loss-curve-analysis', 'model-arch-analysis', 'experiment-log'].every(function (k) { return slugs.indexOf(k) > -1; }), '');

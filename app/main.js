@@ -51,11 +51,14 @@ const TOKEN = crypto.randomBytes(24).toString('hex');
 let PORT = PORT_CANDIDATES[0];
 const DATA_DIR = path.join(__dirname, 'data');
 const STATE_FILE = path.join(DATA_DIR, 'state.json');
-/* 验证通道：设置 CS_REMOTE_DEBUGGING_PORT 环境变量时启用 CDP 远程调试，
-   供打包版自动化 UI 验证连接（普通用户不受影响） */
-if (process.env.CS_REMOTE_DEBUGGING_PORT) {
-    electron_1.app.commandLine.appendSwitch('remote-debugging-port', process.env.CS_REMOTE_DEBUGGING_PORT);
+/* 启动诊断标记（定位打包版静默退出用；常驻保留，成本一行日志）
+   注：CDP 远程调试由启动参数 --remote-debugging-port=<port> 控制（appendSwitch
+   对此类早期开关不生效），验证脚本 exe-verify.ts 以命令行参数传入。 */
+try {
+    fs.mkdirSync(path.join(__dirname, 'data'), { recursive: true });
+    fs.appendFileSync(path.join(__dirname, 'data', 'boot-marker.log'), new Date().toISOString() + ' main.js loaded pid=' + process.pid + '\n');
 }
+catch (e) { /* 忽略 */ }
 let win = null;
 let tray = null;
 let alwaysOnTop = false;
@@ -95,13 +98,34 @@ function flushState() {
     }
 }
 /* ---------------- IPC 白名单 ---------------- */
+/* 通知抑制决策：仅在用户「不在看应用」时提醒。
+   - 置顶窗口：用户明确保持可见，任务完成不打扰 → 不通知
+   - 任一窗口前台聚焦：用户正在交互（会话中）→ 不通知
+   - 其余（后台失焦 / 最小化 / 隐藏到托盘）→ 通知提醒任务完成 */
+function shouldNotify() {
+    if (alwaysOnTop)
+        return false;
+    const wins = []
+        .concat(win, childWins)
+        .filter((w) => !!w && !w.isDestroyed());
+    if (!wins.length)
+        return true;
+    return !wins.some((w) => w.isVisible() && w.isFocused());
+}
 electron_1.ipcMain.on('state:get', (event) => { event.returnValue = readState(); });
 electron_1.ipcMain.on('state:save', (event, json) => { writeState(String(json || '')); event.returnValue = true; });
 electron_1.ipcMain.on('notify', (event, payload) => {
     try {
         const p = payload || {};
-        if (electron_1.Notification.isSupported())
+        const desc = String(p.title || '') + ' / ' + String(p.body || '').slice(0, 40);
+        if (!shouldNotify()) {
+            appendLog('notify suppressed: ' + desc);
+            return;
+        }
+        if (electron_1.Notification.isSupported()) {
             new electron_1.Notification({ title: String(p.title || 'ChatScience'), body: String(p.body || ''), silent: false }).show();
+            appendLog('notify shown: ' + desc);
+        }
     }
     catch (e) { /* 忽略 */ }
 });
@@ -122,6 +146,23 @@ electron_1.ipcMain.handle('cs:select-directory', async () => {
     catch (e) {
         /* 不吞错：失败原因回传渲染端 toast，同时落日志 */
         appendLog('select-directory failed: ' + e.message);
+        return { error: e.message };
+    }
+});
+/* 打开本地文件夹（设置页「记忆」的打开按钮）。shell.openPath，失败原因回传渲染端 */
+electron_1.ipcMain.handle('cs:open-path', async (_e, p) => {
+    const target = String(p || '');
+    try {
+        if (!target || !path.isAbsolute(target))
+            return { error: '非法路径' };
+        const st = fs.statSync(target);
+        if (!st.isDirectory())
+            return { error: '不是目录' };
+        const r = await electron_1.shell.openPath(target);
+        return r ? { error: r } : { ok: true };
+    }
+    catch (e) {
+        appendLog('open-path failed: ' + e.message);
         return { error: e.message };
     }
 });
@@ -257,8 +298,16 @@ function createChildWindow() {
         childWins.splice(i, 1); });
 }
 /* ---------------- 启动 ---------------- */
+/* Windows 通知身份：AUMID 指向自身 exe（便携应用官方做法），
+   配合 rcedit 写入的 FileDescription/ProductName（见 pack.ts），
+   系统通知横幅即显示「ChatScience」名称与应用图标，而非 "Electron" 默认身份。 */
+electron_1.app.setAppUserModelId(process.execPath);
 /* 单实例：重复双击 exe 时唤起已有窗口（配合关窗到托盘的常驻设计） */
 const gotLock = electron_1.app.requestSingleInstanceLock();
+try {
+    fs.appendFileSync(path.join(__dirname, 'data', 'boot-marker.log'), new Date().toISOString() + ' lock=' + gotLock + '\n');
+}
+catch (e) { /* 忽略 */ }
 if (!gotLock) {
     electron_1.app.quit();
 }

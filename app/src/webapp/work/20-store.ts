@@ -11,6 +11,8 @@
 const WorkState = {
   loaded: false,          /* 是否已尝试拉取（无论成败） */
   agents: [],
+  subagents: [],          /* 墨道子智能体（可编辑可添加不可删） */
+  byokModels: null,       /* 用户在 Qoder 注册的 BYOK 模型（启动异步缓存） */
   skills: {},             /* slug -> { enabled, order } */
   mcpServers: [],
   sandboxPolicy: {},
@@ -29,6 +31,8 @@ function ensureReady(force) {
   _readyPromise = Work.api.fetch('/api/work/bootstrap').then(function (d) {
     const w = (d && d.work) || {};
     WorkState.agents = Array.isArray(w.agents) ? w.agents : [];
+    WorkState.subagents = Array.isArray(w.subagents) ? w.subagents : [];
+    WorkState.byokModels = (d && d.byokModels) || null;
     WorkState.skills = w.skills && typeof w.skills === 'object' ? w.skills : {};
     WorkState.mcpServers = Array.isArray(w.mcpServers) ? w.mcpServers : [];
     WorkState.runHistory = Array.isArray(w.runHistory) ? w.runHistory : [];

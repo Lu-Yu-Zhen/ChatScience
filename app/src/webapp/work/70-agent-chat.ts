@@ -52,13 +52,22 @@ Work.runTurn = function (conv, aiMsg) {
   setSendBusy(true, function () { aiMsg._pausedByUser = true; if (aiMsg._run) aiMsg._run.abort(); });
   aiMsg._calls = [];
   aiMsg._reasoning = '';
+  aiMsg._reasonings = [];   /* 思考按步骤分段（trace 分组渲染） */
   aiMsg._running = true;
   aiMsg._step = 1;
   aiMsg._t0 = Date.now();
   aiMsg._agentId = agent.id;
   aiMsg.text = '';
+  /* 侧栏会话条目：执行中标记（转圈），结束后移除 */
+  if (window.csMarkRunning) window.csMarkRunning(conv.id, true);
 
   let rafPending = false;
+  /* 条件置底：仅当消息区已接近底部时跟随滚动；用户上滑阅读则停住不打扰 */
+  function stickScroll() {
+    const host = msgHost();
+    if (!host) return;
+    if (host.scrollHeight - host.scrollTop - host.clientHeight < 90) host.scrollTop = host.scrollHeight;
+  }
   function requestPaint() {
     if (rafPending) return;
     rafPending = true;
@@ -66,12 +75,13 @@ Work.runTurn = function (conv, aiMsg) {
       rafPending = false;
       const elx = rowTextEl();
       if (elx && aiMsg.text) paintStreaming(elx, aiMsg.text);
-      msgHost().scrollTop = msgHost().scrollHeight;
+      stickScroll();
     });
   }
 
   function finishRun(okFlag, errText) {
     if (typeof setSendBusy === 'function') setSendBusy(false);   /* 恢复发送键 */
+    if (window.csMarkRunning) window.csMarkRunning(conv.id, false);   /* 侧栏转圈移除 */
     Work.traceFinish(aiMsg);
     aiMsg.streaming = false;
     const elx = rowTextEl();
@@ -138,20 +148,43 @@ Work.runTurn = function (conv, aiMsg) {
           aiMsg._step = d.step;
           Work.traceRefresh(aiMsg);
           break;
-        case 'reasoning':
+        case 'reasoning': {
+          /* 思考分段：工具调用之后再次进入思考 = 新步骤开始（步骤号+1），
+             思考文本按步骤分段存储（渲染时归组到对应步骤之下） */
+          if ((aiMsg._calls || []).length > 0 && !aiMsg._inReasoning) {
+            aiMsg._step = (aiMsg._step || 1) + 1;
+            aiMsg._inReasoning = true;
+          }
+          aiMsg._reasonings = aiMsg._reasonings || [];
+          aiMsg._reasonings[aiMsg._step - 1] = (aiMsg._reasonings[aiMsg._step - 1] || '') + (d.delta || '');
           aiMsg._reasoning = (aiMsg._reasoning || '') + (d.delta || '');
           if (aiMsg._reasoningOpen) Work.traceRefresh(aiMsg);
           break;
+        }
         case 'delta':
           aiMsg.text = (aiMsg.text || '') + (d.delta || '');
           requestPaint();
           break;
-        case 'tool_start':
+        case 'tool_start': {
+          /* 子智能体统一显示英文 id（任务页面）：Agent 委派解析目标 id；
+             子智能体内部工具调用（parentToolUseId 指向该次委派）带 id 前缀 */
+          let dispName = d.name;
+          aiMsg._subAgentByCall = aiMsg._subAgentByCall || {};
+          if (d.name === 'Agent') {
+            let sid = '';
+            try { const ao = JSON.parse(d.args || '{}'); sid = ao.subagent_type || ao.agent_id || ao.agent || ''; } catch (e) { /* 参数解析失败按原名显示 */ }
+            dispName = 'Agent → ' + (sid || 'subagent');
+            aiMsg._subAgentByCall[d.callId] = sid || 'subagent';
+          } else if (d.parentToolUseId && aiMsg._subAgentByCall[d.parentToolUseId]) {
+            dispName = aiMsg._subAgentByCall[d.parentToolUseId] + ' · ' + d.name;
+          }
+          aiMsg._inReasoning = false;   /* 离开思考阶段：下一次思考将开启新步骤 */
           aiMsg._calls.push({
-            callId: d.callId, name: d.name, args: d.args, state: 'running', _open: false, step: d.step || aiMsg._step || 1
+            callId: d.callId, name: dispName, args: d.args, state: 'running', _open: false, step: d.step || aiMsg._step || 1
           });
           Work.traceRefresh(aiMsg);
           break;
+        }
         case 'tool_end': {
           const c = aiMsg._calls.find(function (x) { return x.callId === d.callId; });
           if (c) {
@@ -180,8 +213,11 @@ Work.runTurn = function (conv, aiMsg) {
           } else if (r.ok) {
             finishRun(true);
           } else {
-            aiMsg.text = (aiMsg.text || '') + '\n\n【' + tt('notifyFail') + '】' + (r.error || tt('wAgentEmpty'));
-            finishRun(false, r.error);
+            /* 具体错误透传：后端把上游失败（鉴权/配额/参数）放 errors[] 数组，
+               必须原样展示给用户，不能用「没有给出回答」掩盖真实原因 */
+            const detail = r.error || (Array.isArray(r.errors) && r.errors.length ? r.errors.join('；') : '') || tt('wAgentEmpty');
+            aiMsg.text = (aiMsg.text || '') + '\n\n【' + tt('notifyFail') + '】' + detail;
+            finishRun(false, detail);
           }
           break;
         }

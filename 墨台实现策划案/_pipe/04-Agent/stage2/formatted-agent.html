@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="docx-page-size" content="A4">
+<title>墨台 · Agent 系统设计实现策划案</title>
+<style>
+@page { @bottom-center { content: counter(page); } }
+@page cover { @bottom-center { content: none; } }
+section[role="cover"] { page: cover; }
+
+:root {
+  --fs-h1: 20pt;
+  --fs-h2: 11pt;
+  --fs-h3: 10pt;
+  --fs-h4: 9pt;
+  --fs-body: 9pt;
+  --fs-small: 8pt;
+  --fs-tiny: 7pt;
+  --ff-heading: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-body: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-mono: Consolas, Source Code Pro, monospace;
+  --lh-body: 1.6;
+  --lh-title: 1.3;
+  --fw-bold: 700;
+  --fw-em: 500;
+  --fw-normal: 400;
+
+  --color-primary: #1565C0;
+  --color-secondary: #0288D1;
+  --color-accent: #00897B;
+  --color-text: #212121;
+  --color-heading: #1A237E;
+  --color-muted: #616161;
+  --color-border: #E0E0E0;
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F7FA;
+  --color-divider: #E0E0E0;
+  --color-danger: #C62828;
+  --color-emphasis: #C62828;
+  --color-success: #2E7D32;
+  --color-warn: #B26A00;
+  --color-code-bg: #F5F7FA;
+
+  --spacing-paragraph: 0.75em;
+  --spacing-section: 2.5em;
+  --spacing-block: 1.5em;
+  --spacing-card: 1.5em;
+  --margin-page: 2.5cm;
+  --page-content-width: 15.6cm;
+  --radius-card: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------- cover ---------------- */
+section[role="cover"] { padding: 0; }
+.cover-inner { padding: 4.2cm 0 0 0; }
+.cover-category {
+  font-family: var(--ff-heading); font-size: var(--fs-small);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  letter-spacing: 0.18em; text-align: left; margin-bottom: 1.1em;
+}
+.cover-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); text-align: left; margin-bottom: 0.55em;
+}
+.cover-subtitle {
+  font-size: var(--fs-h3); color: var(--color-muted);
+  text-align: left; line-height: 1.5; margin-bottom: 2.6em;
+}
+.cover-info { width: 100%; border-collapse: collapse; margin-top: 2.4cm; }
+.cover-info td {
+  padding: 0.42em 0; font-size: var(--fs-small);
+  color: var(--color-muted); border-bottom: 1px solid var(--color-divider);
+  text-align: left;
+}
+.cover-info td:first-child {
+  width: 6.2em; color: var(--color-text); font-weight: var(--fw-em);
+}
+.cover-foot {
+  margin-top: 1.6cm; font-size: var(--fs-tiny); color: var(--color-muted);
+  text-align: left;
+}
+
+/* ---------------- body ---------------- */
+.body-wrap { padding: 0; }
+h1 {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-bottom: 0.8em;
+}
+h2 {
+  font-family: var(--ff-heading); font-size: var(--fs-h2);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-top: 1.9em; margin-bottom: 0.62em;
+  padding-bottom: 0.22em; border-bottom: 1px solid var(--color-divider);
+}
+h3 {
+  font-family: var(--ff-heading); font-size: var(--fs-h3);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  margin-top: 1.35em; margin-bottom: 0.5em;
+}
+h4 {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-text);
+  margin-top: 1.05em; margin-bottom: 0.4em;
+}
+p { margin-bottom: var(--spacing-paragraph); text-align: left; }
+ul, ol { margin: 0 0 var(--spacing-paragraph) 1.5em; }
+li { margin-bottom: 0.32em; line-height: var(--lh-body); }
+strong { font-weight: var(--fw-bold); color: var(--color-heading); }
+code {
+  font-family: var(--ff-mono); font-size: 0.92em;
+  background: var(--color-code-bg); padding: 1px 4px;
+  border-radius: 3px; color: var(--color-heading);
+}
+pre {
+  background: var(--color-code-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card); padding: 0.72em 0.9em;
+  margin-bottom: var(--spacing-paragraph); overflow-x: auto;
+}
+pre code { background: none; padding: 0; font-size: 0.86em; }
+
+/* ---------------- toc ---------------- */
+.doc-toc {
+  margin-bottom: 1.8em; padding: 1.05em 1.2em;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.toc-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  margin-bottom: 0.6em;
+}
+.toc-list, .toc-list ol, .toc-list ul { list-style: none; list-style-type: none;
+  padding-left: 0; margin: 0; }
+.toc-list li { margin-bottom: 0.3em; text-indent: 0; font-size: var(--fs-small); }
+.toc-list a { color: var(--color-primary); text-decoration: none; }
+
+/* ---------------- table ---------------- */
+.doc-table {
+  width: 100%; border-collapse: collapse; margin-bottom: var(--spacing-block);
+  table-layout: fixed; font-size: var(--fs-small);
+}
+.doc-table th {
+  background: var(--color-primary); color: #FFFFFF;
+  font-family: var(--ff-heading); font-weight: var(--fw-bold);
+  padding: 0.5em 0.62em; border: 1px solid var(--color-primary);
+  text-align: left; font-size: var(--fs-tiny);
+}
+.doc-table td {
+  padding: 0.46em 0.62em; border: 1px solid var(--color-border);
+  vertical-align: top; text-align: left; word-wrap: break-word;
+}
+.doc-table tbody tr:nth-child(even) td { background: var(--color-surface); }
+
+/* ---------------- callout ---------------- */
+.callout {
+  margin-bottom: var(--spacing-paragraph);
+  padding: 0.62em 0.85em 0.62em 0.9em;
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface);
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+}
+.callout--warning {
+  border-left-color: var(--color-warn); background: #FFFBEB;
+}
+.callout--danger {
+  border-left-color: var(--color-danger); background: #FEF2F2;
+}
+
+/* ---------------- misc ---------------- */
+section[role="body"] { padding: 0; }
+h2 + p, h3 + p, h4 + p { text-align: left; }
+</style>
+</head>
+<body>
+<section role="cover">
+  <div class="cover-inner">
+    <p class="cover-category">PRODUCT IMPLEMENTATION PLAN · 04</p>
+    <h1 class="cover-title">墨台 · Agent 系统设计实现策划案</h1>
+    <p class="cover-subtitle">墨道运行时、SDK 接入、权限模型、工具生态与演进路线图</p>
+    <table class="cover-info"><tr><td>文档主题</td><td>Agent 系统（墨道）设计</td></tr><tr><td>产品名称</td><td>墨台 / 墨道（ChatScience）</td></tr><tr><td>基准原则</td><td>已实现内容优先于策划案原文</td></tr><tr><td>编制依据</td><td>D:\ChatScience 项目源码实测</td></tr><tr><td>编制时间</td><td>2026 年 9 月</td></tr><tr><td>文档版本</td><td>v1.0</td></tr></table>
+    <p class="cover-foot">本策划案全部「已实现」结论均以项目源码行号为证据，冲突项一律以已实现内容为准。</p>
+  </div>
+</section>
+<section role="body" data-page-restart="1">
+<div class="body-wrap">
+<nav class="doc-toc" aria-label="文档目录"><p class="toc-title">目录</p><ol class="toc-list"><li><a href="#section-1">一、板块定位与冲突处理原则</a></li><li><a href="#section-2">二、运行架构</a></li><li><a href="#section-3">三、底座接入</a></li><li><a href="#section-4">四、智能体定义体系</a></li><li><a href="#section-5">五、模型与权限策略</a></li><li><a href="#section-6">六、工具与技能生态</a></li><li><a href="#section-7">七、上下文、会话与工作区</a></li><li><a href="#section-8">八、演进目标架构：墨道</a></li><li><a href="#section-9">九、能力边界（如实声明）</a></li><li><a href="#section-10">十、风险与应对</a></li><li><a href="#section-11">十一、实施优先级与任务拆解</a></li><li><a href="#section-12">十二、已实现 / 待实现速查总表</a></li><li><a href="#section-13">十三、修改方向与补充内容（落地清单）</a></li><li><a href="#section-14">十四、Qoder Agent SDK 官方参考（Work 模式专用）</a></li><li><a href="#section-15">十五、智能体改码执行边界（授权契约）</a></li></ol></nav><h1>墨台 · Agent 系统设计实现策划案</h1>
+<h2 id="section-1">一、板块定位与冲突处理原则</h2>
+<h3>1.1 板块范围</h3>
+<p>本板块覆盖 Work 模式的智能体系统——即策划案所称的<strong>「墨道」</strong>：Agent 运行架构、底座接入、智能体定义体系、模型与权限策略、工具生态、技能系统、上下文隔离、调度与迭代循环、会话机制、工作区模式、可观测性、能力边界。</p>
+<h3>1.2 已实现 vs 策划案：核心差异总览</h3>
+<p>这是六个板块中<strong>差异最大</strong>的一个。策划案描绘的是"墨道七类科研子智能体 + 主智能体调度 + 审辨迭代循环 + fork/检查点"的完整蓝图，而已实现的是一个<strong>基于 Qoder Agent SDK 的、以"单智能体 + 技能白名单"为核心的可用 Work 体系</strong>，且已通过 69+ 项真实验证。</p>
+<table class="doc-table"><thead><tr><th>维度</th><th>策划案设计</th><th>已实现实际</th><th>判定</th></tr></thead><tbody><tr><td>智能体数量</td><td>主智能体 + <strong>七类子智能体</strong></td><td><strong>4 个内置智能体</strong>（并列，无主从调度关系）</td><td>已实现 4 个为准，七类列为待实现</td></tr><tr><td>调度架构</td><td>主智能体<strong>动态调度</strong>子智能体，子智能体不可互相调度</td><td><strong>无调度层</strong>；用户在界面上<strong>手动选择</strong>一个智能体执行任务；SDK 内部循环驱动</td><td>以已实现为准；动态调度列为待实现</td></tr><tr><td>上下文隔离</td><td>子智能体强边界隔离，上下文单向权限，工具经主智能体审核中转</td><td><strong>无子智能体，故无隔离层</strong>；隔离体现在 <code>settingSources: []</code> + <code>strictMcpConfig</code> + <code>tools</code> 白名单（隔离本机配置污染）</td><td>已实现的隔离是"与宿主环境隔离"，非"智能体间隔离"</td></tr><tr><td>审辨迭代循环</td><td>评审智能体打分 → 不达标回环重做 → 可配置迭代上限</td><td><strong>无</strong>；Agent 单次运行至 <code>maxTurns</code> 上限即结束</td><td>待实现</td></tr><tr><td>检查点 / fork</td><td>checkpoint / rewind / fork 分支</td><td><strong>无</strong>；仅有 SDK 原生 <code>resume</code>（会话恢复）</td><td>待实现</td></tr><tr><td>模型选择</td><td>每个智能体独立选模型，<code>resolveModel</code> 回调路由</td><td><strong>模型档位系统</strong>：每个智能体可设 5 档（auto/ultimate/performance/efficient/lite），走 SDK 平台模型池</td><td>已实现档位为准；自定义模型池路由为待实现</td></tr><tr><td>工具生态</td><td>Skill（提示框架）+ 自定义工具（本地函数）+ MCP（外部程序），共 4 组 MCP</td><td><strong>6 个 in-process 科研 MCP 工具</strong> + <strong>12 个科研技能</strong> + 外部 MCP 服务器接入</td><td>已实现为准</td></tr><tr><td>会话机制</td><td>session-control + external session-storage</td><td>SDK 原生 <code>resume</code>（<code>conv.sdkSessionId</code> 持久化）</td><td>已实现 resume，其余待实现</td></tr><tr><td>记忆方式</td><td>主智能体全局上下文长期保留子智能体产出</td><td>SDK <code>resume</code> 原生多轮记忆，<strong>不手工拼历史</strong></td><td>以 SDk 原生为准</td></tr><tr><td>鉴权</td><td>—</td><td><code>server/qoder.json</code> 中的 PAT（<strong>等同账户身份</strong>）</td><td>已实现（需在文档中强调安全）</td></tr></tbody></table>
+<p><strong>冲突裁定</strong>：本板块全部以已实现为准。策划案的"墨道七类子智能体"作为<strong>演进目标架构</strong>保留（见第八章），但<strong>不得</strong>在对外文档中宣称已实现。</p>
+<h3>1.3 状态标记约定</h3>
+<p><strong>【已实现】</strong> / <strong>【部分实现】</strong> / <strong>【待实现】</strong></p>
+<div data-component="divider"></div>
+<h2 id="section-2">二、运行架构</h2>
+<h3>2.1 已实现架构全景【已实现】</h3>
+<pre><code>┌────────────────────────────────────────────────────────────────┐
+│  Work 模式入口（前端）                                          │
+│  · 用户选择：工作区 / 权限模式 / 执行智能体 / 模型档位            │
+│  · 发消息 → POST /api/work/agent/run（SSE）                     │
+└──────────────────────────┬─────────────────────────────────────┘
+                           │
+┌──────────────────────────▼─────────────────────────────────────┐
+│  runWorkTurn（qoder.ts）— Work 运行时封装层                     │
+│  ① 解析请求：agentId / permissionMode / workspaceRoot / skills   │
+│  ② 计算工具可见集（白名单过滤，隔离本机配置）                     │
+│  ③ 计算技能白名单（skills 数组）                                 │
+│  ④ 权限模式覆盖链：请求 &gt; 智能体定义 &gt; 全局配置 &gt; default        │
+│  ⑤ 装配 SDK options → 调 query()                                │
+│  ⑥ 桥接 SDK 消息 → 发射 SSE 事件                                │
+└──────────────────────────┬─────────────────────────────────────┘
+                           │
+┌──────────────────────────▼─────────────────────────────────────┐
+│  Qoder Agent SDK（@qodercn-ai/qodercn-agent-sdk@1.0.34）        │
+│  内置 qoderclicn 1.1.44 运行时                                   │
+│  Agent 循环 / 工具调用 / MCP / 模型路由 / 会话 resume / 事件流    │
+│  ⚠ 纯 ESM 包 → 动态 import() 惰性加载（loadSdk，Function 间接层） │
+└──────────────────────────┬─────────────────────────────────────┘
+                           │
+┌──────────────────────────▼─────────────────────────────────────┐
+│  墨道扩展（本产品自研部分）                                       │
+│  · 隔离三件套：settingSources:[] + strictMcpConfig + tools 白名单 │
+│  · 沙箱边界层：cwd 隔离 + canUseTool 高危拦截 + run_code 隔离执行 │
+│  · 科研扩展：buildScienceServer 注入 6 个 in-process MCP 工具     │
+│  · 技能插件：local plugin 目录（12 个内建科研技能）               │
+│  · 管理页：智能体 / 技能与插件 / 连接器 / 沙箱 / 笔记本 / 运行     │
+└────────────────────────────────────────────────────────────────┘</code></pre>
+<p><strong>策划案对照</strong>：策划案的"四层分层架构"（桌面前端层 → 墨道外挂层 → SDK 底座层 → 模型与资源层）<strong>与已实现架构结构一致</strong>。差异在于"墨道外挂层"的实际内容比策划案简化（无七子智能体、无审辨循环、无主智能体网关）。</p>
+<h3>2.2 关键设计决策【已实现】</h3>
+<table class="doc-table"><thead><tr><th>决策</th><th>内容</th><th>理由（项目记载）</th></tr></thead><tbody><tr><td><strong>不自研 Agent 循环</strong></td><td>Work 模式放弃自研 Agent 循环，改以 Qoder Agent SDK 为底座</td><td>① Agent 循环、工具调用、MCP、模型路由是通用能力，自研成本高收益低；② 聚焦科研领域价值（技能 + 沙箱 + 科研工具）</td></tr><tr><td><strong>隔离三件套（缺一不可）</strong></td><td><code>settingSources: []</code> + <code>strictMcpConfig: true</code> + <code>tools</code> 白名单</td><td><strong>实测：缺任一项，SDK 会继承本机 qoderclicn 全部配置，泄漏数百个 MCP 工具</strong></td></tr><tr><td><strong>cwd 指向沙箱</strong></td><td><code>options.cwd</code> 指向 <code>app/data/sandbox/&lt;scope&gt;/work</code></td><td>文件操作天然被限制在沙箱内；<code>global</code> 共享 / <code>conv-&lt;id&gt;</code> 会话独立</td></tr><tr><td><strong>多轮走 SDK 原生 resume</strong></td><td>用 <code>conv.sdkSessionId</code>，<strong>不手工拼历史</strong></td><td>避免上下文重复、成本浪费与不一致</td></tr><tr><td><strong>技能用 local plugin 目录</strong></td><td><code>app/server/skills-plugin</code> 播种 → <code>app/data/skills-plugin</code></td><td>支持自定义技能与热更新</td></tr><tr><td><strong>模型/权限两套独立体系</strong></td><td>SDK 五档模型档位（Work）与 Chat 的厂商模型体系<strong>互相独立</strong></td><td>两条链路各自正常</td></tr><tr><td><strong>PAT 鉴权</strong></td><td><code>server/qoder.json</code> 中的 PAT</td><td><strong>等同账户身份，需严格保管</strong></td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-3">三、底座接入</h2>
+<h3>3.1 SDK 接入实现【已实现】</h3>
+<table class="doc-table"><thead><tr><th>项</th><th>实现</th></tr></thead><tbody><tr><td>包</td><td><code>@qodercn-ai/qodercn-agent-sdk@1.0.34</code></td></tr><tr><td>内置运行时</td><td>qoderclicn <strong>1.1.44</strong></td></tr><tr><td>加载方式</td><td><strong>动态 <code>import()</code> 惰性加载</strong>（<code>loadSdk()</code>，进程内缓存一次）</td></tr><tr><td>为什么要动态加载</td><td>SDK 是<strong>纯 ESM 包</strong>，而 Electron 33 内置 Node 20 不支持 <code>require(esm)</code>；静态 require 会导致 <strong>server 完全无法启动</strong>（此故障已在打包版实际发生并修复，见后端板块 8.3）</td></tr><tr><td>tsc 陷阱与解法</td><td>tsc 会把一切 <code>import()</code>（含变量指示符）改写为 <code>require()</code> 包装 → 用 <strong>Function 间接层</strong>构造真实 <code>import()</code>，编译器无法识别</td></tr><tr><td>类型策略</td><td>SDK 类型以官方包为准（自带 <code>dist/index.d.ts</code>）；业务代码<strong>不直接 import SDK</strong>，统一经 <code>shared/qoder-sdk.ts</code> 重导出</td></tr><tr><td>值类型获取</td><td><code>type QoderSdkModule = typeof import('@qodercn-ai/qodercn-agent-sdk')</code>（纯类型引用，不触发加载）</td></tr></tbody></table>
+<h3>3.2 官方类型面【已实现】</h3>
+<p>已接入的类型（<code>type-only</code>，零运行时成本）：</p>
+<table class="doc-table"><thead><tr><th>类别</th><th>类型</th></tr></thead><tbody><tr><td>运行时</td><td><code>query</code> / <code>tool</code> / <code>createSdkMcpServer</code> / <code>accessToken</code>（经 <code>loadSdk</code> 获取）</td></tr><tr><td>核心</td><td><code>Options</code> / <code>Query</code> / <code>SDKMessage</code> 及各成员</td></tr><tr><td>权限</td><td><code>CanUseTool</code> / <code>CanUseToolOptions</code> / <code>PermissionResult</code> / <code>PermissionMode</code></td></tr><tr><td>智能体</td><td><code>AgentDefinition</code></td></tr><tr><td>MCP</td><td><code>McpServerConfig</code> 族 / <code>CallToolResult</code> / <code>ToolAnnotations</code> / <code>AnyZodRawShape</code></td></tr><tr><td>插件</td><td><code>SdkPluginConfig</code></td></tr><tr><td>鉴权</td><td><code>AuthOptions</code></td></tr></tbody></table>
+<h3>3.3 官方文档能力映射【已实现 + 待实现】</h3>
+<p>策划案列出的官方文档与用途映射，按实现状态逐项核对：</p>
+<table class="doc-table"><thead><tr><th>官方能力</th><th>策划案用途</th><th>实现状态</th></tr></thead><tbody><tr><td><code>quick-start</code></td><td>运行时初始化、流式调用最小闭环</td><td><strong>已实现</strong></td></tr><tr><td><code>session-control</code></td><td>会话恢复、接续、fork 分支、自定义会话标识</td><td><strong>部分</strong>（已实现 resume 恢复；continue/fork/自定义 sessionId 待实现）</td></tr><tr><td><code>agents</code></td><td><code>options.agents</code> 注册主智能体与七类子智能体、工具授权</td><td><strong>部分</strong>（已实现 <code>AgentDefinition</code> 注册 4 个智能体 + 工具授权；七类子智能体待实现）</td></tr><tr><td><code>mcp</code></td><td>挂载科研类 MCP 服务</td><td><strong>已实现</strong>（6 个 in-process 科研 MCP + 外部 MCP 服务器接入）</td></tr><tr><td><code>skills</code></td><td>为各智能体预加载专属科研 Skill 并支持开关</td><td><strong>已实现</strong>（12 技能 + <code>skills</code> 白名单开关）</td></tr><tr><td><code>plugins</code></td><td>以本地插件目录形式加载墨道科研外挂包</td><td><strong>已实现</strong>（local plugin 目录 + 播种）</td></tr><tr><td><code>model-policy</code></td><td><code>resolveModel</code> 按智能体独立路由模型</td><td><strong>部分</strong>（已实现 5 档模型档位；<code>resolveModel</code> 自定义路由待实现）</td></tr><tr><td><code>tools</code></td><td>区分 SDK 原生工具与墨道自定义科研工具</td><td><strong>已实现</strong>（SDK 内置 9 工具 + 6 科研工具，白名单区分）</td></tr><tr><td><code>hooks</code> / <code>events</code></td><td>捕获智能体与工具事件，实时推送前端</td><td><strong>已实现</strong>（SSE 7 类运行事件 + 工具轨迹）</td></tr><tr><td><code>security</code></td><td>权限模式与工具调用审核，支撑主智能体网关</td><td><strong>部分</strong>（已实现 5 档权限模式 + <code>canUseTool</code>；主智能体网关待实现）</td></tr><tr><td><code>checkpoint</code></td><td>文件与任务快照、回滚</td><td><strong>待实现</strong></td></tr><tr><td><code>session-storage</code></td><td>接管会话持久化，项目资料落盘与云同步</td><td><strong>部分</strong>（会话落本地；云同步待实现）</td></tr><tr><td><code>types</code> / <code>authentication</code></td><td>类型定义、身份鉴权</td><td><strong>已实现</strong></td></tr><tr><td><code>cloud-agent</code></td><td>可选云端运行时</td><td><strong>未采纳</strong>（本地优先）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-4">四、智能体定义体系</h2>
+<h3>4.1 四个内置智能体【已实现】</h3>
+<table class="doc-table"><thead><tr><th>ID</th><th>名称/定位</th><th>模型档位</th><th>已实测表现</th></tr></thead><tbody><tr><td><code>agent-general</code></td><td><strong>通用 Agent</strong></td><td>performance</td><td>默认智能体；跨域任务</td></tr><tr><td><code>agent-research</code></td><td><strong>科研助理</strong></td><td>performance</td><td>黄金路径验证通过：真实任务 → 思考过程折叠 + 工具轨迹 + 正确答案（43 / 121 / 56088 三轮）</td></tr><tr><td><code>agent-repro</code></td><td><strong>代码复现</strong></td><td>performance</td><td>界面切换实测通过（<code>conv.agentId = agent-repro</code>）</td></tr><tr><td><code>agent-analysis</code></td><td><strong>数据分析</strong></td><td>performance</td><td>已注册并可在切换器中选择</td></tr><tr><td><code>agent-discuss</code></td><td><strong>讨论</strong>（第 5 个 id）</td><td>—</td><td>已注册</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;说明：<code>BUILTIN_AGENTS</code> 定义共 5 个 id（含 <code>agent-discuss</code>），界面切换器实测显示 4 项。文档中统一表述为"内置智能体（4 项可选，含通用/科研/复现/分析）"。</p>
+<p><strong>每个智能体卡片展示的元信息【已实现】</strong>：角色 / 模型档位 / 工具数 / 技能数 / 沙箱范围标签 + 操作（对话 / 编辑 / 复制 / 删除）。</p>
+<p><strong>UI 呈现规范【已实现】</strong>：智能体卡片的彩色 tag 堆砌已改为<strong>单行弱化 meta 文本</strong>（去 AI 味改造），遵循"可点元素 cursor-pointer、过渡 150–300ms、hover 不引起布局位移"的可用性基线。</p>
+<h3>4.2 智能体定义字段【已实现】</h3>
+<p><code>AgentDefRecord</code>（定义于 <code>shared/domain.ts</code>）承载：</p>
+<table class="doc-table"><thead><tr><th>字段类</th><th>内容</th></tr></thead><tbody><tr><td>标识</td><td><code>id</code> / 名称 / 描述 / 角色</td></tr><tr><td>模型</td><td>模型档位（5 档）</td></tr><tr><td>工具</td><td>工具白名单（可见集）</td></tr><tr><td>技能</td><td>技能白名单（<code>skills</code> 数组）</td></tr><tr><td>沙箱</td><td>沙箱范围（<code>global</code> / <code>conv-&lt;id&gt;</code>）</td></tr><tr><td>权限</td><td>该智能体的默认权限模式</td></tr></tbody></table>
+<h3>4.3 种子机制【已实现】</h3>
+<table class="doc-table"><thead><tr><th>机制</th><th>实现</th><th>教训</th></tr></thead><tbody><tr><td>播种</td><td>启动时<strong>按 id 增量合并</strong>内置智能体定义</td><td>原逻辑被 <code>seeded</code> 标志拦住，导致<strong>内置智能体改名不生效</strong>；已改为每次启动执行、无变化不写盘</td></tr><tr><td>持久化</td><td><code>store.ts</code> 的 <code>agents</code> 分区</td><td>—</td></tr><tr><td>用户自定义</td><td>支持创建 / 编辑 / 复制 / 删除（<code>/api/work/agents</code> GET/PUT）</td><td>—</td></tr></tbody></table>
+<h3>4.4 待实现：七类科研子智能体【待实现】</h3>
+<p>策划案设计的七类子智能体，需按以下方式落地（保持与已实现架构兼容）。</p>
+<p><strong>关键设计约束</strong>：已实现架构是"用户直接选一个智能体执行"。七类子智能体落地时，有两种可选路径：</p>
+<table class="doc-table"><thead><tr><th>路径</th><th>方案</th><th>评估</th></tr></thead><tbody><tr><td><strong>路径 A：技能化（推荐，渐进）</strong></td><td>把七类子智能体实现为<strong>专属技能包 + 专属工具集</strong>，由主智能体按任务动态加载</td><td>与已实现的 skill 白名单机制天然兼容；成本低；可分阶段落地</td></tr><tr><td><strong>路径 B：多智能体注册（完整）</strong></td><td>用 <code>options.agents</code> 注册主智能体 + 七个子智能体，实现主智能体调度</td><td>需 SDK 支持智能体间调用与上下文隔离；需先做技术探针（见第十章风险）</td></tr></tbody></table>
+<p><strong>路径 A 的七类映射（建议）</strong>：</p>
+<table class="doc-table"><thead><tr><th>子智能体</th><th>复用已实现资产</th><th>需新增</th></tr></thead><tbody><tr><td><strong>文献调研</strong></td><td>技能：<code>lit-review</code> / <code>paper-deep-read</code> / <code>paper-repro-plan</code>&lt;br&gt;工具：<code>arxiv_search</code> / <code>fetch_url</code> / <code>kb_search</code></td><td>布尔检索式生成技能、Zotero/EndNote MCP、本地 PDF 增强解析（公式/图表/参考文献块）、GB/T 7714 / APA 引用生成</td></tr><tr><td><strong>实验设计</strong></td><td>技能：<code>ablation-design</code> / <code>experiment-log</code></td><td>假设生成、因果变量梳理（混杂/中介/调节）、统计效能计算 MCP、伦理自检</td></tr><tr><td><strong>实验仿真</strong></td><td>技能：<code>mindspore-repro</code>（最接近）</td><td>仿真假设校验、边界与网格推荐、不收敛诊断；COMSOL/LAMMPS/GROMACS MCP、仿真文件解析、集群提交</td></tr><tr><td><strong>数据分析</strong></td><td>技能：<code>data-analysis</code> / <code>loss-curve-analysis</code> / <code>figure-plot</code>&lt;br&gt;工具：<code>run_code</code>（沙箱）</td><td>统计方法匹配、缺失异常处理、相关与因果边界标注；学术绘图 MCP</td></tr><tr><td><strong>文稿撰写</strong></td><td>技能：<code>thesis-audit</code>（部分）</td><td>IMRaD 范式、中英学术改写、结构一致性；期刊模板 MCP、Word/Markdown 导出、文献插入</td></tr><tr><td><strong>结果评审</strong></td><td>技能：<code>thesis-audit</code>（核心）</td><td>论点证据匹配、引用核验、逻辑与伦理审查、多维打分；文献溯源核对、文本查重（可选）</td></tr><tr><td><strong>资料归档</strong></td><td>技能：<code>experiment-log</code>（部分）&lt;br&gt;工具：<code>note_write</code>（笔记本联动已实现）</td><td>自动分类、知识片段提取、版本快照；本地目录读写、向量知识库、团队云盘</td></tr></tbody></table>
+<p><strong>已实现技能与七类的覆盖关系</strong>：12 个内建技能已覆盖七类的大部分需求（详见第六章），这是"路径 A"成本低的根本原因。</p>
+<div data-component="divider"></div>
+<h2 id="section-5">五、模型与权限策略</h2>
+<h3>5.1 模型档位（五档）【已实现】</h3>
+<table class="doc-table"><thead><tr><th>项</th><th>实现</th></tr></thead><tbody><tr><td>档位</td><td><code>MODEL_TIERS = ['auto', 'ultimate', 'performance', 'efficient', 'lite']</code></td></tr><tr><td>归属</td><td><strong>SDK 平台模型池</strong>（Work 线路）</td></tr><tr><td>与 Chat 独立</td><td><strong>是的</strong>——Chat 走厂商模型体系（8 家 Provider + 用户可配置模型），Work 走 SDK 五档。<strong>两套链路各自正常，互不影响</strong>（已实测确认）</td></tr><tr><td>校验与回落</td><td>档位不合法时回落至 <code>agentDef.model</code>（智能体定义中的档位）</td></tr><tr><td>UI</td><td>无边框下拉（门户方案）；空列表时显示「正在加载智能体…」并 <code>Work.ready(true)</code> 强制重拉</td></tr></tbody></table>
+<h3>5.2 与策划案的差异【待实现】</h3>
+<table class="doc-table"><thead><tr><th>策划案要求</th><th>现状</th></tr></thead><tbody><tr><td>每个智能体独立选择模型（含主智能体与全部子智能体）</td><td><strong>部分实现</strong>：可设 5 档；但档位是 SDK 平台池的抽象，非"指定具体模型名"</td></tr><tr><td>未指定时继承主智能体模型</td><td><strong>部分实现</strong>：<code>auto</code> 档位承担继承语义</td></tr><tr><td>借助 <code>resolveModel</code> 回调按智能体标识返回对应模型</td><td><strong>待实现</strong></td></tr><tr><td>模型池由设置页统一维护，涵盖<strong>云端 API 模型与本地模型</strong>，所有智能体共享</td><td><strong>部分实现</strong>：Chat 链路已有模型配置 UI（8 家 Provider）；<strong>本地模型未接入</strong></td></tr><tr><td><strong>节点级覆盖 + 类型级预设</strong></td><td><strong>待实现</strong>（无节点概念）</td></tr><tr><td><code>temperature</code> / <code>top_p</code> 遵循同样继承规则</td><td><strong>待实现</strong></td></tr><tr><td>工作流模板持久化模型选择（"跟随主智能体" / "固定模型"标记）</td><td><strong>待实现</strong></td></tr><tr><td>多智能体选高性能模型时给出<strong>成本与显存提示</strong></td><td><strong>待实现</strong></td></tr><tr><td>运行日志记录每次调用的<strong>模型名称</strong>（便于成本追溯）</td><td><strong>部分实现</strong>（<code>server.log</code> 记录 <code>model=&lt;m&gt;</code>；Work 运行的模型名需补全）</td></tr></tbody></table>
+<h3>5.3 权限模式（五档）【已实现】</h3>
+<table class="doc-table"><thead><tr><th>档位</th><th>SDK 名称</th><th>语义</th></tr></thead><tbody><tr><td>1</td><td><code>default</code></td><td>默认确认（每个高危操作需确认）</td></tr><tr><td>2</td><td><code>acceptEdits</code></td><td>自动接受编辑</td></tr><tr><td>3</td><td><code>auto</code></td><td>自动执行</td></tr><tr><td>4</td><td><code>plan</code></td><td>计划模式</td></tr><tr><td>5</td><td><code>dontAsk</code></td><td>免确认</td></tr></tbody></table>
+<p><strong>覆盖链【已实现】</strong>：<code>请求 &gt; 智能体定义 &gt; 全局配置 &gt; default</code></p>
+<p><strong>持久化【已实现】</strong>：按会话持久化（<code>conv.permissionMode</code>），请求体带 <code>permissionMode</code>（已用 fetch 钩子实测确认 <code>body.permissionMode = "auto"</code>）。</p>
+<p><strong>UI【已实现】</strong>：位于 Work 输入栏"工作区"与"Agent 选择器"之间的无边框下拉。<strong>重要修复经验</strong>：该下拉曾"点击无响应"，是<strong>两层根因</strong>——</p>
+<ol><li><code>.dropdown-menu</code> 默认 <code>opacity: 0</code> + <code>pointer-events: none</code>（父级未挂 <code>.open</code>）</li><li><code>.input-box</code> 的 <code>overflow-y: auto</code> <strong>裁剪</strong>了向上弹出的绝对定位菜单（<code>elementFromPoint</code> 实测命中 textarea）</li></ol>
+<p><strong>解法</strong>：新增 <code>openDropdownMenu</code> / <code>closeDropdownMenu</code> <strong>门户</strong>（打开时挂 <code>body</code> + <code>position: fixed</code> 动态定位，关闭时归位），perm 与 agentSelect 两个菜单均接入。</p>
+<h3>5.4 待实现【待实现】</h3>
+<table class="doc-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>主智能体权限网关</td><td>策划案要求"工具与文件访问统一由主智能体审核中转，形成唯一权限网关与审计点"</td></tr><tr><td>授权弹窗通道</td><td>后端 <code>canUseTool</code> 需支持"待人工决策"状态（配合前端阻塞弹窗，见前端板块 5.5）</td></tr><tr><td>工具调用审计日志</td><td>记录调用方 / 对象 / 参数摘要 / 结果 / 时间</td></tr><tr><td>权限模式与档位绑定</td><td>免费档强制更严的权限模式</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-6">六、工具与技能生态</h2>
+<h3>6.1 三层工具生态【已实现】</h3>
+<table class="doc-table"><thead><tr><th>层</th><th>内容</th><th>数量</th></tr></thead><tbody><tr><td>SDK 原生工具</td><td><code>SDK_BUILTIN_DEFAULT</code>：Read / Write / Edit / Glob / Grep / Bash / WebFetch / WebSearch / NotebookEdit</td><td><strong>9 个</strong></td></tr><tr><td><strong>in-process 科研 MCP 工具</strong></td><td><code>buildScienceServer</code> 注入（<code>chatscience</code> 服务器）</td><td><strong>6 个</strong></td></tr><tr><td>外部 MCP 服务器</td><td>用户可配置接入（<code>/api/work/mcp/servers</code>）</td><td>用户定义</td></tr></tbody></table>
+<p><strong>工具可见集过滤【已实现】</strong>：只保留白名单内的内置工具（<code>qoder.ts</code> 按 <code>tools</code> 数组过滤）。</p>
+<p><strong>策划案的三类概念映射【已实现】</strong>：</p>
+<ul><li><strong>Skill</strong>（推理侧能力，以提示框架与结构化输出规则封装）→ 12 个科研技能</li><li><strong>自定义工具</strong>（本地执行的函数）→ <code>run_code</code> + 部分工具；其余见待实现</li><li><strong>MCP</strong>（对接外部程序与资源的标准协议服务）→ 6 个 in-process 科研工具 + 外部 MCP</li></ul>
+<h3>6.2 六个科研 MCP 工具【已实现】</h3>
+<table class="doc-table"><thead><tr><th>工具</th><th>功能</th><th>已验证表现</th></tr></thead><tbody><tr><td><code>arxiv_search</code></td><td>arXiv 文献检索</td><td>外网检索命中 3 篇（Gated Sparse Attention 等）</td></tr><tr><td><code>fetch_url</code></td><td>网页抓取</td><td>已实现</td></tr><tr><td><code>web_search</code></td><td>网页搜索</td><td>已实现（<strong>依赖 DuckDuckGo HTML 抓取，较脆弱</strong>）</td></tr><tr><td><code>kb_search</code></td><td>知识库检索（BM25）</td><td>Agent 会话内真实命中；BM25 相关性排序正确</td></tr><tr><td><code>note_write</code></td><td>写研究笔记</td><td>落盘 <code>source=agent</code>；与前端笔记本双向联动（Agent 写的笔记立即可见可编辑）</td></tr><tr><td><code>run_code</code></td><td>沙箱内执行代码</td><td>真实 python 执行（实测 <code>RESULT:42</code>）；cwd 随工作区切换</td></tr></tbody></table>
+<p><strong>技术实现要点【已实现】</strong>：</p>
+<ul><li>经 SDK <code>createSdkMcpServer</code> <strong>in-process</strong> 注入（无进程开销）</li><li>工具 schema 用 <strong>zod</strong>（官方文档 <code>tool()</code> 即 Zod raw shape 用法）</li><li>修复记录：<code>buildScienceServer(sdk, {...})</code> 曾因<strong>实参顺序错</strong>导致科学 MCP 全部不可用 → 签名为 <code>(sciCtx, sdk)</code>，调用点已纠正</li></ul>
+<h3>6.3 MCP 元工具调用机制【已实现 — 重要边界】</h3>
+<table class="doc-table"><thead><tr><th>机制</th><th>说明</th></tr></thead><tbody><tr><td>元工具调用</td><td>本机 CLI 1.1.44 的 MCP 工具经 <strong><code>mcp_get</code> / <code>mcp_call</code></strong> 元工具间接调用（先发现后调用）</td></tr><tr><td>直接命名</td><td><code>mcp__server__tool</code> 形式的命名<strong>同时声明在工具清单中</strong></td></tr><tr><td>实测轨迹</td><td>界面轨迹中可见 <code>mcp_get</code> / <code>mcp_call</code> 条目</td></tr></tbody></table>
+<h3>6.4 十二个内建科研技能【已实现】</h3>
+<p>技能以 <code>SKILL.md</code> + <code>scripts/</code> + <code>references/</code> + <code>assets/</code> 的目录结构组织，位于 <code>server/skills-plugin/skills/</code>。</p>
+<table class="doc-table"><thead><tr><th>#</th><th>技能</th><th>职责</th><th>附带资源</th></tr></thead><tbody><tr><td>1</td><td><code>lit-review</code></td><td>文献综述（检索式与综述组织）</td><td><code>scripts/bib_export.py</code>、<code>references/query_patterns.md</code></td></tr><tr><td>2</td><td><code>paper-deep-read</code></td><td>论文精读（结构化笔记）</td><td><code>references/note_template.md</code></td></tr><tr><td>3</td><td><code>paper-repro-plan</code></td><td>论文复现计划</td><td><code>references/plan_and_checklist.md</code></td></tr><tr><td>4</td><td><code>model-arch-analysis</code></td><td>模型架构分析（参数量估算）</td><td><code>scripts/estimator.py</code></td></tr><tr><td>5</td><td><code>formula-derivation</code></td><td>公式推导（含梯度校验）</td><td><code>scripts/grad_check.py</code></td></tr><tr><td>6</td><td><code>loss-curve-analysis</code></td><td>训练日志/Loss 曲线诊断</td><td><code>scripts/diagnose.py</code></td></tr><tr><td>7</td><td><code>ablation-design</code></td><td>消融实验设计</td><td><code>scripts/aggregate_results.py</code></td></tr><tr><td>8</td><td><code>experiment-log</code></td><td>实验记录（环境采集）</td><td><code>scripts/env_capture.py</code></td></tr><tr><td>9</td><td><code>data-analysis</code></td><td>数据分析（统计检验）</td><td><code>scripts/stat_tests.py</code></td></tr><tr><td>10</td><td><code>figure-plot</code></td><td>学术绘图</td><td><code>scripts/paper_style.py</code>、<code>references/plot_templates.py</code></td></tr><tr><td>11</td><td><code>thesis-audit</code></td><td>论文审校</td><td><code>scripts/audit.py</code></td></tr><tr><td>12</td><td><code>mindspore-repro</code></td><td>MindSpore 复现（昇腾生态）</td><td><code>scripts/env_probe.py</code>、<code>layer_align_check.py</code>；<code>assets/</code> 四个模板（dataset/model/train/eval）；<code>references/api_mapping.md</code></td></tr></tbody></table>
+<p><strong>技能系统能力【已实现】</strong>：</p>
+<table class="doc-table"><thead><tr><th>能力</th><th>实现</th></tr></thead><tbody><tr><td>全量发现</td><td>12 技能全量解析（验证 10/10 通过）</td></tr><tr><td>builtin 标记</td><td>正确标记内建技能</td></tr><tr><td>自定义技能</td><td>SKILL.md 落盘 / 编辑 / 删除（CRUD 完整）</td></tr><tr><td><strong>启用白名单端到端</strong></td><td><code>store.states</code> → <code>agentDef.skills</code> → SDK <code>init.skills</code> 出现 <code>chatscience-skills:&lt;name&gt;</code>（已实测）</td></tr><tr><td>工具可见集一致</td><td>工具可见集与技能白名单一致</td></tr><tr><td>插件目录</td><td>SDK local plugin（<code>app/server/skills-plugin</code> 播种 → <code>app/data/skills-plugin</code>）</td></tr><tr><td>UI</td><td>技能卡 builtin/custom 用<strong>灰色小字</strong>（去彩色堆砌）</td></tr></tbody></table>
+<p><strong>重要边界【已实现声明】</strong>：</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong><code>init.skills</code> 是发现报告</strong>——含本机用户级技能（实测 <strong>54 项</strong>），<strong>仅发现不注入上下文</strong>；上下文与调用由 <code>skills</code> 数组白名单限制。</p>
+<h3>6.5 待实现：策划案的技能与工具补充【待实现】</h3>
+<table class="doc-table"><thead><tr><th>类别</th><th>策划案要求</th><th>现状</th></tr></thead><tbody><tr><td><strong>科研 Skill</strong></td><td>科研问题分解 / 文献批判性阅读 / 因果变量梳理 / 仿真假设校验 / 统计审慎解读 / 学术写作范式 / 审稿对标</td><td><strong>部分覆盖</strong>（审稿对标≈<code>thesis-audit</code>；文献批判性阅读≈<code>paper-deep-read</code>；其余 5 项待新增）</td></tr><tr><td><strong>自定义科研工具</strong></td><td>DOI 自动生成 BibTeX 与 GB/T 7714 引用 / LaTeX 公式解析与校验 / 科研单位换算 / 变量与文件命名规范化 / 由表格或图片自动生成图表注 / 研究关键词与同义词扩展</td><td><strong>待实现</strong>（6 个本地函数工具，均为纯本地计算，实现成本低）</td></tr><tr><td><strong>MCP · 文献类</strong></td><td>本地 PDF 增强解析（公式、图表、参考文献块）、按 DOI 取元数据、Zotero/Mendeley 双向同步</td><td><strong>待实现</strong></td></tr><tr><td><strong>MCP · 实验仿真类</strong></td><td>仿真输入文件生成、仿真输出解析、电子实验记录、远程集群任务提交</td><td><strong>待实现</strong></td></tr><tr><td><strong>MCP · 数据处理类</strong></td><td>科研表格清洗、科研图像基础标注、统计检验与效能计算、Jupyter 沙箱</td><td><strong>部分</strong>（<code>run_code</code> 即 Jupyter 式沙箱；表格清洗/图像标注/统计效能待实现）</td></tr><tr><td><strong>MCP · 知识库类</strong></td><td>项目私有向量库、项目快照打包、团队云盘同步</td><td><strong>待实现</strong>（向量库见后端板块 6.3）</td></tr><tr><td>能力—智能体授权绑定</td><td>规定哪些智能体可申请调用哪项能力</td><td><strong>部分实现</strong>（工具/技能白名单已具备该能力，但未显式以"授权清单"形式呈现）</td></tr><tr><td>第三方扩展标准目录与清单格式</td><td>允许高级用户接入自定义 MCP 与 Skill；<strong>默认关闭、显式授权后才可见</strong></td><td><strong>部分实现</strong>（自定义技能已支持；第三方 MCP 已有接入端点，但"默认关闭 + 显式授权"流程需完善）</td></tr></tbody></table>
+<h3>6.6 待实现：MCP 稳定性与安全【待实现】</h3>
+<p>策划案要求"为每个 MCP 设置<strong>超时、熔断与错误回传</strong>，默认最小授权、危险操作强制人工确认并留审计"。</p>
+<table class="doc-table"><thead><tr><th>项</th><th>状态</th></tr></thead><tbody><tr><td>工具级超时</td><td><strong>部分</strong>（沙箱有超时；MCP 调用无独立超时）</td></tr><tr><td>熔断</td><td><strong>待实现</strong></td></tr><tr><td>错误回传</td><td><strong>部分</strong>（拒绝原因回给模型已实现）</td></tr><tr><td>审计</td><td><strong>待实现</strong>（见后端板块 10.2）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-7">七、上下文、会话与工作区</h2>
+<h3>7.1 上下文隔离（已实现层）【已实现】</h3>
+<p>已实现的隔离是<strong>与宿主环境的隔离</strong>，这是最关键的安全边界：</p>
+<table class="doc-table"><thead><tr><th>隔离项</th><th>配置</th><th>缺失后果（实测）</th></tr></thead><tbody><tr><td>配置源隔离</td><td><code>settingSources: []</code></td><td>继承本机 qoderclicn 全部配置</td></tr><tr><td>MCP 严格模式</td><td><code>strictMcpConfig: true</code></td><td>泄漏数百个本机 MCP 工具</td></tr><tr><td>工具白名单</td><td><code>tools</code> 数组</td><td>工具可见集不受控</td></tr><tr><td>工作目录隔离</td><td><code>options.cwd = &lt;sandbox&gt;/work</code></td><td>Agent 可访问任意目录</td></tr><tr><td>写入守卫</td><td><code>canUseTool</code> 路径白名单</td><td>可越界写入</td></tr><tr><td>技能注入隔离</td><td><code>skills</code> 数组白名单</td><td>54 项本机技能全部注入上下文</td></tr></tbody></table>
+<p><strong>已验证【已实现】</strong>：工具列表隔离（不含本机任何 MCP 泄漏）——<code>sdk-verify.js</code> 12/12 通过。</p>
+<h3>7.2 待实现：智能体间上下文隔离【待实现】</h3>
+<p>策划案第 6.4 条的隔离设计（<strong>强边界隔离与单向上下文权限</strong>），核心机制：</p>
+<table class="doc-table"><thead><tr><th>设计要点</th><th>内容</th></tr></thead><tbody><tr><td>独立上下文</td><td>子智能体各自拥有独立会话与局部上下文</td></tr><tr><td>不可直连</td><td>子智能体之间不能直接通信，也不能直接读取主智能体完整上下文</td></tr><tr><td>按需下发</td><td>子智能体只收到主智能体裁剪后的当前任务与必要材料片段</td></tr><tr><td>全局视角</td><td>主智能体掌握用户消息、项目文件与全部子智能体产出</td></tr><tr><td><strong>唯一网关</strong></td><td>子智能体的工具/文件访问请求必须向主智能体申请，由主智能体权限校验 + 审计后代理调用</td></tr><tr><td>六步信息流转</td><td>① 用户输入 → 主智能体全局上下文；② 主智能体裁剪任务 → 目标子智能体；③ 子智能体推理，工具请求上报主智能体；④ 主智能体校验并代调 MCP，回传结果；⑤ 子智能体交回成果与局部日志；⑥ 局部上下文冻结/销毁，产出由主智能体长期保留</td></tr><tr><td>信息不足处理</td><td>子智能体只能向主智能体申请，由主智能体判断是否授权并转发片段</td></tr></tbody></table>
+<p><strong>四点收益（策划案论述）</strong>：防无关信息污染；集中权限管控以拦截危险文件操作；按需裁剪降低 Token 开销；为审辨迭代留存完整可追溯记录。</p>
+<p><strong>实施约束</strong>：该设计依赖 SDK 的智能体间调用与上下文控制能力。<strong>必须先做技术探针验证</strong>（见第十章风险一），若受限则退化为"预设模板 + 局部动态"方案。</p>
+<h3>7.3 工作区模式【已实现】</h3>
+<table class="doc-table"><thead><tr><th>能力</th><th>实现</th></tr></thead><tbody><tr><td>会话绑定工作区</td><td>Electron <code>dialog.showOpenDialog</code> 选文件夹 → 自动创建 Work 项目（<code>mode:'work'</code> + <code>folder</code>）并绑定当前会话</td></tr><tr><td>SDK cwd 切换</td><td><code>options.cwd</code> 指向工作区</td></tr><tr><td>run_code cwd 切换</td><td>透传 <code>workspaceRoot</code>，<strong>进程 cwd 用工作区</strong>（此为本轮修复项：原 run_code 在工作区模式下 cwd 仍为沙箱目录）</td></tr><tr><td>写入守卫根切换</td><td><code>canUseTool</code> 的写入守卫根同步切换为工作区（越界写拒绝）</td></tr><tr><td>危险命令拦截</td><td>保留（工作区模式下不放松）</td></tr><tr><td><strong>不污染工作区</strong></td><td><code>_run_*.py</code> 等运行脚本仍写沙箱目录</td></tr><tr><td>产物 diff</td><td>工作区模式<strong>限深 2</strong>（避免全量扫描大目录；原全量扫描大目录是风险）</td></tr><tr><td>工作区扫描</td><td><code>/api/fs/list</code>（深度 3、跳过 <code>node_modules</code>/<code>.git</code> 等、上限 400）</td></tr><tr><td>文件读取</td><td><code>/api/fs/raw</code>（≤64MB，供阅读器实时读取；实测 1.79MB PDF 打开渲染 47 页）</td></tr><tr><td>项目文件区</td><td>仅 pdf/docx/md/html（<strong>按用户要求不含 png/jpg/txt</strong>）</td></tr><tr><td>数据库区</td><td>xlsx/xls/csv</td></tr><tr><td>工作区标注</td><td>文件行标注「工作区」</td></tr><tr><td>验证</td><td><code>workspace-verify.js</code> <strong>5/5 通过</strong>（含用户文件未被改动的 mtime/size 一致性核对）</td></tr></tbody></table>
+<h3>7.4 会话机制【部分实现】</h3>
+<table class="doc-table"><thead><tr><th>策划案能力</th><th>现状</th></tr></thead><tbody><tr><td><code>resume</code> 恢复历史会话</td><td><strong>已实现</strong>（<code>conv.sdkSessionId</code> 持久化；实测第二回合 resume 精确回忆 <code>-0.1572</code>）</td></tr><tr><td><code>continue</code> 接续最近任务</td><td><strong>部分</strong>（同会话续跑即接续，实测 sessionId 相同）</td></tr><tr><td><code>fork</code> 从当前节点分出平行分支</td><td><strong>待实现</strong></td></tr><tr><td><code>checkpoint</code> / <code>rewind</code> 回退到任意迭代点</td><td><strong>待实现</strong></td></tr><tr><td><code>external session-storage</code> 接管持久化</td><td><strong>部分</strong>（会话落本地 <code>data/work.json</code>）</td></tr><tr><td>项目作为顶层会话分组</td><td><strong>已实现</strong>（项目 → 多个 Chat 会话 + 多条 Work 工作流会话）</td></tr><tr><td>子智能体独立子会话</td><td><strong>不适用</strong>（无子智能体）</td></tr><tr><td>会话加密</td><td><strong>待实现</strong></td></tr><tr><td>运行期 events 流式推送</td><td><strong>已实现</strong></td></tr></tbody></table>
+<h3>7.5 运行可观测性【已实现】</h3>
+<table class="doc-table"><thead><tr><th>能力</th><th>实现</th></tr></thead><tbody><tr><td>SSE 事件序列</td><td><code>run_start</code> → <code>notice</code> / <code>delta</code> / <code>reasoning</code> / <code>tool_start</code> / <code>tool_end</code> → <code>run_end</code> / <code>aborted</code></td></tr><tr><td>工具轨迹 trace</td><td>左侧 1px 竖向导轨 + 节点圆点（running 呼吸 / ok 灰 / error 红）；等宽工具名 + 参数摘要 + 右对齐耗时；点击展开输入/响应面板</td></tr><tr><td>步骤汇总条</td><td>「步骤 N · M 次工具调用 · T」</td></tr><tr><td>思考过程折叠</td><td><code>reasoning</code> 增量 → 折叠块（12px 小字，<code>max-height: 240px</code>）</td></tr><tr><td>状态行</td><td>运行中显示「正在执行…」（已修复运行结束后未移除的缺陷）</td></tr><tr><td>中断 / 暂停</td><td>发送键变「暂停生成」；<code>_pausedByUser</code> 标记使中断渲染为「已中断」而非裸错误</td></tr><tr><td>运行历史</td><td>「运行」菜单查看当前与历史任务的完整记录</td></tr><tr><td>无静默假成功</td><td>失败时如实显示【AI 回复失败】</td></tr><tr><td>连通性自检</td><td><code>/api/work/qoder/ping</code>（<code>settingSources:[]</code> + <code>strictMcpConfig:true</code> + <code>tools:[]</code>）</td></tr></tbody></table>
+<p><strong>已验证的黄金路径【已实现】</strong>：科研助理 → 对话 → 真实任务 → 思考过程折叠块 + <code>mcp_get</code> / <code>mcp_call</code> 工具轨迹 + 状态行 → 正确答案（43 / 121 / 56088 三轮）。</p>
+<h3>7.6 笔记联动【已实现】</h3>
+<table class="doc-table"><thead><tr><th>能力</th><th>实现</th></tr></thead><tbody><tr><td>Agent <code>note_write</code></td><td>落盘 <code>source=agent</code></td></tr><tr><td>前端笔记本</td><td>Agent 写的「最小注意力实验」立即可见可编辑</td></tr><tr><td>Jupyter 化</td><td>单元格模型（markdown/code）、<code>In[n]:</code> 提示、类型徽章、单元格工具</td></tr><tr><td>兼容</td><td>Agent 只写 <code>content</code> 时后端<strong>自动追加为 markdown 单元格</strong>（读写双向兼容）</td></tr><tr><td>分组</td><td>项目笔记本 / 对话笔记本 / 独立（<code>scopeKey</code> 持久化）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-8">八、演进目标架构：墨道</h2>
+<p>本章给出策划案"墨道"完整愿景的落地路径——这是<strong>待实现</strong>部分，需在对外文档中明确标注。</p>
+<h3>8.1 五环节抽象</h3>
+<p>策划案把一次完整科研活动抽象为<strong>「察故、分役、试证、合论、审辨」</strong>五个环节：</p>
+<table class="doc-table"><thead><tr><th>环节</th><th>含义</th><th>已实现对应</th></tr></thead><tbody><tr><td><strong>察故</strong></td><td>理解任务与已有材料</td><td>部分（Agent 读文件 + <code>kb_search</code>）</td></tr><tr><td><strong>分役</strong></td><td>拆解并分派子任务</td><td><strong>待实现</strong>（现由 SDK 内部循环自行拆解）</td></tr><tr><td><strong>试证</strong></td><td>子智能体调用专业工具执行</td><td><strong>已实现</strong>（6 科研工具 + 沙箱 + 12 技能）</td></tr><tr><td><strong>合论</strong></td><td>汇总结果</td><td>部分（Agent 自行汇总）</td></tr><tr><td><strong>审辨</strong></td><td>评审智能体校验，不达标回环迭代</td><td><strong>待实现</strong></td></tr></tbody></table>
+<h3>8.2 主智能体设计（待实现）</h3>
+<p>策划案的三类职责：</p>
+<table class="doc-table"><thead><tr><th>职责</th><th>内容</th><th>落地方式</th></tr></thead><tbody><tr><td><strong>意图识别与动态路由</strong></td><td>判断任务属简单/中度/复杂，据此决定自行完成、调用少量子智能体还是启动完整墨道循环，"绝不机械地为每个任务都拉起全部子智能体"</td><td>意图分类（可为轻量分类器或主模型 system prompt 约束）→ 路由表</td></tr><tr><td><strong>通用能力池</strong></td><td>内置 PPT 制作、通用报告、通用程序设计、跨文档整合摘要等科研之外的能力</td><td>新增通用技能包；PPT 生成可复用现有文档能力（或接 <code>tencent-pptx</code> 类能力）</td></tr><tr><td><strong>全局上下文管理与权限网关</strong></td><td>唯一有权调度子智能体、调用全局 MCP、审核工具请求的角色</td><td>需 SDK 支持智能体调度 + 工具代理（技术探针前置）</td></tr></tbody></table>
+<p><strong>三分支路由策略【待实现】</strong>：</p>
+<table class="doc-table"><thead><tr><th>分支</th><th>判定</th><th>行为</th></tr></thead><tbody><tr><td>简单任务</td><td>如解释一个概念</td><td>主智能体<strong>直接回答</strong>，不唤起任何子智能体</td></tr><tr><td>中度任务</td><td>如检索若干篇文献</td><td>只调用<strong>一个或少数几个</strong>子智能体</td></tr><tr><td>复杂任务</td><td>如设计实验、做仿真、分析数据、写稿并评审</td><td><strong>串联多个子智能体</strong>并进入审辨迭代</td></tr><tr><td>混合任务</td><td>如先仿真产出结果再生成汇报 PPT</td><td><strong>先科研、后通用</strong>：仿真与数据智能体产出 → 交回主智能体 → 用自身 PPT 能力生成汇报</td></tr></tbody></table>
+<p><strong>子智能体之间不互相调度</strong>，调度权唯一归属主智能体。</p>
+<h3>8.3 审辨迭代循环（待实现）</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>设计</th></tr></thead><tbody><tr><td>循环结构</td><td>察故 → 分役 → 试证 → 合论 → <strong>评审打分</strong> → 达标则交付 / 不达标则<strong>依据缺陷重裁剪上下文、回环重做对应环节</strong></td></tr><tr><td>迭代上限</td><td><strong>可配置</strong>；受档位控制（免费与入门档位设上限，高阶档位不限）</td></tr><tr><td>动态调度</td><td>主智能体可在中途动态拉起或取消子智能体（如执行到一半发现需补文献时临时调用文献调研智能体）——体现"<strong>按需调度而非固定模板</strong>"</td></tr><tr><td>评审产出</td><td>结构化评审意见 + 评分 + 缺陷清单</td></tr><tr><td>触发条件</td><td>评分低于阈值</td></tr></tbody></table>
+<p><strong>策划案的档位映射</strong>：免费档受限；49/89 档上限 5 次；139 及以上不限。</p>
+<h3>8.4 落地路线图【待实现】</h3>
+<table class="doc-table"><thead><tr><th>阶段</th><th>交付</th><th>关键验证</th></tr></thead><tbody><tr><td><strong>A. 探针</strong></td><td>SDK 能力探针：动态增删子智能体、子会话、运行时改上下文、智能体间调用</td><td>确认哪些能力可用；若受限则定为"预设模板 + 局部动态"方案</td></tr><tr><td><strong>B. 技能化七类</strong></td><td>七类子智能体以<strong>专属技能包 + 专属工具集</strong>形式落地（路径 A）</td><td>每类可独立完成其环节任务</td></tr><tr><td><strong>C. 主智能体路由</strong></td><td>意图分类 + 三分支路由 + 通用能力池</td><td>简单任务不误拉起全部智能体（成本可控）</td></tr><tr><td><strong>D. 评审与迭代</strong></td><td>评审智能体 + 迭代循环 + 迭代上限（档位控制）</td><td>迭代收敛；不达标能正确回环</td></tr><tr><td><strong>E. 上下文网关</strong></td><td>主智能体作为唯一权限网关 + 智能体间隔离 + 审计</td><td>工具/文件访问经网关；无越权</td></tr><tr><td><strong>F. 会话能力</strong></td><td>fork / checkpoint / rewind</td><td>分支对比不同参数方案；回退到任意迭代点</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-9">九、能力边界（如实声明）</h2>
+<p><strong>【已实现 — 建议在对外文档中完整保留】</strong></p>
+<p>以下边界已在项目验证报告中明确声明，这是产品诚信的体现，<strong>不应在宣传中隐去或模糊</strong>：</p>
+<table class="doc-table"><thead><tr><th>边界</th><th>说明</th><th>影响</th></tr></thead><tbody><tr><td><strong><code>canUseTool</code> 对 Bash 的拦截可被绕过</strong></td><td>静态扫描命令文本，"防误操作不防有意绕过"；需要硬隔离的执行走 <code>run_code</code>（独立进程沙箱）</td><td>安全定位需准确表述为"防误操作"，非"沙箱隔离"</td></tr><tr><td><strong>沙箱进程级无资源上限</strong></td><td>无 Job Object，<code>usage.peakRssKb</code> 恒为 null（<strong>字段留位但不谎报</strong>）；只有超时 / 并发 / 输出 / 文件大小上限</td><td>恶意代码可耗尽 CPU/内存</td></tr><tr><td><strong>声明式断网不可强制</strong></td><td>代理黑洞 + socket/net 阻断 + 可选静态导入拦截；<strong>ctypes 与原生扩展仍可联网</strong></td><td>不能作为网络隔离保证</td></tr><tr><td><strong><code>kb_search</code> 是词法检索（BM25）</strong></td><td>非语义检索，同义改述会漏召回；返回 score 供模型判断</td><td>检索召回率受限</td></tr><tr><td><strong>MCP 经元工具调用</strong></td><td>经 <code>mcp_get</code> / <code>mcp_call</code> 元工具间接调用（先发现后调用）；直接 <code>mcp__server__tool</code> 命名同时声明在工具清单中</td><td>多一跳开销</td></tr><tr><td><strong><code>init.skills</code> 是发现报告</strong></td><td>含本机用户级技能（实测 54 项），<strong>仅发现不注入上下文</strong>；上下文与调用由 <code>skills</code> 白名单限制</td><td>需正确理解"发现"≠"启用"</td></tr><tr><td><strong>简单算术可能不调工具</strong></td><td>模型对平凡问题可能直接回答（<strong>预期行为，非缺陷</strong>）</td><td>—</td></tr><tr><td>SDK 暂停中途抛内部错误</td><td>SDK worker 在工具调用中途被用户暂停时抛内部 <code>state is not defined</code></td><td>前端已按「已中断」呈现；不影响后续会话</td></tr><tr><td><strong>模型侧重复循环</strong></td><td>实测模型（qwen3.8-max-0902）在写文件任务中出现 Write/Read 重复循环，触发 <code>maxTurns=16</code> 上限</td><td>前端如实显示【AI 回复失败】，<strong>无静默假成功</strong></td></tr><tr><td>两套模型链路</td><td>Work 走 Qoder 平台模型（<code>MODEL_TIERS</code>）；Chat 走厂商模型</td><td>需在文档与 UI 中讲清，避免用户困惑</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-10">十、风险与应对</h2>
+<p><strong>【已实现的风险清单，来自策划案 9.2 + 项目实测】</strong></p>
+<table class="doc-table"><thead><tr><th>#</th><th>风险</th><th>已实测证据</th><th>应对</th></tr></thead><tbody><tr><td>1</td><td><strong>SDK 扩展能力上限</strong></td><td>动态增删子智能体、子会话互通、运行时改上下文等能力受底座接口约束</td><td><strong>Alpha 阶段优先做技术探针验证</strong>；若运行时动态编排受限，退化为"预设模板 + 局部动态"方案（即第八章路径 A）</td></tr><tr><td>2</td><td><strong>上下文与 Token 成本</strong></td><td>实测 TTFT 16.2s（17.2 万字符上下文）</td><td>墨道层做<strong>摘要压缩与按需裁剪</strong>，只下发必要片段；独立模型选择让简单环节用低成本模型</td></tr><tr><td>3</td><td><strong>MCP 稳定性与安全</strong></td><td>webSearch 依赖 DuckDuckGo HTML 抓取（脆弱）；MCP 无独立超时/熔断</td><td>为每个 MCP 设<strong>超时、熔断与错误回传</strong>；默认最小授权；危险操作强制人工确认并留审计</td></tr><tr><td>4</td><td><strong>桌面资源占用</strong></td><td>无 Job Object；<code>peakRssKb</code> 不可得</td><td>资源占用提示；后台进程可控释放；云端运行时备选</td></tr><tr><td>5</td><td><strong>模型重复循环</strong></td><td>实测触发 <code>maxTurns=16</code> 上限（Write/Read 循环）</td><td>前端如实呈现失败；可优化为循环检测提示；提高上限需权衡成本</td></tr><tr><td>6</td><td><strong>商业化转化</strong></td><td>计费体系零实现</td><td>通过签到积分与免费 Work 体验降低门槛（详见订阅板块）</td></tr><tr><td>7</td><td><strong>两套模型链路的心智负担</strong></td><td>Work 与 Chat 模型体系独立</td><td>UI 明确标注当前链路；文档讲清</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-11">十一、实施优先级与任务拆解</h2>
+<h3>阶段一（补齐现有体验，P0）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td>授权弹窗（后端通道 + 前端阻塞交互）</td><td>安全关键，见 5.4</td></tr><tr><td>2</td><td>工具 / MCP 调用审计日志</td><td>见 6.6</td></tr><tr><td>3</td><td>MCP 超时与熔断</td><td>见 6.6</td></tr><tr><td>4</td><td>运行日志补全模型名</td><td>见 5.2，便于成本追溯</td></tr><tr><td>5</td><td>SDK 能力技术探针</td><td>见第八章阶段 A，<strong>其余演进的前置条件</strong></td></tr><tr><td>6</td><td>6 个自定义科研工具（DOI→BibTeX、LaTeX 校验、单位换算、命名规范化、图表注、关键词扩展）</td><td>纯本地函数，成本低收益明确</td></tr></tbody></table>
+<h3>阶段二（技能化七类，P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>7</td><td>补齐 5 项科研 Skill（科研问题分解、因果变量梳理、仿真假设校验、统计审慎解读、学术写作范式）</td><td>见 6.5</td></tr><tr><td>8</td><td>七类子智能体以技能包 + 工具集形式落地</td><td>见 4.4 路径 A</td></tr><tr><td>9</td><td>文献类 MCP（PDF 增强解析、DOI 元数据、Zotero 同步）</td><td>见 6.5</td></tr><tr><td>10</td><td>数据处理类 MCP（表格清洗、统计效能）</td><td>见 6.5</td></tr><tr><td>11</td><td>能力—智能体授权清单显式化</td><td>见 6.5</td></tr></tbody></table>
+<h3>阶段三（主智能体与审辨循环，P1—P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>12</td><td>主智能体意图分类 + 三分支路由</td><td>见 8.2</td></tr><tr><td>13</td><td>主智能体通用能力池（PPT / 报告 / 通用编程 / 跨文档摘要）</td><td>见 8.2</td></tr><tr><td>14</td><td>评审智能体（多维打分 + 缺陷清单）</td><td>见 8.3</td></tr><tr><td>15</td><td>审辨迭代循环 + 迭代上限（档位控制）</td><td>见 8.3</td></tr><tr><td>16</td><td>主智能体权限网关 + 智能体间上下文隔离</td><td>见 7.2（依赖探针结论）</td></tr><tr><td>17</td><td>fork / checkpoint / rewind</td><td>见 7.4</td></tr><tr><td>18</td><td>实验仿真类 MCP + 知识库类 MCP</td><td>见 6.5</td></tr><tr><td>19</td><td>节点级 / 类型级模型预设 + 成本与显存提示</td><td>见 5.2</td></tr><tr><td>20</td><td>项目快照打包导出</td><td>见 6.5</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-12">十二、已实现 / 待实现速查总表</h2>
+<table class="doc-table"><thead><tr><th>模块</th><th>已实现</th><th>部分实现</th><th>待实现</th></tr></thead><tbody><tr><td>底座接入</td><td>SDK 1.0.34 + qoderclicn 1.1.44；动态 import 惰性加载（Function 间接层）；完整官方类型面</td><td>—</td><td>cloud-agent</td></tr><tr><td>运行架构</td><td><code>runWorkTurn</code> 封装、隔离三件套、cwd 沙箱、SSE 桥接</td><td>—</td><td>主智能体调度层</td></tr><tr><td>智能体</td><td>4 项内置（通用/科研/复现/分析）+ 自定义 CRUD + 种子增量合并</td><td>—</td><td>七类科研子智能体</td></tr><tr><td>模型策略</td><td>5 档 MODEL_TIERS，与 Chat 模型体系独立，非法档位回落</td><td>档位非具体模型名</td><td>resolveModel 自定义路由、本地模型、节点级/类型级预设、成本提示</td></tr><tr><td>权限</td><td>5 档 PERMISSION_MODES + 四层覆盖链 + 会话持久化 + 门户式下拉</td><td>—</td><td>主智能体网关、授权弹窗通道、审计</td></tr><tr><td>工具</td><td>9 SDK 内置 + 6 in-process 科研 MCP + 外部 MCP + 白名单过滤 + mcp_get/call 元工具</td><td>MCP 无独立超时</td><td>熔断、错误回传完善、审计；6 个自定义科研工具</td></tr><tr><td>技能</td><td>12 内建科研技能（含 scripts/references/assets）+ 自定义技能 CRUD + 启用白名单端到端 + builtin 标记</td><td>覆盖七类中的 5 类</td><td>5 项科研 Skill；文献/数据处理/仿真/知识库 4 组 MCP</td></tr><tr><td>上下文隔离</td><td>与宿主环境隔离（配置源/MCP/工具/cwd/写入/技能六重）——已验证无泄漏</td><td>—</td><td>智能体间隔离、主智能体唯一网关、六步信息流转</td></tr><tr><td>会话</td><td>SDK 原生 resume（多轮精确回忆）；项目—会话两级分组</td><td>continue 部分</td><td>fork、checkpoint、rewind、会话加密、云同步</td></tr><tr><td>工作区</td><td>会话绑定文件夹、cwd 同步切换、写入守卫根切换、脚本不污染、产物 diff 限深 2、扫描/读取 API、文件区分类</td><td>—</td><td>—</td></tr><tr><td>可观测性</td><td>SSE 7 类事件、时间线轨迹、步骤汇总、思考折叠、状态行、暂停/中断、运行历史、无静默假成功、ping 自检</td><td>—</td><td>用量/成本统计、审计日志</td></tr><tr><td>笔记联动</td><td>note_write ↔ Jupyter 笔记本双向兼容</td><td>—</td><td>—</td></tr><tr><td>墨道蓝图</td><td>五环节中的"试证"（工具 + 沙箱 + 技能）</td><td>察故/合论部分</td><td>分役、审辨、主智能体三职责、三分支路由、审辨迭代、能力边界声明完善</td></tr><tr><td>验证</td><td>69+ 项（sdk 12/12、agent 7/7、skills 10/10、kb 7/7、sandbox 18/18、workspace 5/5）+ 黄金路径</td><td>—</td><td>迭代循环验证、七类子智能体验证</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-13">十三、修改方向与补充内容（落地清单）</h2>
+<p>本章把前文的「待实现 / 部分实现」项收拢为可施工清单。<strong>本板块是六个板块中差距最大的</strong>：策划案描绘的「墨道七类子智能体 + 主调度 + 审辨循环 + fork/检查点」为零实现，因此本章的补充量也最大。</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>纪律前置</strong>：第十三章所列全部内容在落地并验证前，<strong>一律不得对外宣称已实现</strong>。能力边界声明的准确性是本板块的第一位要求。</p>
+<h3>13.1 修改方向总览</h3>
+<table class="doc-table"><thead><tr><th>组</th><th>主题</th><th>差距性质</th><th>优先级</th><th>前置依赖</th></tr></thead><tbody><tr><td>A</td><td>已实现能力的补齐与加固</td><td>局部缺口</td><td>P0</td><td>无</td></tr><tr><td>B</td><td>模型与权限策略深化</td><td>能力扩展</td><td>P1</td><td>无</td></tr><tr><td>C</td><td>工具与技能生态扩充</td><td>内容补充</td><td>P1</td><td>无</td></tr><tr><td>D</td><td>上下文隔离与信息流转</td><td><strong>架构级</strong></td><td>P1</td><td>B 组完成</td></tr><tr><td>E</td><td>主智能体调度与审辨循环</td><td><strong>架构级（墨道蓝图核心）</strong></td><td>P2</td><td>D 组完成</td></tr><tr><td>F</td><td>会话能力（fork/检查点/rewind）</td><td>能力扩展</td><td>P2</td><td>无</td></tr></tbody></table>
+<h3>13.2 A 组：已实现能力的补齐与加固（P0）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>现状</th><th>修改方向</th></tr></thead><tbody><tr><td>A1</td><td>MCP 独立超时</td><td>MCP 调用无独立超时（沙箱有）</td><td>为每个 MCP 调用设超时与重试上限，超时归入工具错误而非中断整个 turn</td></tr><tr><td>A2</td><td>MCP 熔断</td><td>无熔断机制</td><td>连续失败 N 次后短暂熔断该 MCP，返回明确错误而非反复重试</td></tr><tr><td>A3</td><td>工具错误回传完善</td><td>错误回传不完整</td><td>统一工具错误结构（工具名、参数摘要、错误类型、可重试性），前端时间线可展开查看</td></tr><tr><td>A4</td><td>工具审计</td><td>无审计</td><td>每次工具调用落审计记录（时间、工具、参数摘要、结果状态、耗时）</td></tr><tr><td>A5</td><td><code>continue</code> 部分会话</td><td>SDK 原生 resume 已实现，<code>continue</code> 为部分</td><td>补齐 continue 的边界场景（空会话、已结束会话、跨项目 continue）</td></tr><tr><td>A6</td><td>用量/成本统计</td><td>无</td><td>按 turn 统计 Token 与耗时，按模型计价汇总（与 03 板块用量端点、06 板块计费联动）</td></tr><tr><td>A7</td><td>档位与模型名解耦</td><td>5 档 <code>MODEL_TIERS</code> 为档位而非具体模型名</td><td>引入 <code>resolveModel</code> 映射层，档位到具体模型可由配置决定；非法档位回落逻辑保留</td></tr></tbody></table>
+<p><strong>验收方法</strong>：A1–A3 用故障注入（MCP 不响应、返回畸形数据）验证降级表现；A6 核对统计值与实际调用一致。</p>
+<h3>13.3 B 组：模型与权限策略深化（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>修改方向</th></tr></thead><tbody><tr><td>B1</td><td><code>resolveModel</code> 自定义路由</td><td>支持按智能体类型、按节点类型（规划/执行/审辨）、按成本上限路由到不同模型</td></tr><tr><td>B2</td><td>节点级/类型级预设</td><td>允许为不同执行阶段预设不同档位，例如规划用高档、执行用中档</td></tr><tr><td>B3</td><td>成本提示</td><td>发起前预估本次调用成本，超阈值时提示确认</td></tr><tr><td>B4</td><td>本地模型</td><td>接入本地模型端点，档位路由可指向本地</td></tr><tr><td>B5</td><td>权限授权弹窗通道</td><td>5 档权限已有，但缺"工具请求授权"的<strong>阻塞式交互通道</strong>（服务端暂停等待前端授权结果，超时按拒绝处理）</td></tr><tr><td>B6</td><td>权限审计</td><td>记录每次权限判定的依据链（四层覆盖链的哪一层生效）</td></tr><tr><td>B7</td><td>主智能体网关</td><td>见 D/E 组——所有子智能体的工具与模型调用须经统一网关（前置：父子智能体结构存在）</td></tr></tbody></table>
+<h3>13.4 C 组：工具与技能生态扩充（P1）</h3>
+<p><strong>现状</strong>：9 个 SDK 内置工具 + 6 个 in-process 科研 MCP + 外部 MCP + 白名单过滤 + 元工具；12 个内建科研技能覆盖七类中的 5 类。</p>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>修改方向</th></tr></thead><tbody><tr><td>C1</td><td>6 个自定义科研工具</td><td>按策划案清单补齐，纳入白名单机制</td></tr><tr><td>C2</td><td>5 项科研 Skill</td><td>补齐七类覆盖中缺失的 2 类，共 5 项</td></tr><tr><td>C3</td><td>文献 MCP</td><td>组：检索、元数据、引用格式化</td></tr><tr><td>C4</td><td>数据处理 MCP</td><td>组：表格读写、统计分析、图表生成</td></tr><tr><td>C5</td><td>仿真 MCP</td><td>组：任务提交、状态轮询、结果回收</td></tr><tr><td>C6</td><td>知识库 MCP</td><td>组：索引、检索、引用溯源（与 03 板块向量化联动）</td></tr><tr><td>C7</td><td>技能清单声明式化</td><td>与前端 02 板块 D 组联动：技能/工具的可用性由清单声明，渲染层自动派生</td></tr></tbody></table>
+<p><strong>验收方法</strong>：每个新工具/技能配一条黄金路径用例；白名单机制验证禁用项确实不可调用。</p>
+<h3>13.5 D 组：上下文隔离与信息流转（P1 — 架构级）</h3>
+<p><strong>这是最容易被误解的一项，必须澄清</strong>：</p>
+<table class="doc-table"><thead><tr><th>概念</th><th>现状</th><th>说明</th></tr></thead><tbody><tr><td><strong>与宿主环境隔离</strong></td><td><strong>已实现并验证无泄漏</strong></td><td>配置源 / MCP / 工具 / cwd / 写入 / 技能六重隔离——指<strong>智能体运行环境</strong>与本机宿主环境的隔离</td></tr><tr><td><strong>智能体间隔离</strong></td><td><strong>零实现</strong></td><td>指多个智能体之间互不可见彼此的上下文——<strong>前提是存在多个智能体实例</strong>，而当前仅单智能体运行</td></tr></tbody></table>
+<p><strong>修改方向</strong>（前提：E 组父子智能体结构建立）：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>动作</th><th>说明</th></tr></thead><tbody><tr><td>D1</td><td>建立智能体实例概念</td><td>每个子智能体有独立实例标识与独立的上下文空间</td></tr><tr><td>D2</td><td>上下文隔离</td><td>子智能体只能访问被显式传入的上下文，不能读取兄弟智能体的上下文</td></tr><tr><td>D3</td><td>主智能体唯一网关</td><td>所有跨智能体信息流动必须经主智能体，禁止子智能体直连</td></tr><tr><td>D4</td><td>六步信息流转</td><td>按策划案定义流转步骤：分派 → 取用 → 执行 → 回传 → 汇总 → 判定；每步有明确的输入输出契约</td></tr><tr><td>D5</td><td>隔离验证</td><td>建隔离测试集：尝试从子智能体读取兄弟上下文，必须失败</td></tr></tbody></table>
+<p><strong>验收方法</strong>：D5 隔离测试集全部通过，且与宿主环境隔离的既有 6 项验证<strong>继续全绿</strong>（不可回退）。</p>
+<h3>13.6 E 组：主智能体调度与审辨循环（P2 — 墨道蓝图核心）</h3>
+<p><strong>这是本板块差距最大的部分</strong>。策划案的墨道蓝图包含：分役（拆解任务给七类子智能体）、审辨（迭代校验）、主智能体三职责、三分支路由、审辨迭代循环——<strong>全部为零实现</strong>。</p>
+<table class="doc-table"><thead><tr><th>#</th><th>待建能力</th><th>说明</th></tr></thead><tbody><tr><td>E1</td><td><strong>七类科研子智能体</strong></td><td>按策划案定义补齐；每类有明确职责边界、输入输出契约、可用工具集</td></tr><tr><td>E2</td><td><strong>主智能体三职责</strong></td><td>任务拆解与分派、结果汇总与判定、异常处理与重规划</td></tr><tr><td>E3</td><td><strong>三分支路由</strong></td><td>按任务性质路由：单智能体可完成 → 直接执行；需协作 → 分派多子智能体；超出能力 → 明确拒绝并说明原因</td></tr><tr><td>E4</td><td><strong>审辨迭代循环</strong></td><td>执行结果经审辨子智能体校验，不通过则带反馈重试，设最大迭代次数与失败兜底</td></tr><tr><td>E5</td><td><strong>分役机制</strong></td><td>任务拆解为可并行/串行的子任务图，明确依赖关系</td></tr><tr><td>E6</td><td><strong>调度层</strong></td><td>子任务调度、并发控制、失败重试、中断传播（父中断则全部子任务中断）</td></tr><tr><td>E7</td><td><strong>可观测性扩展</strong></td><td>现有 SSE 7 类事件需扩展：支持多智能体并行的嵌套时间线展示</td></tr><tr><td>E8</td><td>迭代循环验证</td><td>建验证用例：含必然失败的子任务，验证审辨能捕获并触发重试，达上限后正确兜底</td></tr><tr><td>E9</td><td>七类子智能体验证</td><td>每类子智能体配黄金路径用例（当前验证仅覆盖单智能体）</td></tr></tbody></table>
+<p><strong>实施建议</strong>：E 组工作量最大且风险最高，建议<strong>分阶段</strong>——先建 E1+E2+E3（最小可用调度），验证稳定后再叠加 E4+E5+E6（迭代与并发）。每个阶段独立验证、独立交付，不做一次性大爆炸式上线。</p>
+<p><strong>验收方法</strong>：E8/E9 验证项从"待实现"转绿后，方可更新能力边界声明；<strong>在此之前对外一律表述为"规划中"</strong>。</p>
+<h3>13.7 F 组：会话能力扩展（P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>说明</th></tr></thead><tbody><tr><td>F1</td><td>fork</td><td>从某条消息分叉出新会话，继承此前的上下文</td></tr><tr><td>F2</td><td>checkpoint</td><td>在关键节点打检查点，可回到该状态</td></tr><tr><td>F3</td><td>rewind</td><td>会话回退到任意历史节点</td></tr><tr><td>F4</td><td>会话加密</td><td>本地会话内容加密存储（与账号体系联动）</td></tr><tr><td>F5</td><td>云同步</td><td>多设备会话同步（<strong>依赖账号体系，属架构级缺失</strong>）</td></tr></tbody></table>
+<p><strong>实施建议</strong>：F1–F3 可基于现有 SDK resume 机制扩展；F4/F5 依赖账号体系，建议与 06 板块团队能力一并规划。</p>
+<h3>13.8 其余补充说明</h3>
+<table class="doc-table"><thead><tr><th>补充项</th><th>说明</th></tr></thead><tbody><tr><td>cloud-agent</td><td>SDK 支持但未接入，需评估是否作为远端算力通道</td></tr><tr><td>知识库容量配额</td><td>与 06 板块权益联动</td></tr><tr><td>能力边界声明维护</td><td>现有 11 项声明需随实现推进同步更新——<strong>建议每次发版前强制复核</strong>，避免过度承诺</td></tr><tr><td>主智能体网关的权限审计</td><td>见 B7，所有经过网关的调用都需留痕</td></tr></tbody></table>
+<h3>13.9 施工顺序建议</h3>
+<pre><code>A 组（补齐加固）→ B 组（模型权限）→ C 组（生态扩充）→ D 组（隔离与流转）→ E 组（调度审辨）→ F 组（会话扩展）
+                                    ↑                        ↑
+                            可与 C 组并行            架构级，需 D 组完成</code></pre>
+<p><strong>关键纪律</strong>：</p>
+<ol><li><strong>A 组先做</strong> —— 补齐现有能力的缺口（超时、熔断、审计、错误回传）是后续所有架构扩展的地基，且风险最低、收益最快。</li><li><strong>D/E 两组必须同步维护能力边界声明</strong> —— 这是最容易出现"文档说了、代码没做"的板块。</li><li><strong>E 组分阶段交付</strong> —— 每阶段独立验证，避免长期不可用的大分支。</li></ol>
+<div data-component="divider"></div>
+<p><em>本策划案基于对 <code>D:\ChatScience\app\src\server\qoder.ts</code>、<code>shared/domain.ts</code>、<code>skills-plugin/</code> 与 <code>app/verify/验证报告.md</code> 的实测调研编制。全部"已实现"结论均以源码/验证报告为准。<strong>「墨道」七类子智能体、审辨迭代循环、fork/检查点、智能体间上下文隔离均为待实现</strong>，不得作为已实现能力对外表述。编制日期：2026 年 9 月。</em></p>
+<div data-component="divider"></div>
+<h2 id="section-14">十四、Qoder Agent SDK 官方参考（Work 模式专用）</h2>
+<h3>14.0 阅读前置与适用范围</h3>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>本章内容仅适用于 Work 模式的「墨道」开发查阅。</strong>  <strong>Chat 模式完全不涉及以下任何机制</strong>——Chat 模式不走智能体框架，只做模型 API 的直接调用。本章所列的子 Agent、MCP、Skills、Plugins、Hooks、Checkpoint、会话存储等能力，<strong>全部与 Chat 模式无关</strong>，不得被 Chat 模式引用、不得作为 Chat 模式的需求来源。  本章的唯一读者是 Work 模式「墨道」的开发者。</p>
+<p><strong>本章性质</strong>：这是<strong>官方能力上界参考</strong>，不是本项目实现现状说明。官方文档描述的是 SDK「能做什么」，而本项目实际接入的是另一个包与版本。阅读时务必区分两者。</p>
+<table class="doc-table"><thead><tr><th>维度</th><th>官方文档（本章来源）</th><th>本项目实际接入</th></tr></thead><tbody><tr><td>包名</td><td><code>@qoder-ai/qoder-agent-sdk</code>（TS）/ <code>qoder-agent-sdk</code>（Python）</td><td><code>@qodercn-ai/qodercn-agent-sdk@1.0.34</code></td></tr><tr><td>内置 CLI</td><td>qodercli</td><td>qoderclicn 1.1.44</td></tr><tr><td>文档前缀</td><td><code>https://docs.qoder.com/en/cli/sdk/</code></td><td>—</td></tr></tbody></table>
+<p><strong>关键提醒</strong>：包名不同、版本不同，<strong>不保证官方文档中的每一个 API 与字段在本项目所用版本中均存在或行为一致</strong>。凡本章内容进入实现前，必须先在 <code>@qodercn-ai/qodercn-agent-sdk@1.0.34</code> 上验证字段与方法的真实可用性。<strong>不得凭本章内容直接对外声明能力已具备</strong>——这延续第十三章「纪律前置」的要求。</p>
+<p>本章按官方文档顺序共 16 篇，逐篇给出可直接施工的要点。每篇末尾的「对墨道的落地提示」是本项目视角的解读，非官方内容。</p>
+<h3>14.1 Quick Start（快速开始）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/quick-start</code></p>
+<p><strong>环境要求</strong>：TypeScript 需 Node.js 18+；Python 需 Python 3.10+。</p>
+<p><strong>安装</strong>：</p>
+<pre><code>npm install @qoder-ai/qoder-agent-sdk</code></pre>
+<p><strong>认证</strong>：SDK 通过 PAT（个人访问令牌）认证，适用于脚本、CI 管线、第三方集成。PAT 在 <code>qoder.com/account/integrations</code> 生成——<strong>页面关闭后无法再次查看，必须立即复制</strong>。</p>
+<pre><code>export QODER_PERSONAL_ACCESS_TOKEN="&lt;your-qoder-personal-access-token&gt;"
+node agent.mjs</code></pre>
+<p>配置认证：TypeScript 用 <code>accessTokenFromEnv()</code>，Python 用 <code>access_token_from_env()</code>。</p>
+<pre><code>import { accessTokenFromEnv, query } from '@qoder-ai/qoder-agent-sdk';
+
+const stream = query({
+  prompt: 'Hello',
+  options: {
+    auth: accessTokenFromEnv(),
+  },
+});</code></pre>
+<p>SDK 在启动 qodercli 之前读取该环境变量，并把解析出的访问令牌写入一次性认证载荷。通常不需要通过 <code>env</code> 选项传 PAT；若显式提供了 <code>options.env</code>，SDK 会<strong>优先从它读取</strong>同名变量。</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>安全提示</strong>：不得在代码仓库中硬编码 PAT，只能通过环境变量或密钥管理服务注入。</p>
+<p><strong>两种输入模式</strong>：两个 SDK 均以 <code>query()</code> 为核心入口。当 <code>prompt</code> 为字符串时，一次调用提交一条用户消息，turn 结束后 SDK 关闭会话——适合一次性、无状态任务。若要在同一会话内发送多条消息、并根据响应决定下一步，则向 TypeScript 的 <code>query()</code> 传异步消息流，或用 Python 的 <code>QoderSDKClient</code> 维持长连接。</p>
+<p><strong>完整示例</strong>：</p>
+<pre><code>import { accessTokenFromEnv, query } from '@qoder-ai/qoder-agent-sdk';
+
+for await (const message of query({
+  prompt: 'Analyze the codebase, find functions without test coverage, and write unit tests for them.',
+  options: {
+    auth: accessTokenFromEnv(),
+    allowedTools: ['Read', 'Write', 'Edit', 'Glob', 'Grep', 'Bash'],
+    permissionMode: 'acceptEdits',  // Auto-approve file edits
+  },
+})) {
+  if (message.type === 'assistant') {
+    for (const block of message.message.content) {
+      if (block.type === 'text') {
+        console.log(block.text);              // AI text response
+      } else if (block.type === 'tool_use') {
+        console.log(`Tool: ${block.name}`);   // Tool being called
+      }
+    }
+  } else if (message.type === 'result') {
+    console.log(`Done: ${message.subtype}`);  // Final result
+  }
+}</code></pre>
+<p><strong>对墨道的落地提示</strong>：本项目已按此模式封装 <code>runWorkTurn</code>。示例中的 <code>message.type</code> 分支处理（<code>assistant</code> → 遍历 <code>content</code> 区分 <code>text</code> / <code>tool_use</code>；<code>result</code> → 取 <code>subtype</code>）正是 SSE 桥接层需要复刻的最小集合。<code>permissionMode: 'acceptEdits'</code> 对应本项目权限档位中的相应档位——<strong>注意 <code>acceptEdits</code> 只自动接受文件编辑，其他敏感操作仍走权限流程</strong>，这与本项目「五档权限 + 四层覆盖链」的设计兼容。</p>
+<h3>14.2 Agents / Subagents（子智能体注册 — 墨道核心）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/agents</code></p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>这是墨道最核心的一篇。</strong> 第十三章 E 组「七类科研子智能体 + 主智能体调度」的落地，几乎全部依赖本篇的 <code>options.agents</code> 机制。</p>
+<p><strong>内置子智能体</strong>：SDK 自带三个 —— <code>general-purpose</code>（通用）、<code>Explore</code>（探索）、<code>Plan</code>（规划）。用 <code>q.supportedAgents()</code> 读取当前可用列表（含插件贡献的 Agent）。</p>
+<p><strong>两种注册位置</strong>：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>作用</th></tr></thead><tbody><tr><td><code>options.agent</code></td><td>指定<strong>主会话</strong>以哪个 Agent 角色运行（把定义好的 Agent 提升为会话主体）</td></tr><tr><td><code>options.agents</code></td><td>注册<strong>自定义子智能体</strong>供主会话委派（<code>Record&lt;string, AgentDefinition&gt;</code>）</td></tr></tbody></table>
+<p><strong>AgentDefinition 全字段</strong>：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>类型</th><th>必需</th><th>说明</th></tr></thead><tbody><tr><td><code>description</code></td><td>string</td><td>是</td><td><strong>用途描述；模型据此判断何时调起该子智能体</strong>——写成「什么时候用我」而非「我是什么」</td></tr><tr><td><code>prompt</code></td><td>string</td><td>是</td><td>该子智能体的系统提示</td></tr><tr><td><code>tools</code></td><td>string[]</td><td>否</td><td>该子智能体的工具白名单</td></tr><tr><td><code>disallowedTools</code></td><td>string[]</td><td>否</td><td>从该子智能体工具集排除的工具</td></tr><tr><td><code>model</code></td><td>string</td><td>否</td><td>模型覆盖；<code>'inherit'</code> 表示继承主会话模型</td></tr><tr><td><code>maxTurns</code></td><td>number</td><td>否</td><td>该子智能体的最大 API 轮数（防失控）</td></tr><tr><td><code>effort</code></td><td>`'low' \</td><td>'medium' \</td><td>'high' \</td><td>'max'`</td><td>否</td><td>推理努力级别</td></tr><tr><td><code>permissionMode</code></td><td>PermissionMode</td><td>否</td><td>该子智能体内部工具执行的权限模式</td></tr><tr><td><code>skills</code></td><td>string[]</td><td>否</td><td><strong>预加载</strong>到该子智能体上下文的技能名称</td></tr><tr><td><code>mcpServers</code></td><td>AgentMcpServerSpec[]</td><td>否</td><td>该子智能体可用的 MCP 服务器规格</td></tr><tr><td><code>initialPrompt</code></td><td>string</td><td>否</td><td>当该子智能体<strong>作为主会话 Agent</strong>（即 <code>options.agent</code>）时自动提交的首个用户输入</td></tr></tbody></table>
+<p><strong>委派机制的关键约束</strong>：</p>
+<table class="doc-table"><thead><tr><th>约束</th><th>说明</th></tr></thead><tbody><tr><td>必须有 <code>Agent</code> 工具</td><td>主会话要想委派子智能体，其 <code>tools</code> 中<strong>必须包含 <code>Agent</code> 工具</strong>，否则委派能力不存在</td></tr><tr><td>上下文独立</td><td>子智能体使用独立上下文，<strong>不接收父会话的完整历史</strong>；父会话传给它的核心信息是 <code>Agent</code> 工具调用的任务提示</td></tr><tr><td>工具结果不回灌</td><td>子智能体的中间工具结果<strong>不会直接进入父会话</strong>，只有它返回的最终结果进入</td></tr><tr><td>不可嵌套</td><td><strong>子智能体不能衍生自己的子智能体</strong>——因此不要在任何子智能体的 <code>tools</code> 中放 <code>Agent</code></td></tr><tr><td><code>initialPrompt</code> 范围</td><td>仅对 <code>options.agent</code> 指定的<strong>主会话 Agent</strong> 生效，普通子智能体不适用</td></tr></tbody></table>
+<p><strong>对墨道的落地提示</strong>：这是第十三章 D 组（上下文隔离与信息流转）与 E 组（主智能体调度）<strong>唯一的实现基础</strong>。三点必须写进设计：</p>
+<ol><li><strong>硬性约束</strong>——子智能体的 <code>tools</code> 一律不得含 <code>Agent</code>（不可嵌套）；主会话的 <code>tools</code> 必须含 <code>Agent</code>（否则无法委派）。这是 D3「主智能体唯一网关」在 SDK 层面的天然支撑：子智能体直连其他子智能体在能力上就不成立。</li><li><strong><code>description</code> 即路由依据</strong>——E 组「七类子智能体」能否被正确分派，取决于每类的 <code>description</code> 是否清晰描写了「何时用我」。建议把它当作路由质量的<strong>第一等验收指标</strong>，而非文档装饰。</li><li><strong><code>maxTurns</code> 必设</strong>——E4「审辨循环」的最大迭代次数、E6「失败兜底」都需要防失控，<code>maxTurns</code> 是第一道闸。</li><li><code>skills</code> 字段（预加载技能）与第十四章「十二个内建科研技能」直接衔接——可用它为每类子智能体预设专属技能集，替代全局技能白名单。详见 14.4。</li></ol>
+<h3>14.3 MCP Integration（MCP 集成）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/mcp</code></p>
+<p><strong>三种传输方式</strong>：</p>
+<table class="doc-table"><thead><tr><th>传输</th><th>配置形态</th><th>适用场景</th></tr></thead><tbody><tr><td><code>'sdk'</code></td><td>in-process，<code>createSdkMcpServer()</code> + <code>tool()</code>（Python 用 <code>@tool()</code> + <code>create_sdk_mcp_server()</code>）</td><td><strong>本项目六个科研 MCP 工具走的就是这条路</strong></td></tr><tr><td><code>'stdio'</code></td><td>本地子进程，含 <code>command</code> / <code>args</code> / <code>env</code></td><td>外部本地 MCP 服务器</td></tr><tr><td><code>'sse'</code> / <code>'http'</code></td><td>远端 URL + <code>headers</code></td><td>远端 MCP 服务器</td></tr></tbody></table>
+<p><strong>工具命名规则</strong>（贯穿全 SDK）：</p>
+<pre><code>mcp__{serverName}__{toolName}</code></pre>
+<p>例：服务器名 <code>orders</code> + 工具名 <code>lookup_order</code> → <code>mcp__orders__lookup_order</code>。<strong>该全名用于工具白/黑名单、权限回调、hooks 匹配器、子智能体 <code>tools</code> 配置</strong>——凡是配置工具名的地方都用全名。</p>
+<p><strong>三层工具控制的语义区别</strong>（极易混淆，必须分清）：</p>
+<table class="doc-table"><thead><tr><th>手段</th><th>语义</th><th>后果</th></tr></thead><tbody><tr><td><code>tools</code></td><td><strong>可见性允许列表</strong></td><td>不在列表中的工具<strong>根本不会提供给模型</strong>（模型看不到）</td></tr><tr><td><code>allowedTools</code></td><td><strong>预批准</strong></td><td>工具可见，但匹配即跳过授权提示</td></tr><tr><td><code>disallowedTools</code></td><td><strong>拒绝</strong></td><td>匹配即拒绝；<strong>优先级高于 allow</strong></td></tr></tbody></table>
+<p>三者可组合。MCP 服务器级还有 <code>allowedMcpServerNames</code>（服务器白名单）与 <code>strictMcpConfig</code>（严格配置校验）。</p>
+<p><strong>MCP 工具注解（annotations）</strong>：<code>readOnlyHint</code>（只读）、<code>destructiveHint</code>（破坏性）、<code>openWorldHint</code>（开放世界）。这些提示可被上层用于权限决策与 UI 展示。</p>
+<p><strong>错误约定</strong>：MCP 工具<strong>应当返回 <code>isError: true</code> 而不是抛异常</strong>——抛异常会破坏协议链路。</p>
+<p><strong>OAuth 双路径</strong>：</p>
+<table class="doc-table"><thead><tr><th>路径</th><th>机制</th><th>适用</th></tr></thead><tbody><tr><td>CLI 驱动</td><td><code>mcpAuthenticate</code> 运行时方法</td><td>TypeScript 侧主动发起</td></tr><tr><td>服务器驱动</td><td>elicit URL + <code>onElicitation</code> 回调</td><td>Python 侧 <code>on_mcp_oauth_required</code> 入站回调</td></tr></tbody></table>
+<p>Elicitation 支持 <strong>form 模式</strong>（表单填写）与 <strong>url 模式</strong>（跳转授权）。</p>
+<p><strong>运行时方法与缓存破坏原则</strong>：MCP 状态、工具列表等在会话内有缓存；<strong>增删 MCP 服务器后必须走破坏缓存的路径（如 <code>reloadPlugins</code> 或 MCP 状态刷新），否则模型侧看到的仍是旧的工具集</strong>。</p>
+<p><strong>对墨道的落地提示</strong>：本项目「6 个 in-process 科研 MCP + 外部 MCP + 白名单过滤 + <code>mcp_get</code>/<code>mcp_call</code> 元工具」的结构与官方一致。三点改进建议：</p>
+<ol><li><strong>回归 <code>isError</code> 语义</strong>——MCP 元工具调用机制与第十三章 A3「工具错误回传完善」应对齐 <code>isError: true</code> 约定，避免异常穿透。</li><li><strong>补齐工具注解</strong>——为 6 个科研 MCP 工具补 <code>readOnlyHint</code> / <code>destructiveHint</code>，使权限层与 UI 能区分「读文献」与「写产物」。</li><li><strong>注意工具名全名规则</strong>——白名单与权限规则一律写全名 <code>mcp__&lt;server&gt;__&lt;tool&gt;</code>，这是 A3/A4 审计记录里应落库的键。</li></ol>
+<h3>14.4 Skills（技能）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/skills</code></p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>最容易踩坑的一篇。</strong> 官方文档此处存在多处反直觉设计。</p>
+<p><strong>第一硬约束 —— SDK 永远加 <code>--disable-builtin-skills</code></strong>：</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>SDK 模式下内置技能永不加载，且没有任何 opt-in 开关。</strong></p>
+<p>这与 CLI 交互式使用完全不同。含义：<strong>如果你希望某些能力通过技能暴露，就必须由你自己通过 <code>options.skills</code> 显式提供</strong>——不能依赖内置技能兜底。</p>
+<p><strong><code>options.skills</code> 的三种形态</strong>：</p>
+<table class="doc-table"><thead><tr><th>取值</th><th>行为</th></tr></thead><tbody><tr><td><code>'all'</code></td><td>启用<strong>全部已发现</strong>的技能</td></tr><tr><td><code>string[]</code></td><td>启用指定技能（<strong>限定名规则见下</strong>）</td></tr><tr><td><code>[]</code></td><td><strong>禁用全部技能</strong></td></tr></tbody></table>
+<p><strong>插件技能的限定名</strong>：插件贡献的技能注册为 <code>plugin:skill</code> 形式，配置时必须用限定名，否则匹配不上。</p>
+<p><strong><code>skillOverrides</code> 的四个档位</strong>：</p>
+<table class="doc-table"><thead><tr><th>值</th><th>含义</th></tr></thead><tbody><tr><td><code>'on'</code></td><td>完整启用</td></tr><tr><td><code>'name-only'</code></td><td>仅暴露名称（不注入完整技能内容）</td></tr><tr><td><code>'user-invocable-only'</code></td><td>仅允许用户显式调用（模型不可自主调用）</td></tr><tr><td><code>'off'</code></td><td>关闭</td></tr></tbody></table>
+<p><strong>极易误用的两点</strong>：</p>
+<ol><li><code>initializationResult().skills</code> 返回的是<strong>发现列表，不是可调用列表</strong>。发现 ≠ 可用。UI 要展示「当前会话实际可调用的技能」时，<strong>不能直接用这个字段</strong>。</li><li><strong>string-list 不是安全边界</strong>。用 <code>options.skills</code> 传字符串列表<strong>不等于</strong>限制了技能的权限范围——它只影响加载与否，不构成沙箱。</li></ol>
+<p><strong>Agent 级 <code>skills</code></strong>：<code>AgentDefinition.skills</code> 为<strong>预加载</strong>语义——把指定技能的内容直接注入该子智能体的上下文，而非按需加载。</p>
+<p><strong>对墨道的落地提示</strong>：本项目「12 内建科研技能 + 自定义技能 CRUD + 启用白名单端到端 + builtin 标记」的设计需要按本篇校正：</p>
+<ol><li><strong><code>--disable-builtin-skills</code> 的后果要写进架构文档</strong>——本项目的 12 个技能必须是「自备技能」，且必须在 <code>options.skills</code> 中被显式列出。<strong>任何「依赖 SDK 内置技能」的隐含假设都不成立</strong>。</li><li><strong><code>builtin</code> 标记的语义需要重新定义</strong>——官方语境下「built-in」指永远不加载的那些；本项目的「builtin 标记」实为「随产品分发的自备技能」，建议改称 <code>bundled</code> 以免混淆。</li><li><strong>UI 技能列表的数据来源要改</strong>——前端若用 <code>initializationResult().skills</code> 渲染「可用技能」，会显示未启用项。应改为：以 <code>options.skills</code> 白名单为源，与发现列表求交集。</li><li><strong>不要把技能白名单当权限边界</strong>——第十三章 B 组的权限设计不得依赖 <code>options.skills</code>；真正的边界是 <code>tools</code> / <code>allowedTools</code> / <code>disallowedTools</code> / <code>permissionMode</code>（见 14.3、14.10）。</li></ol>
+<h3>14.5 Plugins（插件）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/plugins</code></p>
+<p><strong>加载方式</strong>：<code>options.plugins</code> 载入本地插件目录；SDK 将其转为 <code>--plugin-dir &lt;path&gt;</code> 启动参数，插件内的 commands、agents、skills、MCP 服务器<strong>全部参与本会话的能力发现</strong>。</p>
+<pre><code>import { query } from '@qoder-ai/qoder-agent-sdk';
+
+const q = query({
+  prompt: 'List the commands and agents contributed by the current plugins',
+  options: {
+    plugins: [
+      { type: 'local', path: '/path/to/my-plugin' },
+    ],
+  },
+});
+
+const init = await q.initializationResult();
+console.log(init.commands);
+console.log(init.agents);
+console.log(init.skills);
+
+const plugins = await q.listPlugins();
+console.log(plugins);</code></pre>
+<p>传多个插件时，<code>--plugin-dir</code> 参数<strong>按顺序写入</strong>。</p>
+<p><strong>插件目录布局</strong>：</p>
+<pre><code>my-plugin/
+  .qoder-plugin/plugin.json    # 声明 name / version / description
+  commands/                    # 斜杠命令 → 命名为 &lt;plugin&gt;:&lt;cmd&gt;
+  agents/                      # 子智能体 → 命名为 &lt;plugin&gt;:&lt;agent&gt;
+  skills/&lt;name&gt;/SKILL.md       # 技能 → 命名为 &lt;plugin&gt;:&lt;skill&gt;
+  .mcp.json                    # MCP 服务器</code></pre>
+<p><strong>容错行为（重要）</strong>：</p>
+<table class="doc-table"><thead><tr><th>情况</th><th>行为</th></tr></thead><tbody><tr><td><code>--plugin-dir</code> 路径不存在</td><td><strong>SDK 模式下静默忽略</strong>，会话仍正常初始化</td></tr><tr><td>frontmatter 或 <code>.mcp.json</code> 损坏</td><td><strong>不阻塞 init</strong>，只是损坏的命令不出现在 init 响应里</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;含义：<strong>插件加载失败是静默的</strong>。唯一显式诊断手段是 reload 后的 <code>error_count</code>。</p>
+<p><strong>会话级覆盖</strong>：<code>options.plugins</code> 加载的插件是<strong>会话作用域</strong>。若本地插件与已安装插件同名，<strong>本次会话内本地插件优先</strong>——适合插件开发、调试、灰度验证。<strong>不触碰用户的全局安装状态</strong>。</p>
+<p><strong>运行时重载</strong>：</p>
+<pre><code>const refreshed = await q.reloadPlugins();
+
+console.log(refreshed.commands);
+console.log(refreshed.agents);
+console.log(refreshed.plugins);
+console.log(refreshed.mcpServers);
+console.log(refreshed.error_count);   // 本次重载加载失败的插件数</code></pre>
+<p>典型场景：插件开发中增删 <code>commands/*.md</code> 后刷新；安装/更新插件后不重启宿主；宿主 UI 需在重载后同步展示资源。</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>Python 差异</strong>：<code>reload_plugins()</code> 仅在 <code>QoderSDKClient</code>（流式）模式下有意义；一次性 <code>query()</code> 流没有运行时控制通道。</p>
+<p><strong>返回结构</strong>：</p>
+<ul><li><code>listPlugins()</code> 返回 <code>PluginDetails[]</code>，每项含 <code>id</code> / <code>name</code> / <code>source</code> / <code>path</code> / <code>version</code> / <code>scope</code> / <code>enabled</code> / <code>canDisable</code>，以及 <code>resources</code> 汇总（<code>skills</code> / <code>agents</code> / <code>mcpServers</code> / <code>commands</code> / <code>hooks</code>）。</li><li><code>reloadPlugins()</code> 返回 <code>commands</code> / <code>agents</code> / <code>plugins</code> / <code>mcpServers</code> / <code>error_count</code>。</li><li><strong><code>initializationResult()</code> 没有稳定的插件清单字段</strong>——宿主展示插件清单<strong>应当用 <code>listPlugins()</code></strong>，不要用 init 结果的 <code>plugins</code>。</li></ul>
+<p><strong><code>options.settings</code> 的插件相关字段</strong>：<code>settings.enabledPlugins</code> 控制启用，<code>settings.pluginConfigs</code> 提供插件配置（如 MCP 服务器替换）。</p>
+<p><strong>已知限制</strong>：</p>
+<ul><li>某些 qodercli 版本下，本地插件的 commands/agents/MCP 出现在 init 结果中，但其 <strong>skills 可能缺失于发现列表</strong>（CLI 侧发现缺陷）。</li><li>SDK 模式下不存在的 <code>--plugin-dir</code> 被静默忽略，只有 reload 后的 <code>error_count</code> 能诊断。</li><li>若 CLI 版本在 reload 时抛出内部 <code>this._plugins</code> 错误，需升级到修复版 qodercli。</li></ul>
+<p><strong>对墨道的落地提示</strong>：插件是「技能/子智能体/命令」的<strong>打包分发单元</strong>，与 13.8 的落地路线相关。三点：</p>
+<ol><li><strong>静默失败是主要风险</strong>——若未来把七类子智能体做成插件分发，必须自建「加载后校验」步骤（读 <code>listPlugins()</code> 比对期望清单 + 检查 <code>error_count</code>），不能假定加载成功。</li><li><strong><code>&lt;plugin&gt;:&lt;name&gt;</code> 限定名会影响 Skills 白名单</strong>——见 14.4，<code>options.skills</code> 中必须写限定名。</li><li><strong>init 结果与插件清单要分开取</strong>——前端若做「已加载资源」面板，commands/agents/skills 取 init，插件清单取 <code>listPlugins()</code>。</li></ol>
+<h3>14.6 Authentication（认证）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/authentication</code></p>
+<p><strong>一个会话只能使用一种认证方式</strong>：</p>
+<table class="doc-table"><thead><tr><th>方式</th><th>身份</th><th>适用场景</th></tr></thead><tbody><tr><td>PAT（个人访问令牌）</td><td>某个 Qoder 用户</td><td>脚本、CI、需要该用户权限与数据的宿主应用</td></tr><tr><td>Service Account（服务账号）</td><td>组织级工作负载</td><td>后端服务、CI、定时任务——<strong>不应依赖个人账号</strong></td></tr><tr><td>本地 qodercli 登录态</td><td>当前已登录用户</td><td>开发者工作站（已登录 Qoder）</td></tr></tbody></table>
+<p><strong>PAT 用法</strong>：</p>
+<pre><code>export QODER_PERSONAL_ACCESS_TOKEN="&lt;your-qoder-personal-access-token&gt;"</code></pre>
+<pre><code>import { accessTokenFromEnv, query } from '@qoder-ai/qoder-agent-sdk';
+
+const q = query({
+  prompt: 'Summarize the current workspace.',
+  options: {
+    auth: accessTokenFromEnv(),
+  },
+});</code></pre>
+<ul><li>默认读 <code>QODER_PERSONAL_ACCESS_TOKEN</code>；自定义变量名用 <code>accessTokenFromEnv('MY_QODER_PAT')</code>。</li><li><strong><code>options.env</code> 与进程环境同名时，SDK 优先用 <code>options.env</code> 的值。</strong></li><li>直接传令牌：<code>accessToken(token)</code>，用于已从密钥管理取到 PAT 的可信后端。</li></ul>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>SDK 不会刷新 PAT。</strong> PAT 失效后必须获取新 PAT 并<strong>创建新的 SDK 会话</strong>。</p>
+<p><strong>服务账号</strong>：由 Qoder 组织管理员创建并授权、生成 key。调用方通过 <code>serviceAccount({ serviceAccountKey })</code> 传入；SDK 与 qodercli 负责获取并刷新<strong>短期 Service Account Token（SAT）</strong>。</p>
+<p>链路：</p>
+<pre><code>secret manager
+     |
+     | Service Account Key
+     v
+caller reads the key
+     |
+     | serviceAccount({ serviceAccountKey })
+     v
+SDK starts qodercli and obtains a short-lived SAT
+     |
+     `----&gt; authenticate session requests with the SAT</code></pre>
+<p><strong>宿主自行换取 SAT</strong>（<code>serviceAccount({ fetchServiceAccountToken })</code>）：Service Account Key 留在宿主进程，qodercli 每次需要 SAT 时回调宿主，宿主调用 Token 交换 API 返回新 SAT。</p>
+<pre><code>qodercli
+     |
+     | request a SAT
+     v
+fetchServiceAccountToken callback in the SDK host
+     |
+     | call Token exchange with the host-managed Service Account key
+     v
+Qoder Token exchange
+     |
+     `----&gt; return the short-lived SAT to qodercli</code></pre>
+<p>交换端点：<code>https://openapi.qoder.sh/api/v1/serviceToken/exchange</code>，<code>grant_type: client_credentials</code>，<code>audience: qoder</code>，<code>scope</code> 按需（如 <code>models.read chat.completions</code>），<code>ttl_seconds: 3600</code>。回调需返回 <code>{ token, expiresAt? }</code>；<strong>取不到有效 SAT 时返回 <code>null</code> 或抛异常</strong>，让当前会话显式失败。</p>
+<p><strong>认证失败回调</strong>：<code>onAuthExpired</code>（TS）/ <code>on_auth_expired</code>（Python），在远端拒绝令牌、令牌过期或 CLI 以认证错误退出时触发，<strong>每个 SDK 会话最多触发一次</strong>。</p>
+<p><strong>Python 认证错误码</strong>：</p>
+<table class="doc-table"><thead><tr><th>异常</th><th>code</th></tr></thead><tbody><tr><td><code>AuthNotConfiguredError</code></td><td><code>auth_not_configured</code></td></tr><tr><td><code>AuthAccessTokenEnvVarError</code></td><td><code>auth_access_token_env_var_not_configured</code></td></tr><tr><td><code>AuthServiceAccountEnvVarError</code></td><td><code>auth_service_account_env_var_not_configured</code></td></tr></tbody></table>
+<p><strong>最佳实践</strong>：生产与 CI 用密钥管理提供凭据；不把 PAT / SA key / SAT 写入日志或错误对象；自动化环境显式配置 PAT 或服务账号，不依赖本地登录态；面向用户的应用注册认证过期回调，把失败转成清晰的重新登录提示；凭据更新或轮换后<strong>新建会话</strong>，不复用已认证失败的会话。</p>
+<p><strong>对墨道的落地提示</strong>：本项目为桌面应用（单机），当前使用本地登录态最自然。但<strong>若规划云端/团队能力（第十三章 F5 云同步、06 板块团队权益），Service Account 路径必须提前设计</strong>：</p>
+<ol><li><strong>账号体系缺失是架构级前置</strong>——服务账号需要组织管理员创建，这意味着团队能力落地前须先有组织概念（与 06 板块账号体系互为依赖）。</li><li><strong>不要把凭据写进日志</strong>——本项目已有审计日志规划（A4），审计记录中<strong>禁止包含 PAT / SAT / SA key 原文</strong>，只记 <code>tokenSource</code> 一类元信息。</li><li><strong>认证失败要可诊断</strong>——注册 <code>onAuthExpired</code> 并把失败转为前端可见的重新登录引导，避免「静默假成功」。</li></ol>
+<h3>14.7 Model Policy / Model Selection（模型策略）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/model-policy</code></p>
+<p><strong>两种模式，互斥</strong>：</p>
+<table class="doc-table"><thead><tr><th>模式</th><th>机制</th></tr></thead><tbody><tr><td>固定模型（默认）</td><td>整个会话用一个模型，通过 <code>model</code> 选项指定；省略则用账号默认</td></tr><tr><td>动态选择</td><td>每次 LLM 请求前调用回调返回模型 —— 传 <code>resolveModel</code> 即切换，<strong>固定模型设置被忽略</strong></td></tr></tbody></table>
+<p><strong>固定模型</strong>：</p>
+<pre><code>const q = query({
+  prompt: 'Analyze this code',
+  options: {
+    auth: qodercliAuth(),
+    model: 'performance',
+  },
+});</code></pre>
+<p><strong>动态选择</strong>：</p>
+<pre><code>import { qodercliAuth, query, type ModelPolicyProvider } from '@qoder-ai/qoder-agent-sdk';
+
+const resolveModel: ModelPolicyProvider = (context) =&gt; {
+  return { model: 'performance' };
+};
+
+const q = query({
+  prompt: 'Analyze this code',
+  options: {
+    auth: qodercliAuth(),
+    resolveModel,
+  },
+});</code></pre>
+<p><strong>按用途路由</strong>（官方示例）：</p>
+<pre><code>const resolveModel: ModelPolicyProvider = (context) =&gt; {
+  switch (context.purpose) {
+    case 'main':       return { model: 'performance' };
+    case 'subagent':   return { model: 'efficient' };
+    case 'compact':    return { model: 'lite' };
+    default:           return { model: 'auto' };
+  }
+};</code></pre>
+<p><code>purpose</code> 覆盖：主对话（<code>main</code>）、子智能体（<code>subagent</code>）、上下文压缩（<code>compact</code>）、WebFetch（<code>web_fetch</code>）、图像生成（<code>image_gen</code>）等。</p>
+<p><strong>模型参数覆盖</strong>：回调可返回 <code>parameters</code>：</p>
+<pre><code>const resolveModel: ModelPolicyProvider = (context) =&gt; {
+  return {
+    model: 'ultimate',
+    parameters: {
+      contextWindow: 200000,
+      reasoningEffort: 'high',
+    },
+  };
+};</code></pre>
+<p>这些值<strong>必须匹配当前模型支持的配置</strong>；上下文窗口与思考元数据通过回调入参的 <code>availableModels</code> 暴露（<code>ModelInfo.context_config</code> / <code>ModelInfo.thinking_config</code>）。</p>
+<p><strong>超时</strong>：回调有默认超时（毫秒），做远程 I/O 时应加大：<code>{ resolveModel, resolveModelTimeoutMs: 800 }</code>。</p>
+<p><strong>BYOK（自带 API Key）</strong>：回调可返回 BYOK 凭据对象，该请求将被路由到第三方提供方。<strong>使用前需确认账号具备 BYOK 权限</strong>。</p>
+<pre><code>const resolveModel: ModelPolicyProvider = () =&gt; ({
+  model: {
+    provider: 'bailian',
+    model: 'qwen3.5-plus-cp',
+    api_key: process.env.MY_API_KEY!,
+  },
+});</code></pre>
+<p>可用 provider/model 目录可在运行时获取，供前端渲染选择器与 API Key 输入框。</p>
+<p><strong>运行时操作</strong>：<code>getAvailableModels()</code> 取当前账号可用模型列表（<code>value</code> / <code>displayName</code> / <code>isEnabled</code>）；固定模型模式下可切换当前模型；可获取 BYOK provider 目录。</p>
+<p><strong>错误处理（重要）</strong>：</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>动态选择模式没有自动回退。</strong> 回调超时、抛错、或返回空模型，都会导致本次查询<strong>失败</strong>。</p>
+<p>正确做法是在回调内部兜底：</p>
+<pre><code>const resolveModel: ModelPolicyProvider = async (context) =&gt; {
+  try {
+    const policy = await fetchRemotePolicy(context);
+    return { model: policy.model };
+  } catch {
+    return { model: 'auto' };   // fallback, must be non-empty
+  }
+};</code></pre>
+<p><strong>模型档位对照（官方）</strong>：</p>
+<table class="doc-table"><thead><tr><th>值</th><th>层级</th><th>适用场景</th><th>Credit 成本</th></tr></thead><tbody><tr><td><code>auto</code></td><td>智能路由</td><td>大多数日常开发；推荐默认</td><td>~1.0x</td></tr><tr><td><code>ultimate</code></td><td>终极</td><td>复杂系统设计、困难分析</td><td>~1.6x</td></tr><tr><td><code>performance</code></td><td>性能</td><td>核心实现、架构设计、重构</td><td>~1.1x</td></tr><tr><td><code>efficient</code></td><td>高效</td><td>基础代码生成、单元测试</td><td>~0.3x</td></tr><tr><td><code>lite</code></td><td>轻量</td><td>快速验证、简单逻辑</td><td>0x</td></tr></tbody></table>
+<p>特殊形式：<code>inherit</code>（继承主会话模型）、完整模型 ID。此外 <code>fallbackModel</code> 选项可指定主模型失败时的回退模型。</p>
+<p><strong>对墨道的落地提示</strong>：本篇与第十三章 A7、B1、B2、B3、B4 高度相关，且有<strong>一处必须纠正的认知</strong>：</p>
+<ol><li><strong>本项目的 <code>MODEL_TIERS</code> 五档是自建档位，不是官方档位</strong>。官方档位为 <code>auto</code> / <code>ultimate</code> / <code>performance</code> / <code>efficient</code> / <code>lite</code>。A7 提出的「引入 <code>resolveModel</code> 映射层，档位到具体模型可由配置决定」正是为此——<strong>必须在映射层内显式处理官方档位名与本项目档位名的对应关系</strong>，否则配置会在两套命名间错位。</li><li><strong>动态选择无自动回退，必须自建兜底</strong>——B1 的 <code>resolveModel</code> 路由实现中，回调内部<strong>必须</strong> try/catch 并返回非空模型（建议回退到 <code>'auto'</code>）。这一条若不落实，会出现「网络抖动导致整个对话失败」的严重体验问题。</li><li><strong><code>purpose</code> 天然支持 B2「节点级/类型级预设」</strong>——<code>main</code> / <code>subagent</code> / <code>compact</code> 三类用途已由 SDK 区分，B2 所需的「规划用高档、执行用中档」可在 <code>subagent</code> 分支上按 <code>context.availableModels</code> 与自定义元数据进一步细分。</li><li><strong>B3 成本提示可用 <code>availableModels</code> 的 <code>priceFactor</code></strong>——官方 <code>ModelInfo</code> 含价格因子与促销信息，可直接支撑发起前成本预估。</li><li><strong>B4 本地模型可走 BYOK</strong>——<code>resolveModel</code> 返回 BYOK 凭据即可路由到自建端点，无需自研路由层。</li></ol>
+<h3>14.8 Checkpoint（文件检查点与回滚）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/checkpoint</code></p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>注意</strong>：这是<strong>文件检查点</strong>，不是「对话检查点」。它记录的是 <strong>session 内被工具修改过的本地文件状态</strong>。</p>
+<p><strong>开启</strong>：</p>
+<pre><code>import { query } from '@qoder-ai/qoder-agent-sdk';
+
+const q = query({
+  prompt: 'Refactor src/foo.ts into a cleaner implementation',
+  options: {
+    cwd: '/path/to/project',
+    enableFileCheckpointing: true,
+    allowedTools: ['Read', 'Edit', 'Write'],
+    permissionMode: 'acceptEdits',
+  },
+});</code></pre>
+<p><strong>两个能力必须配合</strong>：检查点提供快照，<code>rewindFiles</code> 消费快照。<strong>未开启检查点则 rewind 无快照可用。</strong></p>
+<p><strong>回滚锚点 = 用户消息的 <code>uuid</code></strong>：</p>
+<ul><li><strong>不是</strong> <code>session_id</code>，<strong>不是</strong> result 消息的 ID。</li><li>仅在产生该检查点的会话上下文内有效；<strong>其他会话不能直接用这个 ID 回滚</strong>。</li><li>TypeScript 建议<strong>自行生成 <code>uuid</code></strong>（<code>randomUUID()</code>）并通过结构化输入传入，便于 UI 精确映射「回到这条消息之前」。</li><li>Python 常用做法：从响应流的 <code>UserMessage.uuid</code> 捕获，并配合 <code>extra_args={"replay-user-messages": None}</code>（该参数<strong>不是检查点开关</strong>，作用是让响应流重放携带 <code>uuid</code> 的 <code>UserMessage</code>，使其可作为回滚锚点）。</li></ul>
+<pre><code>import { randomUUID } from 'node:crypto';
+import { query } from '@qoder-ai/qoder-agent-sdk';
+
+const userMessageId = randomUUID();
+
+async function* input() {
+  yield {
+    type: 'user' as const,
+    uuid: userMessageId,
+    parent_tool_use_id: null,
+    message: {
+      role: 'user' as const,
+      content: [
+        {
+          type: 'text' as const,
+          text: 'Rewrite notes.txt as a two-line summary.',
+        },
+      ],
+    },
+  };
+
+  // If your application needs to call rewind later within the same session,
+  // keep yielding subsequent user inputs here instead of closing the stream.
+}
+
+const q = query({
+  prompt: input(),
+  options: {
+    cwd: '/path/to/project',
+    enableFileCheckpointing: true,
+    allowedTools: ['Read', 'Write'],
+    permissionMode: 'acceptEdits',
+  },
+});</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>Python 提示</strong>：需要后续回滚时，必须用 <code>QoderSDKClient</code> 保持同一活跃会话。</p>
+<p><strong>Dry Run 预演</strong>：执行前先预演，查看<strong>是否可回滚、影响哪些文件、增删行数统计</strong>。<strong>dry run 不修改任何文件</strong>，适合确认弹窗与审计日志。</p>
+<p><code>RewindFilesResult</code> 字段：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>类型</th><th>说明</th></tr></thead><tbody><tr><td><code>canRewind</code></td><td>boolean</td><td>是否可回滚。dry run 模式下失败<strong>不抛异常</strong>，用该字段表示状态</td></tr><tr><td><code>error</code></td><td>string?</td><td><code>canRewind</code> 为 false 时的诊断文本，<strong>可直接展示给用户</strong></td></tr><tr><td><code>filesChanged</code></td><td>string[]?</td><td>受影响文件的<strong>绝对路径</strong>列表</td></tr><tr><td><code>insertions</code></td><td>number?</td><td>将被撤销的<strong>新增行总数</strong>（聚合）</td></tr><tr><td><code>deletions</code></td><td>number?</td><td>将被撤销的<strong>删除行总数</strong>（聚合）</td></tr></tbody></table>
+<pre><code>const preview = await q.rewindFiles(userMessageId, { dryRun: true });
+
+if (!preview.canRewind) {
+  // Show the diagnostic message in the UI.
+  console.error(preview.error);
+  return;
+}
+
+// Overall stats across all affected files.
+console.log({
+  files: preview.filesChanged?.length ?? 0,
+  insertions: preview.insertions ?? 0,
+  deletions: preview.deletions ?? 0,
+});
+
+// Per-file listing — useful for a confirmation dialog.
+for (const file of preview.filesChanged ?? []) {
+  console.log(`will be reverted: ${file}`);
+}</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>限制</strong>：当前 <code>RewindFilesResult</code> <strong>只返回受影响文件列表与聚合行级统计，不返回逐文件 diff</strong>。若需逐文件差异，可在 dry run 后按 <code>filesChanged</code> 读盘与检查点比对，或在执行回滚后用 git/工作区 diff 工具。</p>
+<p><strong>执行回滚</strong>：省略 dry-run 参数即可。</p>
+<pre><code>const result = await q.rewindFiles(userMessageId);
+console.log(result.filesChanged);</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>回滚只恢复本地文件状态，不回滚对话历史。</strong> 模型仍保有前序轮次的上下文；UI 必须自行按 <code>filesChanged</code> 刷新编辑器、文件树或 diff 视图。</p>
+<p><strong>失败语义</strong>：</p>
+<table class="doc-table"><thead><tr><th>调用形式</th><th>不可回滚时的行为</th></tr></thead><tbody><tr><td>Dry run（<code>rewindFiles(id, { dryRun: true })</code>）</td><td>返回 <code>{ canRewind: false, error }</code>，便于 UI 展示诊断</td></tr><tr><td>执行模式（<code>rewindFiles(id)</code>）</td><td><strong>TypeScript 中 Promise reject；Python 抛异常</strong>。调用方必须捕获并暴露失败</td></tr></tbody></table>
+<p><strong>常见失败原因</strong>：未开启文件检查点；ID 不是合法的用户消息 UUID；ID 属于其他会话；目标消息没有可回滚的文件快照。</p>
+<p><strong>与 settings 的关系</strong>：<code>settings</code> 接受 <code>Settings</code> 对象或设置文件路径字符串。</p>
+<ul><li>传<strong>对象</strong>时，SDK 会自动合并 <code>general.fileCheckpointing.enabled = true</code>——无需手写；已有字段保留，已有的 <code>fileCheckpointing</code> 配置其 <code>enabled</code> 会被 SDK 选项覆盖。</li><li>传<strong>文件路径字符串</strong>时，SDK <strong>不重写文件</strong>，需自行配置：</li></ul>
+<pre><code>{
+  "general": {
+    "fileCheckpointing": {
+      "enabled": true
+    }
+  }
+}</code></pre>
+<p>纯回滚场景<strong>只设检查点开关、不传 <code>settings</code> 即可</strong>。</p>
+<p><strong>边界（务必如实声明）</strong>：</p>
+<table class="doc-table"><thead><tr><th>边界</th><th>说明</th></tr></thead><tbody><tr><td>仅本地文件</td><td>MCP 工具、远端服务、数据库的<strong>外部副作用不会被撤销</strong></td></tr><tr><td>Bash 写入不算</td><td>通过 <code>Bash</code> 直接写文件<strong>不被视为可回滚的文件快照</strong></td></tr><tr><td>目录副作用可能不撤销</td><td>文件内容可恢复，但目录创建等目录级副作用可能不撤销</td></tr><tr><td>绑定会话</td><td>检查点 ID 绑定会话；恢复同一会话后仍可用，<strong>不能跨会话混用</strong></td></tr></tbody></table>
+<p><strong>最佳实践</strong>：消息发送时<strong>保存 user message ID</strong>（Python 绑定 <code>UserMessage.uuid</code> 到 UI 消息记录），不要靠反查 UI 文本；回滚前先 dry run 展示影响范围再让用户确认；回滚后按 <code>filesChanged</code> 刷新 UI；失败时把 <code>error</code> 文案直接展示给用户。</p>
+<p><strong>对墨道的落地提示</strong>：本篇直接支撑第十三章 F2「checkpoint」与 F3「rewind」，且<strong>纠正了一个常见预期</strong>：</p>
+<ol><li><strong>这是文件回滚，不是对话回滚</strong>。F2/F3 在需求描述上若写的是「会话回退到任意历史节点」，与官方能力<strong>不一致</strong>——官方只回滚文件，对话历史仍保留在前序上下文中。<strong>建议把 F2/F3 的措辞改为「文件检查点与文件回滚」，对话回退另作规划（可用 <code>resumeSessionAt</code> + <code>resumeDropsTurn</code>，见 14.15、14.17）</strong>。</li><li><strong>用户消息 UUID 必须落库</strong>。F2/F3 落地时，前端消息记录必须保存 user message ID。这需要<strong>前端配合</strong>（与 02 板块联动），不是后端单方面可实现。</li><li><strong>UI 需新增 dry run 确认弹窗</strong>。<code>canRewind</code> / <code>filesChanged</code> / <code>insertions</code> / <code>deletions</code> 四个字段足以支撑一个清晰的确认对话框，且 dry run 不改文件，风险为零。</li><li><strong>能力边界必须写清楚</strong>——Bash 写入不可回滚、MCP 副作用不可回滚。这两条若不声明，用户会误以为「回滚 = 时光倒流」。这应作为第九节「能力边界」的新增条目。</li><li><strong>检查点与外部会话存储互斥</strong>（见 14.16）：若未来启用 <code>sessionStore</code>，<strong>不得同时开启文件检查点</strong>——这是硬性约束，必须在架构决策时二选一。</li></ol>
+<h3>14.9 Tools（工具参考）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/tools</code></p>
+<p><strong>两类工具</strong>：</p>
+<ul><li><strong>内置工具</strong>：Qoder CLI 提供，如读文件、搜索、执行命令、调用子智能体。</li><li><strong>自定义工具</strong>：由 SDK 使用者定义，以 <strong>in-process MCP 服务器</strong>形式暴露给模型——TypeScript 用 <code>tool()</code> + <code>createSdkMcpServer()</code>，Python 用 <code>@tool()</code> 装饰器 + <code>create_sdk_mcp_server()</code>。</li></ul>
+<p><strong>内置工具清单（官方文档完整提供）</strong>：</p>
+<table class="doc-table"><thead><tr><th>类别</th><th>工具名</th><th>说明</th></tr></thead><tbody><tr><td>命令执行</td><td><code>Bash</code></td><td>执行 shell 命令</td></tr><tr><td>文件操作</td><td><code>Read</code> / <code>Edit</code> / <code>Write</code></td><td>读取 / 编辑 / 创建文件</td></tr><tr><td>搜索</td><td><code>Glob</code> / <code>Grep</code></td><td>文件名 / 内容搜索</td></tr><tr><td>网络</td><td><code>WebFetch</code> / <code>WebSearch</code></td><td>抓取 URL / 网络搜索</td></tr><tr><td>智能体</td><td><code>Agent</code></td><td>调起子智能体</td></tr><tr><td>交互</td><td><code>AskUserQuestion</code></td><td>向用户提问</td></tr><tr><td>Notebook</td><td><code>NotebookEdit</code></td><td>编辑 notebook 单元格</td></tr><tr><td>持久任务</td><td><code>TaskCreate</code> / <code>TaskGet</code> / <code>TaskUpdate</code> / <code>TaskList</code></td><td>任务管理</td></tr><tr><td>后台任务</td><td><code>TaskOutput</code> / <code>TaskStop</code></td><td>后台任务管理</td></tr><tr><td>计划 / worktree</td><td><code>ExitPlanMode</code> / <code>EnterWorktree</code> / <code>ExitWorktree</code></td><td>计划模式与工作树</td></tr><tr><td>配置</td><td><code>Config</code></td><td>读写配置</td></tr><tr><td>Todo 回退</td><td><code>TodoWrite</code></td><td>当 <code>QODER_FEATURE_TASKS=false</code> 时替代 Task 工具</td></tr><tr><td>MCP</td><td><code>ListMcpResources</code> / <code>ReadMcpResource</code> / <code>Mcp</code></td><td>MCP 资源与调用</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>工具名由底层 Qoder CLI 决定</strong>；权限配置必须使用 CLI 暴露给模型的工具名。</p>
+<p><strong>自定义工具接入</strong>：定义 → 挂到 MCP 服务器 → 在 <code>query()</code> 的 <code>mcpServers</code> 中注册。模型需要时，CLI 通过 SDK 回调你的 handler。</p>
+<pre><code>query({
+  prompt: 'Search docs for the refund policy and summarize it.',
+  options: {
+    auth: accessTokenFromEnv(),
+    mcpServers: { kb: kbTools },
+    allowedTools: ['mcp__kb__search_docs'],
+  },
+});</code></pre>
+<p><strong>工具全名格式</strong>：</p>
+<pre><code>mcp__{serverName}__{toolName}</code></pre>
+<p>该全名用于<strong>工具白/黑名单、权限回调、hooks 匹配器、子智能体 <code>tools</code> 配置</strong>。</p>
+<p><strong>以 <code>tools: []</code> 彻底禁用工具</strong>：模型只能依据上下文回答。</p>
+<p><strong>允许与拒绝同时匹配时，拒绝优先。</strong></p>
+<p><strong>对墨道的落地提示</strong>：本项目「9 个 SDK 内置工具 + 6 个 in-process 科研 MCP」的结构与官方完全一致。四点施工要点：</p>
+<ol><li><strong>盘一遍内置工具清单</strong>——本项目声明的 9 个与官方清单（至少 24 个工具名）存在差异。第十四章前的工具生态描述中「9 个」应核对是否为<strong>本产品实际暴露</strong>的子集；若是，应明确「另有 N 个官方工具未向模型暴露」，避免读者误以为 SDK 只有 9 个工具。</li><li><strong><code>AskUserQuestion</code> 是特殊工具</strong>——权限回调对它<strong>总是触发</strong>（不像普通工具只在需要批准时触发）。若墨道要实现「向用户追问」，这是官方通道，且与 14.10 的 <code>canUseTool</code> 交互需专门处理。</li><li><strong><code>Task*</code> 系列是持久任务的官方实现</strong>——本项目若自建任务/时间线体系，应评估与 <code>TaskCreate</code> / <code>TaskList</code> 的关系（复用 vs 自建）。同时注意 <code>TodoWrite</code> 是 <code>QODER_FEATURE_TASKS=false</code> 时的回退，<strong>不要同时依赖两者</strong>。</li><li><strong><code>EnterWorktree</code> / <code>ExitWorktree</code> 支持工作树隔离</strong>——这为「多个子智能体并行且互不干扰」提供了一条官方路径，可作为 D2「上下文隔离」与 E6「并发控制」的备选实现方案（与 14.11 的 <code>WorktreeCreate</code> Hook 配套）。</li></ol>
+<h3>14.10 Permission Control（权限控制）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/permissions</code></p>
+<p class="callout callout--info">&nbsp;&nbsp;官方文档中 <code>security</code> 路径不存在；权限相关内容位于 <code>permissions</code>。本篇即「Security 权限安全」的正式对应文档。</p>
+<p><strong>四组权限手段</strong>：① 默认策略（<code>permissionMode</code>）；② 工具范围与规则（<code>tools</code> / <code>allowedTools</code> / <code>disallowedTools</code>）；③ 运行时审批（<code>canUseTool</code>）；④ 高级设置（<code>additionalDirectories</code> / <code>settings</code> / <code>hooks</code> / MCP 工具策略）。</p>
+<p><strong>总览表</strong>：</p>
+<table class="doc-table"><thead><tr><th>要解决的问题</th><th>入口（TS / Python）</th><th>说明</th></tr></thead><tbody><tr><td>设会话默认权限行为</td><td><code>permissionMode</code> / <code>permission_mode</code></td><td>无显式规则匹配时如何处置工具调用</td></tr><tr><td>显式确认跳过权限检查</td><td><code>allowDangerouslySkipPermissions</code></td><td><strong>仅配合</strong> <code>bypassPermissions</code> 或 <code>yolo</code></td></tr><tr><td>限制本会话可见工具</td><td><code>tools</code></td><td>不在列表中的工具不提供给模型</td></tr><tr><td>预批准工具</td><td><code>allowedTools</code></td><td>匹配通常跳过授权提示</td></tr><tr><td>拒绝工具</td><td><code>disallowedTools</code></td><td>匹配即拒绝；<strong>优先于 allow</strong></td></tr><tr><td>让宿主批准工具调用</td><td><code>canUseTool</code></td><td>SDK 宿主在运行时返回 allow 或 deny</td></tr><tr><td>把审批交给外部提示工具</td><td><code>permissionPromptToolName</code></td><td>适用于已提供权限提示工具的运行时</td></tr><tr><td>审批后更新会话规则</td><td><code>PermissionUpdate</code></td><td>常见「允许一次」「本会话始终允许」</td></tr><tr><td>允许 cwd 之外的访问</td><td><code>additionalDirectories</code></td><td>扩展会话可访问目录</td></tr><tr><td>从 settings 提供权限规则</td><td><code>settings</code></td><td>适合会话启动时的静态权限配置</td></tr><tr><td>生命周期拦截或审计</td><td><code>hooks</code></td><td>高级拦截、审计、告警</td></tr><tr><td>在 MCP 服务器上声明工具策略</td><td>MCP 工具策略</td><td>在 MCP 服务器配置里按工具声明 allow / ask / deny</td></tr></tbody></table>
+<p><strong>权限模式全表</strong>：</p>
+<table class="doc-table"><thead><tr><th>模式</th><th>行为</th></tr></thead><tbody><tr><td><code>default</code></td><td>标准权限行为。工具调用按 <code>tools</code>、允许/拒绝规则、动态审批或运行时策略处理</td></tr><tr><td><code>acceptEdits</code></td><td>自动接受文件编辑操作；用于已确认可修改工作区的场景</td></tr><tr><td><code>bypassPermissions</code></td><td>跳过权限检查；<strong>需同时显式确认</strong></td></tr><tr><td><code>yolo</code></td><td><code>bypassPermissions</code> 的兼容别名；同样需显式确认</td></tr><tr><td><code>plan</code></td><td>计划模式；面向先产出执行计划，默认不产生真实改动</td></tr><tr><td><code>dontAsk</code></td><td>不交互询问。未预先授权或规则不允许的操作<strong>被拒绝</strong></td></tr><tr><td><code>auto</code></td><td>运行时能力自动判定允许或拒绝；安全的<strong>工作区内</strong>文件编辑可能被自动批准</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<code>bypassPermissions</code> 与 <code>yolo</code> 是<strong>高危模式</strong>。SDK 要求显式传 <code>allowDangerouslySkipPermissions: true</code>（Python：<code>allow_dangerously_skip_permissions=True</code>），以免普通会话意外跳过权限检查。</p>
+<p><strong>会话内切换模式</strong>：<code>await q.setPermissionMode('default')</code>。</p>
+<p><strong>运行时审批 <code>canUseTool</code></strong>：</p>
+<pre><code>query({
+  prompt: 'Create a changelog file for this release.',
+  options: {
+    auth: accessTokenFromEnv(),
+    cwd: '/path/to/project',
+    permissionMode: 'default',
+    async canUseTool(toolName, input, options) {
+      showApprovalDialog({
+        title: options.title ?? toolName,
+        description: options.description,
+        input,
+      });
+
+      const approved = await waitForUserApproval(options.signal);
+
+      if (!approved) {
+        return {
+          behavior: 'deny',
+          message: 'Rejected by user.',
+          toolUseID: options.toolUseID,
+        };
+      }
+
+      return {
+        behavior: 'allow',
+        updatedInput: input,
+        toolUseID: options.toolUseID,
+      };
+    },
+  },
+});</code></pre>
+<p><strong>回调签名</strong>：</p>
+<pre><code>type CanUseTool = (
+  toolName: string,
+  input: Record&lt;string, unknown&gt;,
+  options: {
+    signal: AbortSignal;
+    suggestions?: PermissionUpdate[];
+    blockedPath?: string;
+    decisionReason?: string;
+    title?: string;
+    displayName?: string;
+    description?: string;
+    toolUseID: string;
+    agentID?: string;
+  },
+) =&gt; Promise&lt;PermissionResult&gt;;</code></pre>
+<p><strong>options 关键字段</strong>：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td>工具名</td><td>全名，如 <code>Read</code> / <code>Bash</code> / <code>mcp__orders__read_order</code></td></tr><tr><td>input</td><td>工具调用的原始参数</td></tr><tr><td><code>toolUseID</code></td><td>本次工具调用 ID；TypeScript 中需在返回值里带上以精确匹配</td></tr><tr><td><code>signal</code></td><td>授权请求被取消时触发；UI 或远程审批应监听</td></tr><tr><td><code>title</code> / <code>displayName</code> / <code>description</code></td><td>运行时生成的人类可读文案，<strong>可直接用于审批 UI</strong></td></tr><tr><td><code>suggestions</code></td><td>运行时建议的权限更新，可用于「本会话始终允许」</td></tr><tr><td><code>blockedPath</code></td><td>路径类授权场景中被限制的路径</td></tr><tr><td><code>decisionReason</code></td><td>运行时给出的原因，用于展示或审计</td></tr><tr><td><code>agentID</code></td><td><strong>子智能体发起工具调用时的 Agent ID</strong></td></tr></tbody></table>
+<p><strong>返回结构</strong>：</p>
+<ul><li>允许：<code>{ behavior: 'allow', updatedInput, toolUseID }</code>。<strong><code>updatedInput</code> 是工具最终收到的参数</strong>——可原样返回，也可在批准后改写（加租户 ID、把路径重写进安全目录、剥离不允许字段）。</li><li>拒绝：<code>{ behavior: 'deny', message, toolUseID }</code>。<strong><code>message</code> 必填</strong>，会成为模型/日志/宿主看到的拒绝原因。<code>interrupt: true</code> 表示拒绝并中断当前 Agent 流程。</li></ul>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>默认拒绝</strong>：若 SDK 收到 CLI 授权请求但<strong>未配置权限回调，则返回错误——默认不允许任何操作</strong>。</p>
+<p><strong>权限拒绝消息</strong>（出现在消息流中）：</p>
+<pre><code>type SDKPermissionDeniedMessage = {
+  type: 'system';
+  subtype: 'permission_denied';
+  tool_name: string;
+  tool_use_id?: string;
+  message?: string;
+  decision_reason?: string;
+  decision_reason_type?: string;
+};</code></pre>
+<p>通常出现在 <code>dontAsk</code> 模式、自动拒绝或规则拒绝时。宿主可用它更新 UI 状态或写审计日志。</p>
+<p><strong>外部授权工具 <code>permissionPromptToolName</code></strong>：把权限请求交给运行时环境中的权限提示工具（而非在 SDK 宿主实现回调），适合已有外部审批工具、远程运行时或统一权限网关。三点注意：必须是当前运行时识别的提示工具名；<strong>与 <code>canUseTool</code> 互斥</strong>；若由 SDK 宿主自行决定审批，优先用 <code>canUseTool</code>。</p>
+<p>其输入 / 输出结构：</p>
+<pre><code>type PermissionPromptToolInput = {
+  tool_name: string;
+  input: Record&lt;string, unknown&gt;;
+  tool_use_id?: string;
+};
+
+type PermissionPromptToolOutput =
+  | {
+      behavior: 'allow';
+      updatedInput: Record&lt;string, unknown&gt;;
+      updatedPermissions?: PermissionUpdate[];
+      toolUseID?: string;
+    }
+  | {
+      behavior: 'deny';
+      message: string;
+      interrupt?: boolean;
+      toolUseID?: string;
+    };</code></pre>
+<p><strong>用 <code>settings</code> 提供静态权限规则</strong>：</p>
+<pre><code>query({
+  prompt: 'Inspect the project.',
+  options: {
+    auth: accessTokenFromEnv(),
+    cwd: '/path/to/project',
+    settings: {
+      permissions: {
+        allow: ['Read', 'Grep'],
+        deny: ['Bash'],
+        ask: ['Write'],
+        defaultMode: 'default',
+        additionalDirectories: ['/path/to/shared-lib'],
+      },
+    },
+  },
+});</code></pre>
+<table class="doc-table"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td><code>permissions.allow</code></td><td>允许规则</td></tr><tr><td><code>permissions.deny</code></td><td>拒绝规则</td></tr><tr><td><code>permissions.ask</code></td><td>始终询问规则</td></tr><tr><td><code>permissions.defaultMode</code></td><td>默认权限模式</td></tr><tr><td><code>permissions.disableBypassPermissionsMode</code></td><td>设为 <code>'disable'</code> 可禁用绕过权限模式</td></tr><tr><td><code>permissions.additionalDirectories</code></td><td>额外可访问目录</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;若应用会从 settings 读取并应用默认权限模式，<strong>建议在执行高危模式前自行做产品级确认</strong>。<code>bypassPermissions</code> / <code>yolo</code> 只应出现在明确可信的环境。</p>
+<p><strong>MCP 工具策略</strong>：把工具级权限策略直接声明在 MCP 服务器配置里，策略随服务器配置走，而非散落在全局工具列表。</p>
+<pre><code>mcpServers: {
+  repo_tools: {
+    type: 'http',
+    url: process.env.REPO_TOOLS_MCP_URL!,
+    tools: [
+      { name: 'search', permission_policy: 'always_allow' },
+      { name: 'write_file', permission_policy: 'always_ask' },
+      { name: 'delete_file', permission_policy: 'always_deny' },
+    ],
+  },
+}</code></pre>
+<table class="doc-table"><thead><tr><th>策略</th><th>行为</th></tr></thead><tbody><tr><td><code>always_allow</code></td><td>匹配工具直接允许</td></tr><tr><td><code>always_ask</code></td><td>匹配工具进入授权流程</td></tr><tr><td><code>always_deny</code></td><td>匹配工具直接拒绝</td></tr></tbody></table>
+<p><code>name</code> 可用 MCP 工具原始名或全名（如 <code>mcp__repo_tools__search</code>）。</p>
+<p><strong>对墨道的落地提示</strong>：本篇是第十三章 B5「权限授权弹窗通道」与 B6「权限审计」的<strong>权威实现依据</strong>，直接推翻了一条此前的实现假设：</p>
+<ol><li><strong>B5 有了官方通道，但代价是架构变化</strong>——官方 <code>canUseTool</code> <strong>本身就是「阻塞式交互通道」</strong>：它在服务端暂停并等待宿主返回结果，<code>options.signal</code> 提供取消。但它的运行位置是 <strong>SDK 宿主进程</strong>，而本项目是「服务端跑 SDK + 前端 UI」的分离结构。因此 B5 的正确落地方式不是自建暂停协议，而是：<strong>在 SDK 宿主侧实现 <code>canUseTool</code>，通过既有 SSE 桥接把审批请求推给前端，前端回传结果后再 resolve</strong>。这比自研协议更可靠。</li><li><strong><code>options.title</code> / <code>description</code> 可直接做审批 UI 文案</strong>——无需自建文案生成。</li><li><strong><code>options.agentID</code> 是 D 组的关键字段</strong>——它标识「本次工具调用由哪个子智能体发起」。<strong>这正是 D3「主智能体唯一网关」的落地点</strong>：在 <code>canUseTool</code> 中按 <code>agentID</code> 应用不同策略，即可在权限层实现网关语义，无需另建调用层。</li><li><strong>B6 审计有了标准数据源</strong>——除 <code>canUseTool</code> 入参外，还应订阅 <code>SDKPermissionDeniedMessage</code>（<code>type: 'system'</code>, <code>subtype: 'permission_denied'</code>），把 <code>decision_reason</code> / <code>decision_reason_type</code> 落库。<strong>这补上了 A4 审计中「权限判定依据」这一缺口</strong>，且是官方结构而非自造。</li><li><strong>「默认拒绝」是官方行为</strong>——未配置回调即不允许任何操作。本项目权限设计应与此对齐，避免出现「未配置即放行」的相反假设。</li><li><strong><code>settings.permissions</code> 可承载本项目的四层覆盖链</strong>——<code>allow</code> / <code>deny</code> / <code>ask</code> / <code>defaultMode</code> 与「四层覆盖链」语义相容，建议评估用它替代自建配置结构，降低维护成本。</li><li><strong>MCP 工具策略可下沉权限声明</strong>——<code>permission_policy</code> 让「写产物」类工具默认 <code>always_ask</code>、「读文献」类默认 <code>always_allow</code>，策略随 MCP 走，比全局列表更内聚。这对 C 组新增的 4 组 MCP 尤其有价值。</li></ol>
+<h3>14.11 Hooks（生命周期钩子）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/hooks</code></p>
+<p><strong>全部事件与可控行为</strong>：</p>
+<table class="doc-table"><thead><tr><th>事件</th><th>触发时机</th><th>可控行为</th></tr></thead><tbody><tr><td><code>PreToolUse</code></td><td>工具调用前</td><td><strong>拦截 / 允许 / 修改输入</strong></td></tr><tr><td><code>PostToolUse</code></td><td>工具成功后</td><td><strong>审计 / 注入上下文 / 覆盖输出</strong></td></tr><tr><td><code>PostToolUseFailure</code></td><td>工具失败后</td><td>错误处理 / 日志</td></tr><tr><td><code>UserPromptSubmit</code></td><td>用户提示发送前</td><td><strong>注入上下文 / 拦截</strong></td></tr><tr><td><code>SessionStart</code></td><td>会话开始</td><td>初始化 / 注入上下文</td></tr><tr><td><code>SessionEnd</code></td><td>会话结束</td><td>清理 / 日志</td></tr><tr><td><code>Stop</code></td><td>AI 停止生成</td><td><strong>阻止停止、强制继续</strong></td></tr><tr><td><code>SubagentStart</code></td><td>子智能体开始</td><td>观察 / 日志</td></tr><tr><td><code>SubagentStop</code></td><td>子智能体停止</td><td>观察 / 日志</td></tr><tr><td><code>PreCompact</code></td><td>上下文压缩前</td><td>观察 / 日志</td></tr><tr><td><code>PostCompact</code></td><td>上下文压缩后</td><td>观察 / 日志</td></tr><tr><td><code>CwdChanged</code></td><td>工作目录变化</td><td>观察 / 日志</td></tr><tr><td><code>InstructionsLoaded</code></td><td>指令文件加载</td><td>观察 / 日志</td></tr><tr><td><code>FileChanged</code></td><td>文件创建/修改/删除</td><td>观察 / 日志</td></tr><tr><td><code>PermissionRequest</code></td><td>请求权限</td><td><strong>自动批准 / 拒绝权限请求</strong></td></tr><tr><td><code>PermissionDenied</code></td><td>权限请求被拒</td><td>观察 / 审计拒绝</td></tr><tr><td><code>WorktreeCreate</code>（TS）</td><td>请求托管工作树</td><td><strong>替换内置的物理创建</strong></td></tr><tr><td><code>WorktreeRemove</code>（TS）</td><td>Hook 创建的工作树被移除</td><td><strong>替换内置的物理删除</strong></td></tr></tbody></table>
+<p><strong>Worktree 替换钩子（TypeScript）</strong>：<code>WorktreeCreate</code> / <code>WorktreeRemove</code> 是<strong>资源替换钩子，不是只读通知</strong>。注册 <code>WorktreeCreate</code> 后，回调<strong>必须物理创建 worktree 并返回其路径</strong>；配对的 <code>WorktreeRemove</code> 回调必须物理删除该 Hook 创建的资源。Qoder CLI 仍负责 session cwd 切换、transcript 迁移、Resume 状态与 Exit 生命周期。</p>
+<pre><code>const hooks = {
+  WorktreeCreate: [{
+    hooks: [async (input) =&gt; {
+      const worktreePath = await createWorktree(input.name);
+      return {
+        hookSpecificOutput: {
+          hookEventName: 'WorktreeCreate',
+          worktreePath,
+        },
+      };
+    }],
+  }],
+  WorktreeRemove: [{
+    hooks: [async (input) =&gt; {
+      await removeWorktree(input.worktree_path);
+      return {};
+    }],
+  }],
+};</code></pre>
+<p><code>createWorktree</code> / <code>removeWorktree</code> 需<strong>应用自行实现</strong>（执行 Git 或宿主特定的操作），SDK 不提供。</p>
+<p><strong>配置</strong>：在 <code>options.hooks</code> 中配置。</p>
+<pre><code>const result = query({
+  prompt: 'perform task',
+  options: {
+    hooks: {
+      PreToolUse: [{ matcher: 'Bash', hooks: [myHook] }],
+      PostToolUse: [{ hooks: [auditHook] }],
+      SessionEnd: [{ hooks: [logHook] }],
+    },
+  },
+});</code></pre>
+<p><strong>matcher 是正则</strong>，匹配工具名；<strong>省略 matcher 则对所有工具生效</strong>：</p>
+<pre><code>hooks: {
+  PreToolUse: [
+    { matcher: 'Bash', hooks: [bashAuditHook] },               // Bash only
+    { matcher: 'File.*|Write|Edit', hooks: [fileAuditHook] },  // File operations
+    { hooks: [generalLogHook] },                               // All tools (no matcher)
+  ],
+},</code></pre>
+<p><strong>回调签名</strong>：</p>
+<pre><code>type HookCallback = (
+  input: HookInput,
+  toolUseID: string | undefined,
+  options: { signal: AbortSignal },
+) =&gt; Promise&lt;HookJSONOutput&gt;;</code></pre>
+<p><strong>输入</strong>：所有事件共享 <code>hook_event_name</code>、<code>session_id</code>、<code>transcript_path</code>、<code>cwd</code>；各事件另有专属字段（如 <code>PreToolUse</code> 的 <code>tool_name</code> / <code>tool_input</code>）。</p>
+<p><strong>输出（关键）</strong>：</p>
+<pre><code>interface HookJSONOutput {
+  continue?: boolean;
+  stopReason?: string;
+  decision?: string;
+  reason?: string;
+  hookSpecificOutput?: object;
+}</code></pre>
+<table class="doc-table"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td><code>continue: false</code></td><td>结束会话（Python 字段名 <code>continue_</code>，序列化时转为 <code>"continue"</code>）</td></tr><tr><td><code>decision: "block"</code> + <code>reason</code></td><td>阻止工具执行；对 <code>Stop</code> 事件则阻止停止、强制继续</td></tr><tr><td><code>hookSpecificOutput</code></td><td>事件特定输出：修改工具输入（<code>updatedInput</code>）、覆盖工具输出（<code>updatedToolOutput</code>）、注入上下文（<code>additionalContext</code>）</td></tr></tbody></table>
+<p><strong>各事件 Hook 输入结构</strong>（官方完整提供）：</p>
+<pre><code>interface PreToolUseHookInput extends BaseHookInput {
+  hook_event_name: 'PreToolUse';
+  permission_mode: string | undefined;
+  tool_name: string;
+  tool_input: unknown;
+}
+
+interface PostToolUseHookInput extends BaseHookInput {
+  hook_event_name: 'PostToolUse';
+  tool_name: string;
+  tool_input: unknown;
+  tool_response: unknown;
+}
+
+interface PostToolUseFailureHookInput extends BaseHookInput {
+  hook_event_name: 'PostToolUseFailure';
+  tool_name: string;
+  tool_input: unknown;
+  error: string;
+  is_interrupt: boolean | undefined;
+}
+
+interface UserPromptSubmitHookInput extends BaseHookInput {
+  hook_event_name: 'UserPromptSubmit';
+  prompt: string;
+}
+
+interface SessionStartHookInput extends BaseHookInput {
+  hook_event_name: 'SessionStart';
+  source: string;
+}</code></pre>
+<pre><code>interface StopHookInput extends BaseHookInput {
+  hook_event_name: 'Stop';
+  stop_hook_active: boolean;
+}
+
+interface SubagentStartHookInput extends BaseHookInput {
+  hook_event_name: 'SubagentStart';
+  agent_id: string;
+  agent_type: string;
+}
+
+interface SubagentStopHookInput extends BaseHookInput {
+  hook_event_name: 'SubagentStop';
+  stop_hook_active: boolean;
+}
+
+interface PreCompactHookInput extends BaseHookInput {
+  hook_event_name: 'PreCompact';
+  trigger: string;
+  custom_instructions: string | null;
+}
+
+interface PermissionRequestHookInput extends BaseHookInput {
+  hook_event_name: 'PermissionRequest';
+  tool_name: string;
+  tool_input: unknown;
+  permission_suggestions: PermissionUpdate[] | undefined;
+}</code></pre>
+<p>其中 <code>SessionStart.source</code> 取 <code>"startup"</code> / <code>"resume"</code> / <code>"clear"</code> / <code>"compact"</code>；<code>SessionEnd.reason</code> 取 <code>"clear"</code> / <code>"resume"</code> / <code>"logout"</code> / <code>"prompt_input_exit"</code> / <code>"other"</code> / <code>"bypass_permissions_disabled"</code>；<code>PreCompact.trigger</code> 取 <code>"manual"</code> / <code>"auto"</code>；<code>FileChanged.event</code> 取 <code>"change"</code> / <code>"add"</code> / <code>"unlink"</code>。</p>
+<p><strong>五类典型用法</strong>（官方示例）：</p>
+<p>① <strong>安全拦截（PreToolUse）</strong> —— 拦危险 shell 命令：</p>
+<pre><code>const securityHook: HookCallback = async (input) =&gt; {
+  if (input.hook_event_name !== 'PreToolUse') return {};
+
+  if (input.tool_name === 'Bash') {
+    const cmd = String((input.tool_input as any)?.command ?? '');
+    if (cmd.includes('rm -rf')) {
+      return {
+        hookSpecificOutput: {
+          hookEventName: 'PreToolUse',
+          permissionDecision: 'deny',
+          permissionDecisionReason: 'Destructive delete operations are not allowed',
+        },
+      };
+    }
+  }
+
+  return {};
+};</code></pre>
+<p>② <strong>脱敏（PostToolUse）</strong> —— 覆盖工具输出，替换 AK / Token 等敏感信息：</p>
+<pre><code>const secretRedactHook: HookCallback = async (input) =&gt; {
+  if (input.hook_event_name !== 'PostToolUse') return {};
+
+  const content = typeof input.tool_response === 'string'
+    ? input.tool_response
+    : JSON.stringify(input.tool_response);
+
+  const redacted = content
+    .replace(/(?:LTAI|AKID)[A-Za-z0-9]{16,}/g, '&lt;REDACTED_AK&gt;')
+    .replace(/Bearer\s+[A-Za-z0-9\-._~+/]+=*/g, 'Bearer &lt;REDACTED&gt;');
+
+  if (redacted === content) return {};
+
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PostToolUse',
+      updatedToolOutput: redacted,
+    },
+  };
+};</code></pre>
+<p>③ <strong>截断超长输出（PostToolUse）</strong> —— 保留首尾、掐掉中段：</p>
+<pre><code>const bashSummarizeHook: HookCallback = async (input) =&gt; {
+  if (input.hook_event_name !== 'PostToolUse') return {};
+  if (input.tool_name !== 'Bash') return {};
+
+  const content = String(input.tool_response ?? '');
+  const THRESHOLD = 50 * 1024;
+  if (content.length &lt;= THRESHOLD) return {};
+
+  const head = content.slice(0, 8 * 1024);
+  const tail = content.slice(-4 * 1024);
+  const omitted = content.length - head.length - tail.length;
+  return {
+    hookSpecificOutput: {
+      hookEventName: 'PostToolUse',
+      updatedToolOutput: `${head}\n\n[... OMITTED ${omitted} chars ...]\n\n${tail}`,
+    },
+  };
+};</code></pre>
+<p>④ <strong>强制继续（Stop）</strong> —— 任务未完成时阻止 AI 停止：</p>
+<pre><code>const keepGoingHook: HookCallback = async (input) =&gt; {
+  if (input.hook_event_name !== 'Stop') return {};
+
+  if (!isTaskComplete()) {
+    return {
+      decision: 'block',
+      reason: 'Please continue completing the remaining tasks',
+    };
+  }
+  return {};
+};</code></pre>
+<p>⑤ <strong>自动批准权限（PermissionRequest）</strong>：</p>
+<pre><code>const autoApproveRead: HookCallback = async (input) =&gt; {
+  if (input.hook_event_name !== 'PermissionRequest') return {};
+
+  if (input.tool_name === 'Read') {
+    return {
+      hookSpecificOutput: {
+        hookEventName: 'PermissionRequest',
+        decision: { behavior: 'allow' },
+      },
+    };
+  }
+  return {};
+};</code></pre>
+<p><strong>注意事项（重要）</strong>：</p>
+<ul><li>Hook 回调<strong>应快速返回</strong>，避免阻塞 AI 执行。</li><li><code>matcher</code> 匹配 <code>tool_name</code> 字段；正则语法随语言（TS 用 JS 正则，Python 用 <code>re</code>）。</li><li><code>continue: false</code> 仅对 <code>PreToolUse</code>、<code>PostToolUse</code>、<code>PostToolUseFailure</code>、<code>UserPromptSubmit</code>、<code>Stop</code>、<code>SubagentStop</code> 生效；<strong>观察类事件（如 <code>SessionEnd</code>、<code>CwdChanged</code>）忽略它</strong>。</li><li><strong>多个 Hook 返回冲突 <code>decision</code> 时，<code>"deny"</code> / <code>"block"</code> 优先（最严格规则胜出）。</strong></li><li><strong>多个 Hook 设置 <code>updatedToolOutput</code> 时，最后一个非空值生效。</strong> 若需链式变换（先脱敏再截断），<strong>应在单个回调内顺序执行</strong>。</li><li>Python SDK 用下划线后缀字段名（<code>continue_</code>）避免与关键字冲突，序列化时自动转换。</li></ul>
+<p><strong>对墨道的落地提示</strong>：Hooks 是本轮全部 16 篇中<strong>对第十三章落地最有直接价值、且成本最低</strong>的一篇。它能在<strong>不改架构</strong>的前提下补上多个此前被列为「待建」的能力：</p>
+<ol><li><strong>A4 工具审计 → <code>PreToolUse</code> + <code>PostToolUse</code></strong>。官方示例（审计日志 + 安全拦截合并）可直接复用。这比自建审计层更内聚，且拿到的是<strong>官方标准 Hook 输入结构</strong>而非自定义事件。</li><li><strong>A3 工具错误回传完善 → <code>PostToolUseFailure</code></strong>。该事件提供 <code>error</code> 与 <code>is_interrupt</code>，正是 A3 所需的结构化错误字段。</li><li><strong>A2 熔断 / A1 超时 → <code>PreToolUse</code> 拦截 + 计数</strong>。在 Hook 内维护失败计数，达到阈值即返回 <code>permissionDecision: 'deny'</code>，即可实现熔断语义，无需改动 MCP 层。</li><li><strong>E4 审辨迭代循环 → <code>SubagentStop</code> + <code>Stop</code></strong>。<code>SubagentStop</code> 提供 <code>agent_id</code> / <code>stop_hook_active</code>，<code>Stop</code> 支持 <code>decision: 'block'</code> 强制继续——<strong>这是实现「审辨不通过则带反馈重试」的官方机制</strong>，比在应用层重建循环更稳。<code>SubagentStart</code> 的 <code>agent_id</code> / <code>agent_type</code> 还可用于 E7「嵌套时间线展示」。</li><li><strong>E7 可观测性扩展 → 全套观察类 Hook</strong>。<code>SubagentStart</code> / <code>SubagentStop</code> / <code>PreCompact</code> / <code>PostCompact</code> / <code>FileChanged</code> / <code>CwdChanged</code> 提供的正是「多智能体并行嵌套时间线」所需的原始事件，<strong>且比现有 SSE 7 类事件更细</strong>。建议评估以 Hook 事件为时间线的第二数据源。</li><li><strong>权限审计（B6）→ <code>PermissionDenied</code></strong>。与 14.10 的 <code>SDKPermissionDeniedMessage</code> 互为补充（一个在 Hook 侧、一个在消息流侧）。</li><li><strong>上下文注入 → <code>UserPromptSubmit</code> / <code>SessionStart</code> 的 <code>additionalContext</code></strong>。D4「六步信息流转」中的「取用」环节可借此注入受控上下文，而非全量透传。</li><li><strong>敏感信息脱敏可直接落地</strong>——脱敏 Hook 官方示例与本项目「审计日志不得含凭据」（见 14.6）要求完全吻合，建议优先实现。</li><li><strong><code>WorktreeCreate</code> 为并发隔离提供路径</strong>——若 E6 需要多个子智能体并行操作同一仓库，可用 worktree 隔离，避免写冲突。注意该 Hook <strong>需自行实现物理创建/删除</strong>。</li></ol>
+<h3>14.12 Cost and Usage（成本与用量）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/cost-usage</code></p>
+<p><strong>用量查询</strong>：<code>q.getUsageInfo()</code>（TS）/ <code>client.get_usage_info()</code>（Python）返回 <code>UsageInfo</code>，含账号级与配额级信息：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td><code>userId</code> / <code>userType</code></td><td>用户标识与类型</td></tr><tr><td><code>totalUsagePercentage</code></td><td>总用量百分比</td></tr><tr><td><code>isHighestTier</code></td><td>是否最高档</td></tr><tr><td><code>expiresAt</code></td><td>到期时间</td></tr><tr><td><code>upgradeUrl</code></td><td>升级入口</td></tr><tr><td><code>userQuota</code></td><td>用户配额桶：<code>total</code> / <code>used</code> / <code>remaining</code> / <code>percentage</code> / <code>unit</code></td></tr><tr><td><code>addOnQuota</code></td><td>附加配额桶（另有 <code>detailUrl</code>）</td></tr><tr><td><code>isQuotaExceeded</code></td><td>配额是否已耗尽</td></tr><tr><td><code>isPlanQuotaProrated</code></td><td>套餐配额是否按比例分摊</td></tr><tr><td><code>orgResourcePackage</code></td><td>组织资源包：<code>used</code> / <code>cap</code> / <code>remaining</code> / <code>percentage</code> / <code>available</code> / <code>unit</code></td></tr><tr><td><code>session</code></td><td>本会话用量：<code>total_credits</code> + <code>model_usage</code>（按模型计 credits）</td></tr></tbody></table>
+<p><strong>Credits 计量</strong>：<code>SDKAssistantMessage</code> 的 <code>message.usage</code> 含 <code>credits</code> / <code>original_credits</code> / <code>billable</code> 三个可选字段，<strong>包含单次模型请求的 Credits 数据</strong>。<code>SDKResultMessage.modelUsage</code> 对应 <code>UsageInfo.session.model_usage</code>。</p>
+<p><strong>上下文用量</strong>：<code>q.getContextUsage()</code> 返回详细结构：</p>
+<pre><code>type SDKControlGetContextUsageResponse = {
+  model: string;
+  contextWindow: { usedPercentage: number };
+  categories: Array&lt;{
+    type:
+      | 'system_prompt' | 'system_tools' | 'skills'
+      | 'messages' | 'other' | 'free_space' | 'auto_compact';
+    percentage: number;
+  }&gt;;
+  autoCompact: { enabled: boolean; thresholdPercentage: number };
+  skills: {
+    count: number;
+    percentageOfContext: number;
+    items: Array&lt;{
+      name: string;
+      source: 'project' | 'user' | 'built-in' | 'plugin';
+      percentageOfContext: number;
+    }&gt;;
+  };
+  duplicateFileReads: Array&lt;{ path: string; count: number }&gt;;
+  session: {
+    messageCount: number;
+    promptCount: number;
+    toolCalls: { total: number; succeeded: number; failed: number };
+    linesChanged: { added: number; removed: number };
+  };
+};</code></pre>
+<p><strong>对墨道的落地提示</strong>：本篇直接解决第十三章 A6「用量/成本统计」，且<strong>顺带解决了一个未列出的问题</strong>：</p>
+<ol><li><strong>A6 不该自建计量</strong>——官方已提供 <code>getUsageInfo()</code>（账号/配额/会话级 credits）与 <code>message.usage.credits</code>（单次请求级），比自建 Token 计数器更准确。<strong>建议 A6 改为「接入官方用量接口 + 落库」，而非自研统计</strong>。</li><li><strong>发现了一个额外收益：上下文占用可视化</strong>——<code>getContextUsage()</code> 的 <code>categories</code>（含 <code>skills</code> 占比）与 <code>duplicateFileReads</code>（重复读文件）是<strong>现成的优化诊断数据</strong>，可直接用于：展示「技能占用了多少上下文」（为 14.4 的 <code>skillOverrides</code> 调优提供量化依据）；发现重复读取的文件以优化上下文效率。<strong>这两项此前不在第十三章任何分组中，建议新增为 A 组补充项。</strong></li><li><strong><code>session.toolCalls</code> 的成败计数可作 A2 熔断的数据源</strong>。</li><li><strong>与 06 板块的衔接</strong>：<code>userQuota</code> / <code>addOnQuota</code> / <code>orgResourcePackage</code> / <code>isQuotaExceeded</code> 正是 06 板块「权益门禁」与「团队资源包」所需的官方字段。<strong>建议 06 板块的计量底座优先复用这些结构</strong>，而非自定义配额模型——这能显著降低前后端与官方配额语义不一致的风险。</li></ol>
+<h3>14.13 Events &amp; Streaming（事件与流式输出）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/streaming-output</code>（消息类型完整定义在 <code>references-typescript</code>）</p>
+<p class="callout callout--info">&nbsp;&nbsp;官方文档中 <code>events</code> 路径不存在；流式事件相关内容位于 <code>streaming-output</code>。本篇合并二者。</p>
+<p><strong>启用</strong>：<code>includePartialMessages: true</code>（Python：<code>include_partial_messages</code>）。</p>
+<pre><code>import { qodercliAuth, query } from '@qoder-ai/qoder-agent-sdk';
+
+const q = query({
+  prompt: 'Write a short analysis report',
+  options: {
+    auth: qodercliAuth(),
+    includePartialMessages: true,
+  },
+});</code></pre>
+<p><strong>三种增量（delta）类型</strong>：</p>
+<table class="doc-table"><thead><tr><th>delta 类型</th><th>用途</th></tr></thead><tbody><tr><td><code>text_delta</code></td><td>模型文本回复增量 → 打字机效果</td></tr><tr><td><code>thinking_delta</code></td><td>思考内容增量（推理型模型在最终回复前发出）</td></tr><tr><td><code>input_json_delta</code></td><td><strong>工具调用参数增量</strong> → 可实时渲染模型正在写入的文件内容</td></tr></tbody></table>
+<pre><code>for await (const msg of q) {
+  if (msg.type === 'stream_event') {
+    const delta = msg.event.delta;
+    if (delta?.type === 'text_delta') {
+      process.stdout.write(delta.text);
+    }
+  }
+}</code></pre>
+<p><strong>SDKMessage 判别联合（完整成员）</strong>：</p>
+<pre><code>type SDKMessage =
+  | SDKAssistantMessage
+  | SDKUserMessage
+  | SDKUserMessageReplay
+  | SDKResultMessage
+  | SDKSystemMessage
+  | SDKPartialAssistantMessage
+  | SDKCompactBoundaryMessage
+  | SDKStatusMessage
+  | SDKMcpStatusChangeMessage
+  | SDKAPIRetryMessage
+  | SDKModelQueueStatusMessage
+  | SDKHookStartedMessage
+  | SDKHookProgressMessage
+  | SDKHookResponseMessage
+  | SDKTaskStartedMessage
+  | SDKTaskProgressMessage
+  | SDKTaskNotificationMessage
+  | SDKSessionStateChangedMessage
+  | SDKSessionTitleChangedMessage
+  | SDKFilesPersistedEvent
+  | SDKElicitationCompleteMessage
+  | SDKPermissionDeniedMessage
+  | SDKMirrorErrorMessage
+  | SDKPromptSuggestionMessage
+  | SDKCloudAgentEventMessage;</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>消费原则</strong>：先按 <code>message.type</code> 分支，再按 <code>subtype</code> 细分（<strong>只有 <code>system</code> / <code>result</code> 两类有 subtype</strong>）。</p>
+<p><strong><code>SDKAssistantMessage</code>（官方完整定义）</strong>：</p>
+<pre><code>type SDKAssistantMessage = {
+  type: 'assistant';
+  uuid: string;
+  session_id: string;
+  parent_tool_use_id: string | null;
+  request_id?: string;
+  message: {
+    role: 'assistant';
+    content: Array&lt;
+      | { type: 'text'; text: string }
+      | { type: 'tool_use'; id: string; name: string; input: unknown }
+      | { type: 'thinking'; thinking: string }
+    &gt;;
+    usage?: {
+      input_tokens?: number | null;
+      output_tokens?: number | null;
+      cache_read_input_tokens?: number | null;
+      cache_creation_input_tokens?: number | null;
+      credits?: number;
+      original_credits?: number;
+      billable?: boolean;
+    };
+  };
+};</code></pre>
+<p><strong><code>parent_tool_use_id</code> 语义（关键）</strong>：</p>
+<ul><li><code>null</code> = 该消息由<strong>主会话</strong>产生。</li><li>非 null = 该消息由<strong>子智能体</strong>产生，其值指向「父子智能体之间那次 <code>Agent</code> 工具调用」的 ID。</li></ul>
+<p class="callout callout--info">&nbsp;&nbsp;这是渲染<strong>嵌套时间线</strong>的唯一依据。第十三章 E7「多智能体并行的嵌套时间线展示」必须基于此字段实现。</p>
+<p><strong><code>request_id</code></strong>：默认缺失。需通过 <code>options.env</code> 设置 <code>QODER_EXPOSE_REQUEST_ID='true'</code>（国际版 CLI）或 <code>QODERCN_EXPOSE_REQUEST_ID='true'</code>（中国版 CLI）才会暴露。</p>
+<p><strong>其他消息类型要点</strong>：</p>
+<table class="doc-table"><thead><tr><th>消息类型</th><th>作用</th></tr></thead><tbody><tr><td><code>SDKUserMessageReplay</code></td><td>重放的用户消息（携带 <code>uuid</code>，检查点回滚锚点来源，见 14.8）</td></tr><tr><td><code>SDKCompactBoundaryMessage</code></td><td>上下文压缩边界</td></tr><tr><td><code>SDKStatusMessage</code></td><td>状态变更</td></tr><tr><td><code>SDKMcpStatusChangeMessage</code></td><td>MCP 服务器状态变化</td></tr><tr><td><code>SDKAPIRetryMessage</code></td><td>API 重试（<strong>可用于提示「网络波动，正在重试」而非静默等待</strong>）</td></tr><tr><td><code>SDKModelQueueStatusMessage</code></td><td>模型排队状态</td></tr><tr><td><code>SDKHookStartedMessage</code> / <code>SDKHookProgressMessage</code> / <code>SDKHookResponseMessage</code></td><td>Hook 生命周期（需 <code>includeHookEvents: true</code>）</td></tr><tr><td><code>SDKTaskStartedMessage</code> / <code>SDKTaskProgressMessage</code> / <code>SDKTaskNotificationMessage</code></td><td>任务生命周期</td></tr><tr><td><code>SDKSessionStateChangedMessage</code> / <code>SDKSessionTitleChangedMessage</code></td><td>会话状态 / 标题变化</td></tr><tr><td><code>SDKFilesPersistedEvent</code></td><td>文件持久化事件</td></tr><tr><td><code>SDKElicitationCompleteMessage</code></td><td>Elicitation 完成（MCP OAuth，见 14.3）</td></tr><tr><td><code>SDKPermissionDeniedMessage</code></td><td>权限拒绝（见 14.10）</td></tr><tr><td><code>SDKMirrorErrorMessage</code></td><td>外部会话存储写入失败（见 14.16）</td></tr><tr><td><code>SDKPromptSuggestionMessage</code></td><td>提示建议（需 <code>promptSuggestions: true</code>）</td></tr><tr><td><code>SDKCloudAgentEventMessage</code></td><td>Cloud Agent 事件（见 14.14）</td></tr></tbody></table>
+<p><strong>SessionMessage（会话持久化消息结构）</strong>：</p>
+<pre><code>type SessionMessage = {
+  type: 'user' | 'assistant' | 'system';
+  uuid: string;
+  session_id: string;
+  message: unknown;
+  parent_tool_use_id: string | null;
+  parent_agent_id: string | null;
+  timestamp?: string;
+  subtype?: string;
+  compact_metadata?: object;
+};</code></pre>
+<p><strong>对墨道的落地提示</strong>：本篇对第十三章 A6、E7、A3 三项有直接作用，且<strong>暴露出一个当前架构缺口</strong>：</p>
+<ol><li><strong>E7 的实现在此定型</strong>——嵌套时间线 = 按 <code>parent_tool_use_id</code> 建树。本项目现有「SSE 7 类事件」是自建事件集，<strong>未包含 <code>parent_tool_use_id</code> 的等价字段</strong>。若 E7 要在多智能体场景下工作，<strong>SSE 桥接层必须透传该字段</strong>。这是一个<strong>当前就会阻塞 E7 的架构缺口</strong>，建议提前在 SSE 事件结构中预留。</li><li><strong><code>SDKAPIRetryMessage</code> 可消除一类「静默假成功」风险</strong>——本项目已强调「无静默假成功」。API 重试期间若无提示，用户会看到长时间的静止画面。建议把该消息映射为前端状态行提示。</li><li><strong><code>thinking_delta</code> 支撑思考过程实时展示</strong>——本项目已有「思考折叠」功能，<code>thinking_delta</code> 使其从「事后展示」升级为「实时流式」，体验提升明显。</li><li><strong><code>input_json_delta</code> 可用于产物实时预览</strong>——模型写文件时可实时渲染正在写入的内容，与「笔记联动」「产物 diff」功能天然契合。</li><li><strong><code>message.usage</code> 是 A6 的最细粒度数据源</strong>（单次请求级 credits），与 <code>getUsageInfo()</code> 的会话级聚合互补。</li><li><strong><code>SDKCompactBoundaryMessage</code> 提示了自动压缩的存在</strong>——长会话中上下文会被自动压缩（<code>autoCompact.thresholdPercentage</code>）。<strong>这会丢失细节</strong>，本项目若处理长科研对话，应评估在压缩边界处落一份摘要备份。</li></ol>
+<h3>14.14 Cloud Agent（云端智能体，实验性）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/cloud-agent</code></p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>状态：实验性 / 不稳定。API 形态可能在次版本间变化，生产路径不得依赖未发布字段。</strong></p>
+<p><strong>何时使用</strong>：不想管理 qodercli / 捆绑二进制 / 本地运行时；需要跨机器复用的长生命周期 agent（agent 持久化在云端）；希望会话上下文存在云端，使多个进程/主机可恢复。</p>
+<p><strong>关键限制（先行声明）</strong>：</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>本地 CLI 独有能力——MCP 服务器 / <code>settings</code> / <code>hooks</code> / <code>plugins</code> / 本地权限 / 检查点——在 Cloud 运行时全部不支持；传入这些参数会同步抛错。</strong></p>
+<p><strong>前置条件</strong>：</p>
+<ul><li><strong>PAT</strong>：Cloud 运行时<strong>只接受 access-token 认证</strong>（<code>accessToken()</code> / <code>accessTokenFromEnv()</code>）；本地登录态或 job token <strong>同步失败</strong>。</li><li><strong>Cloud <code>environment_id</code></strong>：创建会话时必需。</li></ul>
+<pre><code>export QODER_PERSONAL_ACCESS_TOKEN="&lt;your-pat&gt;"
+export QODER_CLOUD_AGENT_ENVIRONMENT_ID="&lt;your-env-id&gt;"</code></pre>
+<p><strong>首次调用：创建 agent + 创建 session</strong>：</p>
+<pre><code>import { accessTokenFromEnv, query } from '@qoder-ai/qoder-agent-sdk';
+
+const q = query({
+  prompt: 'Summarize this repository in one short paragraph.',
+  options: {
+    auth: accessTokenFromEnv(),
+    experimentalCloudAgent: {
+      agent: {
+        create: {
+          name: 'my-cloud-agent',
+          model: 'ultimate',
+          system: 'You are a concise code assistant.',
+          tools: [
+            {
+              type: 'agent_toolset_20260401',
+              enabled_tools: ['read', 'glob', 'grep'],
+            },
+          ],
+        },
+      },
+      session: {
+        create: {
+          environment_id: process.env.QODER_CLOUD_AGENT_ENVIRONMENT_ID!,
+          title: 'first-cloud-session',
+        },
+      },
+    },
+  },
+});</code></pre>
+<p>运行后从最终 result 消息取 <code>session_id</code>，后续轮次可继续该会话。</p>
+<p><strong>内置工具允许列表</strong>：<code>tools[].enabled_tools</code> 支持 <code>bash</code> / <code>write</code> / <code>glob</code> / <code>web_fetch</code> / <code>read</code> / <code>edit</code> / <code>grep</code> / <code>web_search</code>。<strong>省略 <code>tools</code> 则该 agent 没有任何工具。</strong></p>
+<p><strong>挂载文件到会话</strong>：文件经 Files API 上传后，用 <code>session.create.resources</code> 挂进会话容器：</p>
+<pre><code>session: {
+  create: {
+    environment_id,
+    resources: [
+      { type: 'file', file_id: 'file_abc123', path: '/workspace/data.json' },
+    ],
+  },
+}</code></pre>
+<p><strong>复用已有 agent</strong>：<code>agent: { id: 'agent_xxx' }</code>，跳过 <code>create</code>。</p>
+<p><strong>多轮：恢复会话</strong>——已有 <code>session_id</code> 后，下一次调用<strong>只传 <code>session: { id }</code></strong>，<strong>不要再传 <code>agent</code></strong>（会话已绑定 agent，两者同传会同步抛错）。</p>
+<pre><code>// Turn 2: continue the same Cloud session
+const second = query({
+  prompt: 'What is my favorite color?',
+  options: {
+    auth: accessTokenFromEnv(),
+    experimentalCloudAgent: {
+      session: { id: sessionId! },
+    },
+  },
+});</code></pre>
+<p><strong>会话上下文存在云端</strong>，脚本可在轮次之间重启或在机器间迁移——只要有 <code>session_id</code> 即可恢复。</p>
+<p><strong>Python 高阶用法</strong>：<code>QoderSDKClient</code> 提供更高层的 Cloud 会话管理——<code>connect()</code> 创建/解析 Cloud 会话，后续 <code>query()</code> 逐轮复用，无需手动跟踪 <code>session_id</code>。</p>
+<p class="callout callout--info">&nbsp;&nbsp;Cloud 运行时不支持 <code>client.set_model()</code>、<code>client.reload_plugins()</code>、MCP OAuth 等本地 CLI 控制方法——调用会抛 <code>ValueError</code>。</p>
+<p><strong>消费 SSE 事件</strong>：Cloud 运行时通过 SSE 推回会话事件流；SDK 把每个事件包装成 cloud agent 事件消息（TS：<code>cloud_agent_event</code>；Python：<code>CloudAgentEventMessage</code>）。</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td><code>event</code></td><td>Cloud 事件名（如 <code>user.message</code> / <code>agent.message</code> / <code>session.status_idle</code>）</td></tr><tr><td><code>id</code></td><td>SSE 流中的事件 ID，<strong>可作重放锚点</strong></td></tr><tr><td><code>data</code></td><td>Cloud 事件载荷（含 <code>turn_id</code> 等字段）</td></tr><tr><td><code>uuid</code>（Python）</td><td>SDK 生成的去重唯一 ID</td></tr><tr><td><code>session_id</code></td><td>该事件所属的 Cloud 会话 ID</td></tr></tbody></table>
+<p><strong>历史重放隔离</strong>：复用已有会话时，SSE 会先重放历史轮次事件——SDK <strong>按 <code>turn_id</code> 隔离</strong>：只有<strong>当前轮次</strong>的 <code>session.status_idle</code> 才会产生终止 result，<strong>历史事件不会提前结束本次查询</strong>。</p>
+<p><strong>SSE 调参</strong>：</p>
+<pre><code>experimentalCloudAgent: {
+  session: { id: sessionId },
+  stream: {
+    afterId: 'evt_xxx',         // start replay after this event ID
+    deltaFlushIntervalMs: 250,  // delta merge / flush interval
+  },
+}</code></pre>
+<p><strong>异常关闭</strong>：若 SSE 在当前轮次到达终止态前断开，SDK 会合成一个错误 result（<code>subtype != 'success'</code>、<code>is_error: true</code>），便于上游统一处理。</p>
+<p><strong>终止态 result 内容</strong>：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>说明</th></tr></thead><tbody><tr><td><code>subtype</code></td><td><code>success</code> 或错误子类型</td></tr><tr><td><code>is_error</code></td><td>本轮是否异常结束</td></tr><tr><td><code>session_id</code></td><td>Cloud 会话 ID（create 分支由 SDK 回填）</td></tr><tr><td><code>result</code></td><td>本轮 Agent 文本回复（多个文本块拼接）</td></tr><tr><td><code>usage</code> / <code>total_cost_usd</code></td><td>从本轮 <code>span.model_request_end.usage</code> 回填</td></tr></tbody></table>
+<p><strong>约束速览</strong>：</p>
+<ul><li><code>agent</code> 与 <code>session</code> 各自把 <code>id</code> / <code>create</code> 视为互斥（TypeScript 由联合类型强制）。</li><li>传已有 <code>session.id</code> 时<strong>不要</strong>同时传 <code>agent</code>。</li><li><code>session.create</code> 必须显式含 <code>environment_id</code>。</li><li>Cloud 运行时不支持本地 CLI 顶层选项：<code>model</code>、<code>agent</code>、MCP 服务器、<code>settings</code>、<code>hooks</code>、<code>plugins</code>、权限模式等会同步抛错。</li><li>不支持模型切换、插件重载、MCP OAuth 等运行时控制方法——只能迭代消息与关闭会话。</li></ul>
+<p><strong>错误码</strong>：</p>
+<table class="doc-table"><thead><tr><th>TS 码 / Python 异常</th><th>触发</th></tr></thead><tbody><tr><td><code>cloud_agent_auth_requires_access_token</code> / <code>CloudAgentUnsupportedAuthError</code></td><td>非 PAT 认证（本地登录态 / job token）</td></tr><tr><td><code>cloud_agent_api_error</code> / <code>CloudAgentApiError</code></td><td>Cloud OpenAPI 非 2xx，或 SSE 通道失败</td></tr></tbody></table>
+<p><strong>对墨道的落地提示</strong>：第十三章 13.8「其余补充说明」把 cloud-agent 列为「SDK 支持但未接入，需评估是否作为远端算力通道」。本篇给出了<strong>评估所需的关键约束</strong>：</p>
+<ol><li><strong>与现有能力互斥是核心决策点</strong>——Cloud 运行时不支持 MCP / hooks / plugins / settings / 权限 / 检查点。这意味着<strong>本项目的六个科研 MCP、十二个技能、权限链、审计 Hook 全部无法在 Cloud 运行时工作</strong>。它不是「本地能力的远端版本」，而是<strong>另一套能力更窄的运行时</strong>。</li><li><strong>定位建议</strong>：若未来接入，应定位为<strong>「轻量远端任务的旁路通道」</strong>（如长时仿真、批量文献处理），而<strong>不是 Work 模式的主运行时</strong>。主线（墨道）必须留在本地 runtime。</li><li><strong>PAT 认证是硬门槛</strong>——需要用户在 <code>qoder.com/account/integrations</code> 生成 PAT，<strong>与桌面应用的登录态是两套体系</strong>。这意味着接入 Cloud 需要额外的产品级认证流程设计（与 14.6、06 板块账号体系联动）。</li><li><strong>实验性状态是排期依据</strong>——「API 形态可能在次版本间变化」意味着<strong>不宜在此阶段为此投入架构改造</strong>。建议保持观望，待官方转正式后再评估。</li></ol>
+<h3>14.15 Session Control（会话控制）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/session-control</code></p>
+<p><strong>概念</strong>：一个 session 对应 CLI 侧一份持久化的对话历史（含上下文、工具调用记录、压缩边界等），由 UUID 标识。<code>init</code> 系统消息包含当前 <code>session_id</code>，它同时是后续 resume/fork 操作的锚点。</p>
+<p><strong>创建新会话</strong>：</p>
+<ul><li><strong>默认</strong>：不传任何会话相关字段时，每次创建新会话。</li><li><strong>指定 ID</strong>：给 <code>sessionId</code> 传值，由调用方决定 UUID（适合宿主自管会话索引）。</li></ul>
+<p><strong>恢复会话</strong>：</p>
+<pre><code>const q = query({
+  prompt: 'Continue the previous conversation',
+  options: {
+    auth: accessTokenFromEnv(),
+    resume: 'previous-session-id',
+  },
+});</code></pre>
+<p>不知道 ID 时，用 <code>continue: true</code>（Python：<code>continue_conversation=True</code>）恢复<strong>最近修改的会话</strong>。</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>不要把 <code>resume</code> 与 <code>continue</code> 同时传。</strong></p>
+<p><strong>分叉会话</strong>：从现有会话派生新会话，<strong>保留原有上下文但获得新 session ID，原会话不受影响</strong>。</p>
+<pre><code>const q = query({
+  prompt: 'Based on the prior context, explore a different direction',
+  options: {
+    auth: accessTokenFromEnv(),
+    resume: 'source-session-id',
+    forkSession: true,
+  },
+});</code></pre>
+<p>可为分叉后的新会话指定 ID：</p>
+<pre><code>options: {
+  auth: accessTokenFromEnv(),
+  resume: 'source-session-id',
+  forkSession: true,
+  sessionId: 'my-new-session-id',
+}</code></pre>
+<p><strong>字段参考</strong>：</p>
+<table class="doc-table"><thead><tr><th>字段（TS / Python）</th><th>类型</th><th>行为</th></tr></thead><tbody><tr><td><code>sessionId</code> / <code>session_id</code></td><td>string</td><td>单独使用：以该 ID 创建新会话；配合 fork 字段：分叉后会话的 ID</td></tr><tr><td><code>resume</code> / <code>resume</code></td><td>string</td><td>要恢复的会话 ID</td></tr><tr><td><code>continue</code> / <code>continue_conversation</code></td><td>boolean</td><td><code>true</code> 恢复最近会话</td></tr><tr><td><code>forkSession</code> / <code>fork_session</code></td><td>boolean</td><td>与 <code>resume</code> 配合，表示分叉而非继续</td></tr></tbody></table>
+<p><strong>获取当前会话 ID</strong>：监听 <code>init</code> 系统消息；Python 的 <code>ResultMessage</code> 也带 <code>session_id</code>，两者都可用于记账。</p>
+<pre><code>for await (const msg of q) {
+  if (msg.type === 'system' &amp;&amp; msg.subtype === 'init') {
+    console.log('session_id:', msg.session_id);
+  }
+}</code></pre>
+<p><strong>用户数据目录</strong>：用户数据目录存放会话历史、资源、日志等用户级 CLI 数据。通过 <code>options.env</code> 设 <code>QODER_CONFIG_DIR</code> 可选择该目录：</p>
+<pre><code>const q = query({
+  prompt: 'Analyze this repository',
+  options: {
+    auth: accessTokenFromEnv(),
+    env: {
+      ...process.env,
+      QODER_CONFIG_DIR: '/var/lib/my-agent/qoder',
+    },
+  },
+});</code></pre>
+<p><strong>子智能体与会话的关系</strong>：子智能体<strong>不产生独立的可 resume 会话</strong>——它们运行于父会话的上下文内，其消息通过 <code>parent_tool_use_id</code> / <code>parent_agent_id</code> 标识归属（见 14.13）。<strong>「子 Agent 独立 session」在本 SDK 中不成立</strong>；若需独立可恢复的执行单元，应通过 <strong>fork</strong> 创建平级会话。</p>
+<p><strong>对墨道的落地提示</strong>：本篇对第十三章 A5、F1、F5 有直接作用，并<strong>纠正了一处需求表述</strong>：</p>
+<ol><li><strong>「子 Agent 独立 session」这一表述需修正</strong>——SDK 中子智能体<strong>没有独立会话</strong>，它是父会话内的执行分支，用 <code>parent_tool_use_id</code> 标识。如果需求的原意是「子智能体有独立上下文、能独立恢复」，正确做法是 <strong>fork 出平级会话</strong>（<code>resume + forkSession</code>），而非给子智能体分配 session。<strong>建议据此修订 D1「建立智能体实例概念」的表述</strong>。</li><li><strong>F1 fork 直接可用</strong>——<code>resume + forkSession</code> 即为官方 fork 实现，无需自研。</li><li><strong>A5 <code>continue</code> 的边界场景可对齐官方</strong>——官方未定义「空会话」「已结束会话」「跨项目 continue」的具体行为，属于 SDK 层未明确定义区域。<strong>建议 A5 的实现以「官方行为 + 明确的前置校验」为准</strong>，并在文档中如实标注这些边界为「SDK 未定义」。</li><li><strong><code>QODER_CONFIG_DIR</code> 是会话数据落盘位置的关键开关</strong>——本项目为桌面应用，若需控制会话数据的存放位置（如跟随用户选择的项目目录、或配合 F4 加密存储），这是官方入口。<strong>注意：它影响的是 CLI 侧全部用户级数据，不只是本会话</strong>，改它需谨慎评估。</li><li><strong>fork 是 F5「多设备会话同步」的备选方案</strong>——在没有账号体系的前提下，可以通过导出/导入会话（配合 14.16）实现跨设备迁移，比自建同步协议成本低。但这<strong>不解决「同时在线」问题</strong>，F5 的完整落地仍依赖账号体系。</li></ol>
+<h3>14.16 External Session Storage（外部会话存储）</h3>
+<p><strong>官方地址</strong>：<code>https://docs.qoder.com/en/cli/sdk/session-storage</code></p>
+<p><strong>为什么需要</strong>：默认 qodercli 把会话历史存在运行机器上。多实例、容器、无服务器部署下，下一个请求可能落到另一台机器读不到原会话。外部会话存储把每个会话<strong>镜像</strong>到应用自己控制的存储中。</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>镜像语义</strong>：这是<strong>额外的一份副本</strong>——qodercli 仍写本地，任何宿主只要有 session ID 就能继续该会话。</p>
+<p><strong>适用条件</strong>：请求会在服务实例间迁移；本地磁盘临时或不可靠；应用必须控制访问、加密、备份或留存。<strong>始终单机运行的应用，本地会话存储通常足够。</strong></p>
+<p><strong>工作原理</strong>：</p>
+<pre><code>first request
+  query()
+    -&gt; qodercli writes the session locally
+    -&gt; the SDK mirrors new session entries to your store
+
+later request, on any host
+  query (with resume=session_id)
+    -&gt; the SDK loads session history from your store
+    -&gt; qodercli continues the session</code></pre>
+<p>两条性质：</p>
+<ul><li><strong>写入是尽力而为（best-effort）</strong>。SDK 后台镜像条目；写入失败会报告，但<strong>永不中断正在进行的对话</strong>。</li><li><strong>条目是不透明的（opaque）</strong>。你的存储按原样保存并返回 SDK 定义的 transcript 条目，<strong>应用无需理解 qodercli 的本地文件格式</strong>。</li></ul>
+<p><strong>快速开始</strong>：<code>InMemorySessionStore</code> 只在进程内保数据，用于验证接线（查询能存能恢复），<strong>无法演示跨主机恢复</strong>（进程退出即丢）。要跨主机必须实现真实存储。</p>
+<pre><code>import {
+  InMemorySessionStore,
+  qodercliAuth,
+  query,
+} from '@qoder-ai/qoder-agent-sdk';
+
+const store = new InMemorySessionStore();
+const options = {
+  auth: qodercliAuth(),
+  cwd: '/path/to/project',
+  sessionStore: store,
+};
+
+// First query: run and capture the session ID.
+let sessionId: string | undefined;
+for await (const message of query({
+  prompt: 'Remember the number 42.',
+  options,
+})) {
+  if (message.type === 'result') sessionId = message.session_id;
+}
+if (!sessionId) throw new Error('The first query did not return a session ID.');
+
+// Later query: resume from the store and the model recalls prior context.
+for await (const message of query({
+  prompt: 'What number did I ask you to remember?',
+  options: { ...options, resume: sessionId },
+})) {
+  if (message.type === 'result') console.log(message.result); // -&gt; "42"
+}</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>每个宿主必须使用相同的 <code>cwd</code></strong>，SDK 据此识别请求同属一个项目。</p>
+<p><strong>在应用中使用存储</strong>：给每个需要镜像或恢复的查询传 <code>sessionStore</code>（Python：<code>session_store</code>），然后选择会话识别方式——已知 ID 传 <code>resume</code>；要项目最近会话传 <code>continue: true</code>（<strong>需要存储实现会话列举方法</strong>）。</p>
+<p><strong>会话管理函数</strong>（作用于存储而非本地文件）：</p>
+<table class="doc-table"><thead><tr><th>函数</th><th>用途</th><th>外部存储要求</th></tr></thead><tbody><tr><td><code>listSessions</code></td><td>按最近修改列出会话</td><td><code>SessionStore.listSessions</code></td></tr><tr><td><code>getSessionInfo</code></td><td>读取单个会话元数据</td><td><code>load</code></td></tr><tr><td><code>getSessionMessages</code></td><td>读取活动对话链</td><td><code>load</code></td></tr><tr><td><code>renameSession</code> / <code>tagSession</code></td><td>更新标题或标签</td><td><code>append</code></td></tr><tr><td><code>forkSession</code></td><td>从现有历史创建独立会话</td><td><code>load</code> 和 <code>append</code></td></tr><tr><td><code>listSubagents</code></td><td>列出子代理 ID</td><td><code>SessionStore.listSubkeys</code></td></tr><tr><td><code>getSubagentMessages</code></td><td>读取单个子代理消息</td><td><code>load</code>；可用时用 <code>listSubkeys</code></td></tr><tr><td><code>deleteSession</code></td><td>删除会话及其子数据</td><td><code>SessionStore.delete</code>；缺失时外部不做任何事</td></tr></tbody></table>
+<p><strong>导入已有本地会话到存储</strong>（如迁移此前未启用外部存储的机器）：<code>importSessionToStore(sessionId, store, { dir })</code>。注意<strong>会话 ID 在前、store 在后</strong>。<code>includeSubagents</code> 默认 <code>true</code>，<code>batchSize</code> 默认 <code>500</code>。</p>
+<p><strong>实现存储接口</strong>：</p>
+<pre><code>type SessionKey = {
+  projectKey: string; // derived from cwd; identifies the project
+  sessionId: string; // the session UUID
+  subpath?: string; // set for subagent transcripts, e.g. "subagents/agent-&lt;id&gt;"
+};
+
+type SessionStoreEntry = {
+  type: string;
+  uuid?: string;
+  timestamp?: string;
+  [key: string]: unknown; // opaque transcript line — store and return unchanged
+};
+
+interface SessionStore {
+  // Required
+  append(key: SessionKey, entries: SessionStoreEntry[]): Promise&lt;void&gt;;
+  load(key: SessionKey): Promise&lt;SessionStoreEntry[] | null&gt;;
+  // Optional — implement only the features you need
+  listSessions?(
+    projectKey: string,
+  ): Promise&lt;Array&lt;{ sessionId: string; mtime: number }&gt;&gt;;
+  delete?(key: SessionKey): Promise&lt;void&gt;;
+  listSubkeys?(key: Omit&lt;SessionKey, 'subpath'&gt;): Promise&lt;string[]&gt;;
+}</code></pre>
+<p><strong>主会话没有 <code>subpath</code>；每个子智能体 transcript 复用相同的 projectKey 与 session ID，只是 <code>subpath</code> 不同。</strong></p>
+<table class="doc-table"><thead><tr><th>方法</th><th>启用的能力</th></tr></thead><tbody><tr><td><code>append</code>、<code>load</code></td><td>镜像会话并按 ID 恢复 — <strong>必需</strong></td></tr><tr><td><code>listSessions</code> / <code>list_sessions</code></td><td>恢复最近会话；列出已存会话</td></tr><tr><td><code>delete</code></td><td>从存储中删除会话</td></tr><tr><td><code>listSubkeys</code> / <code>list_subkeys</code></td><td>完整恢复与检视子智能体 transcript</td></tr></tbody></table>
+<p><strong>实现清单（关键纪律）</strong>：</p>
+<ul><li><strong>按 key 保持 append 顺序</strong>，且 <code>load</code> 返回完整历史。<strong>重放依赖顺序。</strong></li><li><strong>键之间必须隔离</strong>。绝不把一个 key 的条目返回给另一个 key。</li><li><strong><code>append</code> 必须幂等</strong>。SDK 可能用同一批条目重试失败的写入，重试<strong>不得重复历史</strong>。</li><li><strong>列举会话时 <code>mtime</code> 返回 Unix 毫秒时间戳</strong>，且<strong>只返回主会话</strong>（无 <code>subpath</code> 者）。</li><li><strong>级联删除</strong>。删除主会话必须同时删除其子智能体 transcript。</li><li><strong><code>listSubkeys</code> / <code>list_subkeys</code> 只返回相对标识符</strong>——<strong>绝不返回绝对路径，绝不包含 <code>.</code> 或 <code>..</code></strong>。这些会成为存储键，路径穿越段会让 transcript 逃出自己的命名空间（<strong>目录穿越风险</strong>）。</li><li><strong>同一会话的并发写入者在存储层串行化</strong>（若多进程可写）。</li></ul>
+<p><strong>操作与调优</strong>：</p>
+<table class="doc-table"><thead><tr><th>项</th><th>说明</th></tr></thead><tbody><tr><td>失败处理</td><td>外部写入失败<strong>永不中断进行中的对话</strong>。最终重试失败后，SDK 发出镜像错误消息（TS：<code>system/mirror_error</code>；Python：<code>SDKMirrorErrorMessage</code>）。<strong>若镜像完整性重要则需监控它</strong>——写入失败时对话仍可能完成</td></tr><tr><td>读超时</td><td>外部读取默认等待 <strong>60 秒</strong>，用 <code>loadTimeoutMs</code> / <code>load_timeout_ms</code> 调整</td></tr><tr><td>刷写策略</td><td><code>sessionStoreFlush</code> / <code>session_store_flush</code> 默认 <code>batched</code>；设为 <code>eager</code> 会更早镜像，代价是更多存储请求</td></tr></tbody></table>
+<p><strong>约束（硬性）</strong>：</p>
+<ul><li>显式 resume 的会话在存储中缺失时，SDK 仍可回退到同 ID 的本地会话。</li><li><strong>存储不能与以下组合使用</strong>：文件检查点（见 14.8）、自定义 transport、实验性 Cloud Agent 运行时（TypeScript 中还不能与 <code>persistSession: false</code> 组合）。TypeScript 中存储支持内置 Process 与 Worker transport；Python 需内置 subprocess transport。</li><li><strong>存储只承载会话历史</strong>。它不承载认证状态、应用配置、文件检查点或留存策略。</li></ul>
+<p><strong>官方提供的测试支持</strong>：TypeScript SDK 仓库内置 <code>SessionStore</code> 一致性测试；Python 在 <code>qoder_agent_sdk.testing</code> 提供 <code>run_session_store_conformance</code>。<strong>连接管理、权限、加密、备份、迁移与留存由应用自行负责。</strong></p>
+<p><strong>对墨道的落地提示</strong>：本篇对第十三章 F5「云同步」有直接价值，并<strong>给出了一组必须在架构决策阶段确认的互斥关系</strong>：</p>
+<ol><li><strong>本篇是「多设备会话同步」的官方解法，且无需账号体系即可先做</strong>——只要有一个共享存储（自建服务、对象存储、甚至用户网盘），就能实现「同一项目在多台机器继续对话」。<strong>这比 F5 原本设想的「账号体系驱动」路径成本低得多</strong>，建议作为 F5 的第一阶段（用户级/自选同步盘），账号体系驱动的自动同步作为第二阶段。</li><li><strong>必须二选一：文件检查点 vs 外部会话存储</strong>——两者<strong>不可组合</strong>。这是硬约束，直接影响 F2/F3（checkpoint/rewind）与 F5（云同步）的排期。<strong>建议决策顺序</strong>：先做 F1–F3（本地文件回滚），待用户对「跨设备继续对话」有明确需求时，再评估是否放弃文件回滚能力换取同步。<strong>这个取舍必须写进架构决策记录</strong>。</li><li><strong><code>cwd</code> 必须一致是同步的前提</strong>——每个宿主的 <code>cwd</code> 相同，SDK 才认作同一项目。这意味着<strong>跨设备同步要求项目路径一致</strong>，这对普通用户在 Windows/macOS 间同步是个真实障碍。<strong>建议在产品层面提供「项目标识」抽象</strong>，而非依赖物理路径。</li><li><strong>镜像失败是静默的（仅一条 <code>mirror_error</code> 消息）</strong>——若同步是实现的功能，<strong>必须监控该消息</strong>，否则用户会遇到「明明同步了却丢历史」且无任何提示。这与本项目「无静默假成功」的原则一致，<strong>应作为硬性要求</strong>。</li><li><strong>子智能体 transcript 的恢复需要 <code>listSubkeys</code></strong>——若 E7 要做嵌套时间线的历史回看（不只是实时），存储必须实现该方法。<strong>这应作为 E7 的隐含前置条件提前登记。</strong></li><li><strong><code>listSubkeys</code> 的目录穿越风险需在实现时专项防护</strong>——官方明确警告不得返回含 <code>.</code> / <code>..</code> 的路径。若自建存储，必须做白名单校验。这是一条<strong>安全红线</strong>。</li><li><strong><code>importSessionToStore</code> 是平滑迁移路径</strong>——已用本地存储的用户升级到同步能力时，可批量导入历史会话，无需用户重新对话。</li></ol>
+<h3>14.17 Type Reference（类型参考）</h3>
+<p><strong>官方地址</strong>：TypeScript 类型完整参考位于 <code>https://docs.qoder.com/en/cli/sdk/references-typescript</code>（Python 版为 <code>references-python</code>；<code>types</code> 路径不存在）。</p>
+<p><strong>语言差异（关键）</strong>：</p>
+<table class="doc-table"><thead><tr><th>维度</th><th>TypeScript</th><th>Python</th></tr></thead><tbody><tr><td>包名</td><td><code>@qoder-ai/qoder-agent-sdk</code></td><td><code>qoder-agent-sdk</code></td></tr><tr><td>命名风格</td><td>camelCase</td><td>公共选项 snake_case</td></tr><tr><td>协议层结构</td><td>camelCase</td><td><strong>仍保留 wire 协议的 camelCase</strong>（如 <code>maxTurns</code>、<code>hookSpecificOutput</code>）</td></tr><tr><td>一次性查询</td><td><code>query()</code></td><td><code>query()</code></td></tr><tr><td>流式输入</td><td><code>query()</code> + async iterable</td><td><code>QoderSDKClient</code></td></tr><tr><td>选项类型</td><td><code>Options</code></td><td><code>QoderAgentOptions</code></td></tr><tr><td>自定义工具</td><td><code>tool()</code></td><td><code>@tool()</code> 装饰器</td></tr><tr><td>in-process MCP</td><td><code>createSdkMcpServer()</code></td><td><code>create_sdk_mcp_server()</code></td></tr><tr><td>权限回调</td><td><code>canUseTool</code></td><td><code>can_use_tool</code></td></tr><tr><td>中断</td><td><code>q.interrupt()</code></td><td><code>client.interrupt()</code></td></tr><tr><td>文件回滚</td><td><code>q.rewindFiles()</code></td><td><code>client.rewind_files()</code></td></tr><tr><td>MCP 状态</td><td><code>q.mcpServerStatus()</code></td><td><code>client.get_mcp_status()</code></td></tr><tr><td>初始化结果</td><td><code>q.initializationResult()</code></td><td><code>client.get_server_info()</code></td></tr><tr><td>上下文用量</td><td><code>q.getContextUsage()</code></td><td><code>client.get_context_usage()</code></td></tr><tr><td>账号会话用量</td><td><code>q.getUsageInfo()</code></td><td><code>client.get_usage_info()</code></td></tr></tbody></table>
+<p><strong>TypeScript 独有选项</strong>：<code>memory</code> / <code>flushMemory()</code> / <code>refreshMemory()</code>（原生或应用自管记忆）；<code>toolConfig</code>（调整内置工具行为）；<code>persistSession</code> / <code>resumeSessionAt</code> / <code>resumeDropsTurn</code>（精细控制恢复会话加载与保留的内容）；<code>promptSuggestions</code>（后续提示建议）；<code>modelRequestPatches</code>（调整发出的模型请求）；<code>includeHookEvents</code>（选择哪些 Hook 事件进入消息流）；<code>transport</code> / <code>spawnQoderCLIProcess</code> / <code>executable</code> / <code>executableArgs</code>（替换运行时启动或连接方式）。</p>
+<p><strong>Python 独有选项</strong>：<code>system_prompt={"type": "file", "path": ...}</code>（从文件加载系统提示）；<code>on_mcp_oauth_required</code>（MCP OAuth 入站回调——TypeScript 通过运行时方法驱动）；<code>on_mcp_status_change</code>（MCP 状态变化入站回调）；<code>max_buffer_size</code>（限制 transport 读缓冲）。</p>
+<p><strong><code>Options</code> 全字段（TypeScript）</strong>：</p>
+<table class="doc-table"><thead><tr><th>字段</th><th>类型</th><th>默认</th><th>说明</th></tr></thead><tbody><tr><td><code>abortController</code></td><td><code>AbortController</code></td><td>—</td><td>提前结束会话</td></tr><tr><td><code>additionalDirectories</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>AI 可访问的额外目录</td></tr><tr><td><code>agent</code></td><td><code>string</code></td><td>—</td><td>主会话使用的 Agent 名称</td></tr><tr><td><code>agents</code></td><td><code>Record&lt;string, AgentDefinition&gt;</code></td><td>—</td><td>程序化定义的子智能体</td></tr><tr><td><code>allowDangerouslySkipPermissions</code></td><td><code>boolean</code></td><td><code>false</code></td><td>允许跳过权限检查</td></tr><tr><td><code>allowedTools</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>工具白名单；列出即预授权</td></tr><tr><td><code>auth</code></td><td><code>AuthOptions</code></td><td>—</td><td><strong><code>query()</code> 必需</strong></td></tr><tr><td><code>canUseTool</code></td><td><code>CanUseTool</code></td><td>—</td><td>工具需批准或 Agent 提问时调用</td></tr><tr><td><code>continue</code></td><td><code>boolean</code></td><td><code>false</code></td><td>继续最近的会话</td></tr><tr><td><code>customContext</code></td><td><code>Record&lt;string, string&gt;</code></td><td>—</td><td>推理请求的默认自定义上下文</td></tr><tr><td><code>cwd</code></td><td><code>string</code></td><td><code>process.cwd()</code></td><td>工作目录</td></tr><tr><td><code>disallowedTools</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>工具黑名单；<strong>优先级高于 allowedTools 与 permissionMode</strong></td></tr><tr><td><code>enableFileCheckpointing</code></td><td><code>boolean</code></td><td><code>false</code></td><td>启用文件检查点</td></tr><tr><td><code>env</code></td><td>`Record&lt;string, string \</td><td>undefined&gt;`</td><td><code>process.env</code></td><td>传给 CLI 进程的环境变量</td></tr><tr><td><code>proxy</code></td><td><code>string</code></td><td>—</td><td>出站代理 URL（<code>http</code> / <code>https</code> / <code>socks5</code> / <code>socks</code>）</td></tr><tr><td><code>executable</code></td><td>`'bun' \</td><td>'deno' \</td><td>'node'`</td><td>自动检测</td><td>JS 运行时</td></tr><tr><td><code>executableArgs</code></td><td><code>string[]</code></td><td><code>[]</code></td><td>运行时参数</td></tr><tr><td><code>experimentalCloudAgent</code></td><td><code>CloudAgentOptions</code></td><td>—</td><td>切换到 Cloud 运行时（实验性）</td></tr><tr><td><code>extraArgs</code></td><td>`Record&lt;string, string \</td><td>null&gt;`</td><td><code>{}</code></td><td>传给 CLI 的额外参数</td></tr><tr><td><code>fallbackModel</code></td><td><code>string</code></td><td>—</td><td>主模型失败时的回退模型</td></tr><tr><td><code>forkSession</code></td><td><code>boolean</code></td><td><code>false</code></td><td>与 <code>resume</code> 配合分叉</td></tr><tr><td><code>hooks</code></td><td><code>Partial&lt;Record&lt;HookEvent, HookCallbackMatcher[]&gt;&gt;</code></td><td><code>{}</code></td><td>生命周期钩子</td></tr><tr><td><code>includeHookEvents</code></td><td><code>boolean</code></td><td><code>false</code></td><td>在消息流中包含 Hook 事件</td></tr><tr><td><code>includePartialMessages</code></td><td><code>boolean</code></td><td><code>false</code></td><td>包含 <code>stream_event</code> 流式片段</td></tr><tr><td><code>maxTurns</code></td><td><code>number</code></td><td>—</td><td>最大对话轮数</td></tr><tr><td><code>mcpServers</code></td><td><code>Record&lt;string, McpServerConfig&gt;</code></td><td><code>{}</code></td><td>MCP 服务器配置</td></tr><tr><td><code>model</code></td><td><code>string</code></td><td>CLI 默认</td><td><code>'auto'</code> / <code>'ultimate'</code> / <code>'performance'</code> / <code>'efficient'</code> / <code>'lite'</code></td></tr><tr><td><code>pathToQoderCLIExecutable</code></td><td><code>string</code></td><td>自动解析</td><td>qodercli 可执行文件路径</td></tr><tr><td><code>permissionMode</code></td><td><code>PermissionMode</code></td><td><code>'default'</code></td><td>会话权限模式</td></tr><tr><td><code>permissionPromptToolName</code></td><td><code>string</code></td><td>—</td><td>权限提示 MCP 工具名；<strong>与 <code>canUseTool</code> 互斥</strong></td></tr><tr><td><code>plugins</code></td><td><code>SdkPluginConfig</code></td><td><code>[]</code></td><td>加载本地插件</td></tr><tr><td><code>promptSuggestions</code></td><td><code>boolean</code></td><td><code>false</code></td><td>每轮结果后发出 <code>prompt_suggestion</code></td></tr><tr><td><code>resolveModel</code></td><td><code>ModelPolicyProvider</code></td><td>—</td><td>动态模型选择回调</td></tr><tr><td><code>resolveModelTimeoutMs</code></td><td><code>number</code></td><td><code>500</code></td><td>回调超时（毫秒）</td></tr><tr><td><code>resume</code></td><td><code>string</code></td><td>—</td><td>要恢复的会话 ID</td></tr><tr><td><code>resumeSessionAt</code></td><td><code>string</code></td><td>—</td><td>从指定消息 UUID 恢复</td></tr><tr><td><code>resumeDropsTurn</code></td><td><code>string</code></td><td>—</td><td>配合 <code>resumeSessionAt</code>，要求丢弃范围属于此 prompt UUID</td></tr><tr><td><code>persistSession</code></td><td><code>boolean</code></td><td><code>true</code></td><td>持久化本地会话；设 <code>sessionStore</code> 时不能为 <code>false</code></td></tr><tr><td><code>sessionId</code></td><td><code>string</code></td><td>自动生成</td><td>指定会话 UUID</td></tr><tr><td><code>sessionStore</code></td><td><code>SessionStore</code></td><td>—</td><td>会话历史保存到外部存储</td></tr><tr><td><code>sessionStoreFlush</code></td><td>`'batched' \</td><td>'eager'`</td><td><code>'batched'</code></td><td>外部写入时机</td></tr><tr><td><code>loadTimeoutMs</code></td><td><code>number</code></td><td><code>60000</code></td><td>恢复会话时外部存储读超时</td></tr><tr><td><code>settings</code></td><td>`string \</td><td>Settings`</td><td>—</td><td>内联设置对象或设置文件路径</td></tr><tr><td><code>settingSources</code></td><td>`'user' \</td><td>'project' \</td><td>'local'`</td><td>CLI 默认</td><td>加载哪些文件系统设置；传 <code>[]</code> 跳过全部</td></tr><tr><td><code>skills</code></td><td>`string[] \</td><td>'all'`</td><td>—</td><td>技能策略；<code>[]</code> 禁用全部</td></tr><tr><td><code>spawnQoderCLIProcess</code></td><td><code>(options) =&gt; SpawnedProcess</code></td><td>—</td><td>自定义进程 spawn</td></tr><tr><td><code>strictMcpConfig</code></td><td><code>boolean</code></td><td><code>false</code></td><td>严格 MCP 验证</td></tr><tr><td><code>systemPrompt</code></td><td>`string \</td><td>{ type: 'preset'; preset: 'qodercli'; append?: string }`</td><td>—</td><td>系统提示</td></tr><tr><td><code>toolConfig</code></td><td><code>ToolConfig</code></td><td>—</td><td>内置工具行为配置</td></tr><tr><td><code>tools</code></td><td>`string[] \</td><td>{ type: 'preset'; preset: 'qodercli' }`</td><td>—</td><td>工具集；省略时默认面含持久 Task 工具</td></tr></tbody></table>
+<p><strong><code>AuthOptions</code></strong>：</p>
+<pre><code>type AuthOptions =
+  | { type: 'accessToken'; accessToken: string | { envVar: string } }
+  | { type: 'qodercli' }
+  | { type: 'serviceAccount'; serviceAccountKey: string }
+  | { type: 'serviceAccount'; fetchServiceAccountToken: FetchServiceAccountToken };</code></pre>
+<p><strong><code>McpServerConfig</code></strong> 四种形态：</p>
+<pre><code>type McpServerConfig =
+  | McpStdioServerConfig       // { type?: 'stdio'; command: string; args?: string[]; env?: Record&lt;string,string&gt; }
+  | McpSSEServerConfig         // { type: 'sse'; url: string; headers?: Record&lt;string,string&gt; }
+  | McpHttpServerConfig        // { type: 'http'; url: string; headers?: Record&lt;string,string&gt; }
+  | McpSdkServerConfigWithInstance; // { type: 'sdk'; name: string; instance: McpServer }</code></pre>
+<p><strong><code>CallToolResult</code> 与工具注解</strong>：</p>
+<pre><code>type CallToolResult = {
+  content: McpToolResultContent[];
+  isError?: boolean;
+  _meta?: Record&lt;string, unknown&gt;;
+};
+
+type ToolAnnotations = {
+  title?: string;
+  readOnlyHint?: boolean;
+  destructiveHint?: boolean;
+  openWorldHint?: boolean;
+};</code></pre>
+<p><strong><code>SDKControlInitializeResponse</code></strong>（<code>initializationResult()</code> 返回）：</p>
+<pre><code>type SDKControlInitializeResponse = {
+  commands: SlashCommand[];
+  agents: AgentInfo[];
+  skills?: Array&lt;{ name: string; description?: string; source?: string }&gt;;
+  output_style: string;
+  available_output_styles: string[];
+  models: ModelInfo[];
+  account: AccountInfo;
+  fast_mode_state?: FastModeState;
+};</code></pre>
+<p><strong><code>Settings</code>（与技能相关部分）</strong>：</p>
+<pre><code>interface Settings {
+  skillOverrides?: Record&lt;
+    string,
+    'on' | 'name-only' | 'user-invocable-only' | 'off'
+  &gt;;
+  skillListingMaxDescChars?: number;
+  skillListingBudgetFraction?: number;
+}</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<code>skillListingMaxDescChars</code> / <code>skillListingBudgetFraction</code> 用于控制<strong>技能描述在上下文中的预算</strong>——当技能数量多时可用于防止描述占满上下文（配合 14.12 的 <code>getContextUsage().skills</code>）。</p>
+<p><strong>模型相关类型</strong>：<code>ModelInfo</code>（<code>value</code> / <code>displayName</code> / <code>description</code> / <code>isEnabled</code> / <code>isNew</code> / <code>isFree</code> / <code>priceFactor</code> / <code>context_config</code> / <code>thinking_config</code> / <code>promotion</code>）、<code>ModelPolicyProvider</code>、<code>ModelPolicyContext</code>（<code>purpose</code> / <code>sessionId</code> / <code>availableModels</code>）、<code>QoderModelPurpose</code>（<code>'main' | 'subagent' | 'web_fetch' | 'image_gen' | 'compact'</code>）、<code>ModelPolicyResult</code>、<code>CustomModel</code>（BYOK：<code>provider</code> / <code>model</code> / <code>api_key</code> / <code>style</code>）、<code>ModelPolicyTimeoutError</code>。</p>
+<p><strong>内置工具的输入/输出类型</strong>：官方完整提供（<code>AgentInput</code> / <code>BashInput</code> / <code>FileReadInput</code> / <code>FileEditInput</code> / <code>FileWriteInput</code> / <code>GlobInput</code> / <code>GrepInput</code> / <code>WebFetchInput</code> / <code>WebSearchInput</code> / <code>AskUserQuestionInput</code> / <code>NotebookEditInput</code> / <code>Task*Input</code> / <code>ExitPlanModeInput</code> / <code>ConfigInput</code> / <code>EnterWorktreeInput</code> / <code>ExitWorktreeInput</code> / <code>ListMcpResourcesInput</code> / <code>ReadMcpResourceInput</code> / <code>McpInput</code> 及对应 Output）。其中 <code>AgentInput</code> 值得特别注意：</p>
+<pre><code>type AgentInput = {
+  prompt: string;
+  agent?: string;
+  timeout_ms?: number;
+};
+
+type AgentOutput = {
+  result: string;
+  agent?: string;
+  error?: string;
+};</code></pre>
+<p><strong><code>SDKControlGetContextUsageResponse</code></strong> 见 14.12；<strong><code>UsageInfo</code></strong> / <strong><code>SessionMessage</code></strong> 见 14.12、14.13。</p>
+<p><strong>对墨道的落地提示</strong>：本篇是施工时的<strong>字段字典</strong>。四点：</p>
+<ol><li><strong><code>Options</code> 里有多项此前未被识别、但直接对应本项目需求的字段</strong>——建议逐项评估：</li><li><code>resumeSessionAt</code> + <code>resumeDropsTurn</code> <strong>可实现对话级回退</strong>（配合 14.8 的文件回滚，构成完整的「回到某轮之前」）；</li><li><code>maxTurns</code> 为 E 组的防失控提供会话级闸门；</li><li><code>fallbackModel</code> 可作为 14.7「动态选择无自动回退」的第二道保险；</li><li><code>proxy</code> 支持 <code>socks5://</code>——国内网络环境下<strong>这是连接稳定性的关键字段</strong>，建议在接入文档中明确；</li><li><code>strictMcpConfig</code> 与 <code>settingSources</code> 影响配置可信度，建议在生产环境开启严格模式。</li><li><strong><code>AgentInput</code> 的 <code>timeout_ms</code> 是子智能体超时的官方字段</strong>——第十三章 A1「MCP 独立超时」之外，<strong>子智能体级别也需设超时</strong>，这此前未列入清单。</li><li><strong><code>QoderModelPurpose</code> 的 <code>subagent</code> 值是 B2 的直接落点</strong>（见 14.7）。</li><li><strong><code>skillListingMaxDescChars</code> / <code>skillListingBudgetFraction</code> 是技能规模化的必设项</strong>——本项目已有 12 个技能，C2 还要新增 5 项。<strong>技能描述会持续占用上下文</strong>，建议在 C 组施工时同步引入这两个预算控制项，并在 UI 上给出提示。</li></ol>
+<h3>14.18 落地对照表：官方能力 × 本项目章节</h3>
+<p>把本章 16 篇与第十三章的分组对应起来，作为施工时的索引。</p>
+<table class="doc-table"><thead><tr><th>官方能力（本章）</th><th>对应第十三章分组</th><th>落地方式</th><th>成本</th></tr></thead><tbody><tr><td>Agents / Subagents（14.2）</td><td><strong>D 组、E 组</strong>（基础）</td><td>用 <code>options.agents</code> 定义七类子智能体；<code>description</code> 即路由依据</td><td>中</td></tr><tr><td>MCP Integration（14.3）</td><td>A1 / A2 / A3 / C1–C6</td><td>回归 <code>isError</code> 语义、补工具注解、权限策略下沉</td><td>低—中</td></tr><tr><td>Skills（14.4）</td><td>C2 / C7</td><td>校正「builtin」命名；UI 技能列表改数据源；不把白名单当权限边界</td><td>低</td></tr><tr><td>Plugins（14.5）</td><td>13.8（与 cloud-agent 同章）</td><td>作为技能/子智能体分发单元评估；必须自建加载校验</td><td>待评估</td></tr><tr><td>Authentication（14.6）</td><td>13.8 / 06 板块账号体系</td><td>桌面应用沿用本地登录态；团队能力需 Service Account</td><td>高（依赖账号体系）</td></tr><tr><td>Model Policy（14.7）</td><td><strong>A7 / B1 / B2 / B3 / B4</strong></td><td><code>resolveModel</code> 映射层 + 必要时自建兜底；BYOK 接本地模型</td><td>中</td></tr><tr><td>Checkpoint（14.8）</td><td><strong>F2 / F3</strong></td><td>修正为「文件回滚」；UUID 落库（需前端配合）；新增 dry run 确认弹窗</td><td>中</td></tr><tr><td>Tools（14.9）</td><td>6.1 修订 / E6 备选方案</td><td>核对内置工具实际暴露面；评估 worktree 隔离</td><td>低</td></tr><tr><td>Permission Control（14.10）</td><td><strong>B5 / B6 / A4</strong></td><td><code>canUseTool</code> 即官方阻塞通道；按 <code>agentID</code> 实现网关；订阅 <code>permission_denied</code></td><td>中</td></tr><tr><td>Hooks（14.11）</td><td><strong>A2 / A3 / A4 / E4 / E7</strong></td><td>本轮性价比最高：审计、熔断、错误回传、审辨循环、嵌套时间线均可借 Hook 落地</td><td><strong>低</strong></td></tr><tr><td>Cost &amp; Usage（14.12）</td><td><strong>A6</strong> + 新增「上下文占用诊断」</td><td>接入官方用量接口而非自研计数；用 <code>getContextUsage()</code> 做优化诊断</td><td>低</td></tr><tr><td>Events &amp; Streaming（14.13）</td><td><strong>A6 / E7 / A3</strong></td><td>SSE 桥接层<strong>必须透传 <code>parent_tool_use_id</code></strong>（当前缺口）；映射 <code>SDKAPIRetryMessage</code></td><td>中</td></tr><tr><td>Cloud Agent（14.14）</td><td>13.8</td><td>定位为轻量旁路通道，非主运行时；实验性，暂不投入</td><td>待评估</td></tr><tr><td>Session Control（14.15）</td><td><strong>A5 / F1 / F5</strong></td><td>fork 官方可用；修正「子 Agent 独立 session」表述</td><td>低—中</td></tr><tr><td>External Session Storage（14.16）</td><td><strong>F5</strong>（+ 与 F2/F3 互斥）</td><td>可先做「用户自选同步盘」，无需账号体系；<strong>与文件检查点二选一</strong></td><td>中—高</td></tr><tr><td>Type Reference（14.17）</td><td>全章字段字典</td><td><code>resumeSessionAt</code> / <code>proxy</code> / <code>maxTurns</code> / <code>fallbackModel</code> 等字段逐项评估</td><td>低</td></tr></tbody></table>
+<h3>14.19 本章新增的架构决策点</h3>
+<p>以下三项<strong>在本章编纂过程中被发现，此前不在第十三章中</strong>，且均属于必须在施工前明确的架构决策：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>决策点</th><th>说明</th><th>影响范围</th></tr></thead><tbody><tr><td><strong>N1</strong></td><td><strong>文件检查点 vs 外部会话存储，二选一</strong></td><td>两者在 SDK 层<strong>不可组合</strong>。选检查点则保留「文件回滚」，失去「跨设备继续」；选外部存储则反之</td><td>F2 / F3 / F5 排期</td></tr><tr><td><strong>N2</strong></td><td><strong>SSE 桥接层需透传 <code>parent_tool_use_id</code></strong></td><td>这是实现嵌套时间线的<strong>唯一依据</strong>，当前 SSE 7 类事件结构中无等价字段。<strong>不预留则 E7 无法实施</strong></td><td>E7 / 前端 02 板块</td></tr><tr><td><strong>N3</strong></td><td><strong>会话数据落盘位置需明确</strong></td><td><code>QODER_CONFIG_DIR</code> 影响 CLI 侧<strong>全部用户级数据</strong>（非单会话）。桌面应用需明确其取值策略，并与 F4「会话加密」联动</td><td>A5 / F4 / 工作区设计</td></tr></tbody></table>
+<p>三项之外，本章还确认了一处<strong>需求表述需修正</strong>：</p>
+<p class="callout callout--info">&nbsp;&nbsp;第十三章 D1「建立智能体实例概念」与「子 Agent 独立 session」的表述，在 SDK 语义下<strong>不成立</strong>——子智能体是父会话内的执行分支（用 <code>parent_tool_use_id</code> 标识），<strong>没有独立可恢复的会话</strong>。若需独立可恢复的执行单元，正确做法是 <strong>fork 出平级会话</strong>。建议据此修订 D1 与相关需求描述。</p>
+<h3>14.20 本章纪律重申</h3>
+<p>本章 16 篇全部来自 <strong><code>@qoder-ai/qoder-agent-sdk</code> 的官方文档</strong>（前缀 <code>https://docs.qoder.com/en/cli/sdk/</code>），而本项目实际接入的是 <strong><code>@qodercn-ai/qodercn-agent-sdk@1.0.34</code>（内置 qoderclicn 1.1.44）</strong>。</p>
+<table class="doc-table"><thead><tr><th>纪律</th><th>内容</th></tr></thead><tbody><tr><td>一</td><td><strong>本章所述一切均为「官方能力上界」，不等于本项目已具备该能力。</strong></td></tr><tr><td>二</td><td><strong>凡本章内容进入实现前，必须先在 <code>1.0.34</code> 上逐字段验证可用性</strong>——包名与版本均不同，字段与行为不保证一致。</td></tr><tr><td>三</td><td><strong>不得因官方文档提及即对外宣称能力已实现</strong>——延续第十三章「纪律前置」。</td></tr><tr><td>四</td><td><strong>Chat 模式不得引用本章任何内容。</strong> Chat 只做模型 API 调用，不走智能体框架。</td></tr><tr><td>五</td><td><strong>「已实现 / 待实现」的判定仍以源码与 <code>app/verify/验证报告.md</code> 为唯一依据</strong>，本章不构成实现证据。</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-15">十五、智能体改码执行边界（授权契约）</h2>
+<h3>15.0 本章用途与使用方式</h3>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>本章是给「让智能体帮你改代码」这件事用的授权契约。</strong></p>
+<p>前面的章节回答的是「墨道的智能体系统怎么设计」；本章回答的是另一个问题：<strong>当你把本项目的代码交给一个智能体去改时，它被允许做到哪里、绝对不许碰什么、碰到什么必须先回来问你。</strong></p>
+<p><strong>使用方式（三步）</strong>：</p>
+<ol><li>从 <strong>15.3</strong> 的语法表里挑出一条指令，把 <code>{范围}</code> 替换成你的实际目录/文件。</li><li>若本次任务需要越界（通常是 B 类），从 <strong>15.6</strong> 的授权模板里挑一条，一并附上。</li><li>把指令与授权一起发给智能体，然后<strong>只按 15.4 的验收方法检查</strong>，不靠「看起来没问题」。</li></ol>
+<p><strong>三条使用纪律</strong>：</p>
+<table class="doc-table"><thead><tr><th>纪律</th><th>说明</th></tr></thead><tbody><tr><td><strong>一次只授权一个模块</strong></td><td>不要一次给「02 前端 + 03 后端」两个范围。跨模块任务拆成两轮，各自验收</td></tr><tr><td><strong>默认最小授权</strong></td><td>不确定时，从更严的档位开始（如先 <code>改动</code> 而非 <code>完整</code>）。授权是与任务绑定的，不是与项目绑定的</td></tr><tr><td><strong>口头同意不算</strong></td><td>任何 B 类动作必须体现为<strong>明确的书面授权</strong>（对话里明确写出即可），不接受「你看着办」这类模糊表述</td></tr></tbody></table>
+<h3>15.1 三层边界模型</h3>
+<p>每个模块的边界都拆成三层。「不能做什么」在这三层里含义不同：</p>
+<table class="doc-table"><thead><tr><th>层</th><th>名称</th><th>含义</th><th>越界后能否恢复</th><th>判定方式</th></tr></thead><tbody><tr><td><strong>L1</strong></td><td>改动范围</td><td>哪些文件/目录可以写</td><td>能（版本控制可还原）</td><td>看 diff 的文件清单</td></tr><tr><td><strong>L2</strong></td><td>行为约束</td><td>不改动文件但违反设计契约的行为（解耦、边界、契约稳定性）</td><td>能，但<strong>返工成本高且会连带污染其他模块</strong></td><td>看 diff 的代码内容与专项核查</td></tr><tr><td><strong>L3</strong></td><td>运行约束</td><td>影响真实数据、凭据、外部系统的动作</td><td><strong>可能不可恢复</strong>（已发请求、已删数据、已泄露密钥）</td><td>看审计记录、看是否发生了外部副作用</td></tr></tbody></table>
+<p><strong>L3 与 L1/L2 的本质区别</strong>：L1/L2 越界可以回滚重来，<strong>L3 越界可能已经造成外部影响</strong>。因此 L3 的默认档位是<strong>全面禁止</strong>，且需要独立白名单授权，不能靠「最小授权」类推。</p>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>为什么 L2 要单独存在</strong>：最常见的失败不是「改了不该改的文件」，而是「改对了文件、但破坏了模块间的解耦契约」——例如在 UI 模块里直接写了一个 <code>fetch</code>、在对话框模块里直接调了 fs API。这类改动在单个模块内看是合理的，但会让后续重构成本陡增。L2 就是为拦这类问题而设。</p>
+<h3>15.2 档位定义</h3>
+<p>每个模块提供一个基准档位；<strong>基准档是「不额外说明时」的默认授权</strong>，不是上限。</p>
+<table class="doc-table"><thead><tr><th>档位</th><th>L1 可写范围</th><th>L2 约束</th><th>L3 权限</th><th>适用场景</th></tr></thead><tbody><tr><td><strong>只读</strong></td><td>无（禁止一切写入）</td><td>不适用</td><td>全禁</td><td>方案设计、代码审查、问题定位</td></tr><tr><td><strong>局部</strong></td><td>指定的单个文件或子目录</td><td>完全遵守 L2</td><td>全禁（除 <code>读项目</code>）</td><td>修一个 bug、改一个函数、调一处样式</td></tr><tr><td><strong>改动</strong></td><td>模块内</td><td>完全遵守 L2</td><td>全禁（除 <code>读项目</code>）</td><td>模块内功能开发与重构</td></tr><tr><td><strong>完整</strong></td><td>模块内 + 授权清单内的跨模块改动</td><td>完全遵守 L2</td><td>需逐条授权</td><td>涉及模块接口变更的联调改造</td></tr></tbody></table>
+<p><strong>跨档不在档位里表达</strong>——跨模块改动一律走 15.6 的独立授权清单，不通过提升档位来实现。这样「越界」永远是一个显式动作，不会被档位本身吞掉。</p>
+<h3>15.3 指令语法表</h3>
+<p>给智能体的指令一律用这个句式，模块号与 <code>_src/*.md</code> 的编号一致：</p>
+<pre><code>在 {模块范围} 内，授权档位 = {1..4 档位}，遵守 04 文档第十五章边界。</code></pre>
+<p><strong>可用的 6 条指令</strong>（直接复制改范围即可）：</p>
+<table class="doc-table"><thead><tr><th>指令</th><th>含义</th></tr></thead><tbody><tr><td><code>在 01 UI 范围内，授权档位 = 改动，遵守 04 文档第十五章边界。</code></td><td>允许在 UI 模块内自由改动</td></tr><tr><td><code>在 02 前端（桌面端原生 UI）范围内，授权档位 = 改动，遵守 04 文档第十五章边界。</code></td><td>允许在前端主进程/渲染层改动</td></tr><tr><td><code>在 03 后端（Work 模式服务端）范围内，授权档位 = 改动，遵守 04 文档第十五章边界。</code></td><td>允许在后端服务改动</td></tr><tr><td><code>在 04 Agent 范围内，授权档位 = 改动，遵守 04 文档第十五章边界。</code></td><td>允许在智能体层改动（<strong>注意 04 是地基，L2 最严</strong>）</td></tr><tr><td><code>在 05 宣传范围内，授权档位 = 改动，遵守 04 文档第十五章边界。</code></td><td>允许在品牌资产/文案改动</td></tr><tr><td><code>在 06 订阅预付费范围内，授权档位 = 改动，遵守 04 文档第十五章边界。</code></td><td>允许在计费/权益/支付层改动</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>注意「04 文档」的双重含义</strong>：在本套文档体系里，「04」既指 <strong>04 模块（Agent 系统设计）</strong>，也指 <strong>本章的宿主文档本身就是 04 号文档</strong>。建议指令里改写为更明确的说法，例如 <code>遵守《墨台-04-Agent系统设计实现策划案》第十五章边界</code>，避免歧义。</p>
+<p><strong>联动类任务</strong>（改动会牵动两个模块）必须显式声明，例如：</p>
+<pre><code>在 02 前端范围内做 X，需同步修改 03 后端接口 Y，
+遵守 04 文档第十五章边界，跨模块授权见附录。</code></pre>
+<h3>15.4 通用禁止项（L3 — 全模块适用，无例外）</h3>
+<p>以下动作<strong>任何模块、任何档位下均禁止</strong>，需要时必须在对话中逐条明确授权：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>禁止项</th><th>避免什么</th></tr></thead><tbody><tr><td><strong>U1</strong></td><td>删除或移动<strong>项目根目录之外</strong>的任何文件</td><td>误伤用户桌面/文档/下载目录</td></tr><tr><td><strong>U2</strong></td><td>执行<strong>破坏性命令</strong>：<code>rm -rf</code>、<code>del /S /Q</code>、<code>format</code>、<code>shutil.rmtree</code>、批量通配符删除</td><td>不可逆的数据丢失</td></tr><tr><td><strong>U3</strong></td><td>修改或导出<strong>凭据类信息</strong>：登录态、token、密钥、证书、本机账户配置</td><td>凭据泄露、账号被登出</td></tr><tr><td><strong>U4</strong></td><td><strong>向外部服务发送请求</strong>（未获授权时）：上传代码/数据、调用第三方 API、提交表单</td><td>数据外流、被外部系统记录</td></tr><tr><td><strong>U5</strong></td><td>修改 <code>.git/</code> 内部、强推（<code>push --force</code>）、<code>reset --hard</code>、<code>clean -fdx</code></td><td>丢失提交历史</td></tr><tr><td><strong>U6</strong></td><td>修改 <code>package.json</code> 的 <code>name</code>/<code>version</code>/依赖版本，或改动构建配置与产物布局</td><td>破坏构建链、锁文件失配</td></tr><tr><td><strong>U7</strong></td><td><strong>安装新的运行时依赖</strong>（含 <code>pip install</code> / <code>npm install &lt;新包&gt;</code>）</td><td>依赖污染、体积膨胀、供应链风险</td></tr><tr><td><strong>U8</strong></td><td>修改 <strong>04 模块已声明的隔离三件套</strong>：<code>settingSources: []</code>、<code>strictMcpConfig: true</code>、<code>tools</code> 白名单</td><td><strong>直接导致 SDK 继承本机全部配置，产生配置泄露（已实测）</strong></td></tr><tr><td><strong>U9</strong></td><td>在<strong>未授权时</strong>修改权限档位、<code>canUseTool</code>、<code>disallowedTools</code></td><td>绕过权限链、静默提权</td></tr><tr><td><strong>U10</strong></td><td>修改 <code>app/verify/验证报告.md</code> 或任何验证记录、测试基线</td><td>掩盖失败，使验证失去意义</td></tr><tr><td><strong>U11</strong></td><td>修改 <code>_src/*.md</code> 之外的生成物后又不改源（或反之）</td><td>源与产物不一致，下次重跑全部回退</td></tr><tr><td><strong>U12</strong></td><td>擅自把「待实现」项改写为「已实现」措辞</td><td>过度承诺，与能力边界声明冲突</td></tr><tr><td><strong>U13</strong></td><td>一次性跨 3 个及以上模块改动</td><td>无法归因、无法分段回滚</td></tr><tr><td><strong>U14</strong></td><td>在未说明失败风险的情况下执行<strong>不可逆操作</strong>（覆写大文件、迁移数据目录）</td><td>静默数据损坏</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>U8 是本项目最特殊的一条</strong>。它不是通用安全常识，而是本项目实测出的具体陷阱：隔离三件套缺任一项，SDK 会继承本机 qoderclicn 的全部配置。任何智能体「顺手简化一下配置」的行为都必须被拦下。</p>
+<h3>15.5 模块专项边界</h3>
+<h4>15.5.1 01 UI（界面层）</h4>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td><strong>基准档</strong></td><td>改动</td></tr><tr><td><strong>L1 范围</strong></td><td>UI 模块对应的样式表、图标资源、界面结构文件</td></tr><tr><td><strong>L2 约束</strong></td><td>① <strong>颜色与间距不得硬编码</strong> —— 必须走设计令牌（已知 9 处待归位项，见第十三章 A 组），不得新增第 10 处 ② 不改既有主题令牌的<strong>语义</strong>（改值可以，改名/改含义会连带影响全部引用点） ③ <strong>不得直接发起网络请求</strong> —— 数据一律经前端层提供的能力入口 ④ <strong>不得直接读写文件系统</strong> —— 含笔记区</td></tr><tr><td><strong>L3</strong></td><td>全禁</td></tr><tr><td><strong>专项禁止</strong></td><td>不得引入图表库、UI 框架、字体 CDN 等外部依赖（U7 的具体化）；不得改动第三方字体/图标文件的二进制内容</td></tr><tr><td><strong>避免什么</strong></td><td>样式失一致（同一含义两种颜色）、体积膨胀、把 UI 层变成事实上的逻辑层</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>L2 第 ① 项为什么是重点</strong>：本项目已识别出 9 处硬编码颜色待回落到令牌体系。若智能体在改 UI 时又写了新的硬编码，就是<strong>一边清理一边制造</strong>——这是本模块最高频的返工来源。</p>
+<h4>15.5.2 02 前端（桌面端原生 UI）</h4>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td><strong>基准档</strong></td><td>改动</td></tr><tr><td><strong>L1 范围</strong></td><td>前端主进程与渲染层目录</td></tr><tr><td><strong>L2 约束</strong></td><td>① <strong>主进程与渲染层的职责边界不得模糊</strong> —— 渲染层不得直接调用 Node API ② <strong>不得绕过既有 IPC 通道另建通道</strong> ③ 新增能力前先确认<strong>是否已有等价通道</strong>，避免平行实现 ④ 涉及<strong>破坏性改动的重构需先说明方案再动手</strong>（本项目存在单文件超大脚本的技术债，局部改动容易引发连带回归，见 02 文档第十三章 A 组）</td></tr><tr><td><strong>L3</strong></td><td>全禁</td></tr><tr><td><strong>专项禁止</strong></td><td>不得改动应用签名、更新配置、安装包配置；不得引入打包工具链替换（如自建 bundle 配置）除非获得专项授权</td></tr><tr><td><strong>避免什么</strong></td><td>双通道并存导致状态不一致、回归面不可控、打包产物不可信</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>L2 第 ④ 项是本模块的特有要求</strong>。02 模块存在一个 30 万字符级的主线脚本，智能体在其中做「小改动」时极易顺手重构，而这类重构的回归面无法通过局部测试覆盖。</p>
+<h4>15.5.3 03 后端（Work 模式服务端 + Chat 模式 API 调用）</h4>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td><strong>基准档</strong></td><td>改动</td></tr><tr><td><strong>L1 范围</strong></td><td>服务端目录</td></tr><tr><td><strong>L2 约束</strong></td><td>① <strong>不得在 Chat 模式路径引入智能体框架或子智能体机制</strong> —— Chat 只做模型 API 调用（这是产品架构红线，不是偏好） ② <strong>Work 模式与 Chat 模式的代码路径不得互相引用</strong> ③ 接口<strong>新增可以，破坏性变更需先说明并列出受影响调用点</strong> ④ 知识库/向量等新能力不得改变既有数据文件格式，需另建</td></tr><tr><td><strong>L3</strong></td><td>全禁</td></tr><tr><td><strong>专项禁止</strong></td><td>不得在<strong>真实用户数据</strong>上执行迁移/删除（需专项授权）；不得修改支付回调的验签逻辑；不得改动数据库/数据文件的 schema 而不提供回退方案</td></tr><tr><td><strong>避免什么</strong></td><td>双模式架构被逐渐侵蚀（最容易发生）、接口契约破坏导致前端连锁失效、真实数据不可逆损失</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>L2 第 ① 项为什么是「架构红线」</strong>：这是用户明确强调的产品级约束——<strong>Chat 完全不碰智能体机制，只做 API 调用</strong>。智能体在「优化」后端时，最容易的做法就是给 Chat 也套上 Work 那套框架，这在功能上「看起来更统一」，但直接违背产品定义。</p>
+<h4>15.5.4 04 Agent（智能体系统 — 地基模块）</h4>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td><strong>基准档</strong></td><td><strong>局部</strong>（本模块默认收紧，其余模块为改动）</td></tr><tr><td><strong>L1 范围</strong></td><td>默认仅限 <code>app/src/server/qoder.ts</code>、<code>shared/domain.ts</code>、<code>skills-plugin/</code> 及其测试</td></tr><tr><td><strong>L2 约束</strong></td><td>① <strong>隔离三件套零改动</strong>（U8，本模块第一位） ② 不得改变既有「已实现」行为，除非任务本身即修正该行为 ③ 新增智能体定义不得复用现有名称 ④ 技能/工具白名单的<strong>可用性由清单声明驱动</strong>，不得散落硬编码 ⑤ 任何模型路由改动必须保留非法档位的回落逻辑</td></tr><tr><td><strong>L3</strong></td><td>全禁</td></tr><tr><td><strong>专项禁止</strong></td><td>不得引入新的智能体运行时/框架；不得改动 <code>runWorkTurn</code> 的对外签名（含 SSE 事件结构）而不通知前端；不得删除或跳过既有验证用例</td></tr><tr><td><strong>避免什么</strong></td><td><strong>配置泄露（实测风险）</strong>、智能体注册表被污染、SSE 契约变更导致前端静默失效、验证基线被削弱</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>为什么本模块基准档收紧到「局部」</strong>：04 是其余模块的地基，改动面天然外溢。而且它包含本项目唯一一个「一改就产生安全后果」的配置（隔离三件套）。地基模块的默认授权应当更保守。</p>
+<h4>15.5.5 05 宣传（品牌与物料）</h4>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td><strong>基准档</strong></td><td>改动</td></tr><tr><td><strong>L1 范围</strong></td><td>品牌资产目录、文案文件</td></tr><tr><td><strong>L2 约束</strong></td><td>① <strong>产品名称不得自行选定</strong> —— 本项目存在<strong>四套品牌名冲突</strong>（墨台 / ChatScience / 墨砺 InkForge / 海报 CHATSCIENCE），统一决策属于 P0 未决项（见第十三章 A 组），智能体<strong>不得在未决策时新增第五套用法</strong> ② 物料中的能力宣称<strong>必须能追溯到验证记录或已声明的能力边界</strong> ③ 不得修改品牌提案原始资产文件的二进制内容</td></tr><tr><td><strong>L3</strong></td><td>全禁</td></tr><tr><td><strong>专项禁止</strong></td><td>不得对外发布/上传任何物料（U4）；不得在物料中写入具体的性能数字、未实现能力、竞品对标结论</td></tr><tr><td><strong>避免什么</strong></td><td>品牌名混用进一步扩散、宣传材料含未实现能力（合规风险）、原始资产被不可逆覆盖</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>L2 第 ① 项是本模块最实际的风险</strong>。四套命名并存的现状下，智能体若「顺手统一」成它自己认为对的那个，会造成新的不一致。<strong>命名必须由人决策，智能体只执行。</strong></p>
+<h4>15.5.6 06 订阅预付费（计费与权益）</h4>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td><strong>基准档</strong></td><td><strong>局部</strong>（计费语义改动风险高，默认收紧）</td></tr><tr><td><strong>L1 范围</strong></td><td>计费/权益相关目录与配置</td></tr><tr><td><strong>L2 约束</strong></td><td>① <strong>权益与余额两类数据结构必须分离</strong>（设计结论，见第十三章 F 组），不得合并 ② 新增档位必须走声明式配置，不得硬编码在业务逻辑里 ③ 计量口径改动需列出受影响的既有数据 ④ 免费档与付费档的能力差异必须显式声明，不得用隐式开关</td></tr><tr><td><strong>L3</strong></td><td>全禁</td></tr><tr><td><strong>专项禁止</strong></td><td><strong>不得执行任何真实支付、退款、订阅变更</strong>（U4 的强化版，需逐笔专项授权）；不得修改金额、币种、税率常量；不得改动额度上限而不提供用户侧说明方案；<strong>不得伪造计量数据用于测试以外用途</strong></td></tr><tr><td><strong>避免什么</strong></td><td>涉及金钱的不可逆错误、用户权益被静默改变、账目不可追溯</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>本模块的 L3 是六个模块里最硬的</strong>。其余模块的 L3 越界可以回滚数据，本模块的 L3 越界可能已经完成一笔真实交易。因此本模块<strong>即便获得「完整」档，也不自动获得任何 L3 权限</strong>。</p>
+<h3>15.6 越界授权模板</h3>
+<p>需要跨模块或触及 L3 时，从下面挑模板，<strong>替换 <code>{}</code> 内的内容</strong>，与任务指令一并发出。</p>
+<p><strong>模板 A — 跨模块改动</strong>（最常用）：</p>
+<pre><code>【跨模块授权】
+源模块：{模块号与名称}
+目标模块：{模块号与名称}
+改动范围：{具体文件或目录清单}
+接口影响：{受影响的方法/类型/事件，或写「无」}
+回退方案：{如何撤销，或写「本次改动可整体丢弃」}
+其他约束：仍适用第十五章通用禁止项 U1–U14，不得扩大范围。</code></pre>
+<p><strong>模板 B — 单个 L3 动作授权</strong>：</p>
+<pre><code>【L3 动作授权】
+动作：{具体要做什么}
+对象：{精确的文件路径或数据范围}
+风险说明：{执行后可能的不良后果}
+可逆性：{可撤销 / 不可撤销}
+执行前确认：需要 / 不需要
+其他约束：仅授权本动作，不得执行清单外的其他 L3 动作。</code></pre>
+<p><strong>模板 C — 破坏性重构授权</strong>（针对 02/04 模块）：</p>
+<pre><code>【重构授权】
+模块：{模块号与名称}
+重构内容：{要改什么，为什么必须重构}
+验收标准：行为完全不变（除非任务本身要求变更行为）
+不变量：{哪些外部可观测行为必须保持}
+回归范围：{需要重新验证的既有功能清单}
+回退方案：{如何撤销}
+其他约束：仍适用第十五章边界，不得顺手扩大重构范围。</code></pre>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>模板 C 的 <code>不变量</code> 字段是本项目最该填的一项</strong>。经验教训是「重构时顺势改进」几乎必然发生——把「什么必须不变」写清楚，是唯一能约束住它的手段。</p>
+<h3>15.7 冲突裁决顺序</h3>
+<p>当两条规则给出不同答案时，按下列顺序裁决（<strong>先出现者优先</strong>）：</p>
+<table class="doc-table"><thead><tr><th>序</th><th>规则</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td><strong>用户本轮指令</strong></td><td>但<strong>不得覆盖 U1–U14</strong>——通用禁止项需要显式授权语句，不能靠「帮我改一下 X」这类泛指令推定</td></tr><tr><td>2</td><td><strong>L3 禁止项</strong>（15.4 + 各模块专项）</td><td>涉及不可逆或外部影响，优先级高于功能需求</td></tr><tr><td>3</td><td><strong>L2 设计契约</strong></td><td>解耦、契约稳定性、语义一致性</td></tr><tr><td>4</td><td><strong>L1 范围</strong></td><td>只影响「改哪个文件」，是最外层</td></tr><tr><td>5</td><td><strong>既有代码风格与惯例</strong></td><td>在没有明确规则时，跟随最近邻实现</td></tr><tr><td>6</td><td><strong>智能体自身判断</strong></td><td><strong>仅在以上均无规定时使用</strong>，且须在回复中说明依据</td></tr></tbody></table>
+<p><strong>两个常用推论</strong>：</p>
+<ul><li>「任务需要我改配置」<strong>不构成</strong> U8/U6 的豁免理由。需要时应走模板 B。</li><li>若任务与某条 L2 约束冲突（例如「就是要在 UI 里直接请求接口」），正确做法是<strong>先回来确认</strong>，而不是自行判断哪条更重要。</li></ul>
+<h3>15.8 执行前自检清单</h3>
+<p>智能体在动手前必须逐条自检；<strong>任一项答不上来就先提问，不要开工</strong>：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>自检项</th></tr></thead><tbody><tr><td>1</td><td>本次的范围是<strong>哪一个模块</strong>？档位是哪个？</td></tr><tr><td>2</td><td>需要改动<strong>哪些文件</strong>？其中有没有跨模块的？</td></tr><tr><td>3</td><td>这些改动<strong>是否触及 L3</strong>？触及的话授权拿到了吗（模板 B）？</td></tr><tr><td>4</td><td>是否违反<strong>任何 L2 约束</strong>？在哪一条上需要确认？</td></tr><tr><td>5</td><td>若涉及 04 模块：<strong>隔离三件套会被碰到吗？</strong>（碰到即停）</td></tr><tr><td>6</td><td>若涉及 02 模块：这是<strong>局部修改还是重构</strong>？重构需模板 C</td></tr><tr><td>7</td><td>若涉及 03 模块：会不会让 <strong>Chat 模式碰到智能体机制</strong>？（碰到即停）</td></tr><tr><td>8</td><td>若涉及 06 模块：会不会触发<strong>真实支付/退款</strong>？（会即停）</td></tr><tr><td>9</td><td><strong>回退方案</strong>是什么？</td></tr><tr><td>10</td><td><strong>验收方法</strong>是什么？如何证明改对了？</td></tr></tbody></table>
+<p><strong>执行后必须报告</strong>（缺一不可）：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>报告项</th></tr></thead><tbody><tr><td>1</td><td>实际改动的文件清单（与计划是否一致）</td></tr><tr><td>2</td><td>是否发生任何越界；若发生，是主动还是误判</td></tr><tr><td>3</td><td>验证结果（跑了哪些用例、结果如何）</td></tr><tr><td>4</td><td>未完成项与已知风险</td></tr><tr><td>5</td><td><strong>是否有「已实现」措辞需要回写到策划案</strong>（见 15.9）</td></tr></tbody></table>
+<h3>15.9 与能力边界声明的联动</h3>
+<p>本项目有一条不可违背的文档纪律（贯穿第九章与第十三章）：<strong>「已实现」的判定以源码与验证报告为唯一依据，不得凭文档或意图宣称。</strong></p>
+<p>因此智能体完成任务后：</p>
+<table class="doc-table"><thead><tr><th>情形</th><th>要求</th></tr></thead><tbody><tr><td>任务把某个「待实现」项真正做完并验证通过</td><td><strong>应</strong>同步更新 04 文档中的状态标记与速查总表；<strong>并说明改了哪几处</strong></td></tr><tr><td>任务完成了部分</td><td><strong>保持「部分实现」标记</strong>，不得因为「主体已完成」就改标为「已实现」</td></tr><tr><td>任务只是重构，「行为不变」</td><td><strong>不得改任何状态标记</strong></td></tr><tr><td>任务新增了官方文档提及但项目未验证的能力</td><td><strong>不得据此宣称已实现</strong>（14.20 纪律三）</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;<strong>这一步为什么必须由人工复核</strong>：状态标记直接决定对外承诺。智能体（和写文档的人）都有一种自然的乐观偏差——把「跑通了」当成「已实现」、「已实现」当成「稳定」。<strong>本章要求智能体主动报告「有哪些措辞需要回写」，但最终是否回写由人决定。</strong></p>
+<h3>15.10 边界速查卡</h3>
+<p>贴在每次发指令的地方。<strong>上半部分是「永远不能」，下半部分是「各模块最容易踩的那一条」。</strong></p>
+<table class="doc-table"><thead><tr><th>永远不能（U1–U14 摘要）</th><th></th></tr></thead><tbody><tr><td>不删根目录外的文件</td><td>不执行破坏性删除命令</td></tr><tr><td>不碰凭据与密钥</td><td>不擅自向外部发请求</td></tr><tr><td>不动 <code>.git</code> 内部与强推</td><td>不改依赖版本与构建配置</td></tr><tr><td>不装新依赖</td><td><strong>不动隔离三件套（04）</strong></td></tr><tr><td>不绕过权限链</td><td>不改验证记录与基线</td></tr><tr><td>不搞源产物双轨</td><td>不把待实现写成已实现</td></tr><tr><td>不一次跨 3 个以上模块</td><td>不做未说明的不可逆操作</td></tr></tbody></table>
+<table class="doc-table"><thead><tr><th>模块</th><th>最该防的那一条</th></tr></thead><tbody><tr><td><strong>01 UI</strong></td><td><strong>不要新增硬编码颜色</strong> —— 有 9 处正在清理</td></tr><tr><td><strong>02 前端</strong></td><td><strong>小改动里不要顺手重构</strong> —— 主线脚本技术债大，回归面不可控</td></tr><tr><td><strong>03 后端</strong></td><td><strong>不要让 Chat 模式碰到智能体机制</strong> —— 产品架构红线</td></tr><tr><td><strong>04 Agent</strong></td><td><strong>不要动隔离三件套</strong> —— 一改就配置泄露</td></tr><tr><td><strong>05 宣传</strong></td><td><strong>不要自行决定品牌名</strong> —— 四套并存，命名由人决策</td></tr><tr><td><strong>06 订阅</strong></td><td><strong>不要触发真实支付</strong> —— 不可逆，且档位不自动含此权限</td></tr></tbody></table>
+</div>
+</section>
+</body>
+</html>

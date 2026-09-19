@@ -1,0 +1,3122 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>墨台 · 桌面端科研 AI 工作台</title>
+<meta name="description" content="墨台 ChatScience —— 轻对话用 Chat，深科研交给墨道。桌面端科研 AI 工作台，Chat 即时问答与墨道多智能体双引擎。" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   墨台 · 产品页
+   视觉基因：宣白纸底 · 玄黑为墨 · 石青为辅 · 丹朱点缀
+   版式基因：宋体标题的刻本感 + 现代编辑排版 + 细分隔线
+   设计纪律：零 emoji / 零彩色大色块 / 零圆角卡片堆砌
+   ============================================================ */
+
+:root{
+  /* 纸与墨 —— 取自墨台 VI */
+  --paper:      #F4F0E5;   /* 宣白（米白系） */
+  --paper-2:    #FBF9F3;
+  --paper-3:    #EDE8DA;
+  --ink:        #16161D;   /* 玄黑 */
+  --ink-wash:   #0F172A;   /* 墨色主色（与产品 UI 令牌一致） */
+  --ink-2:      #3E3E47;
+  --ink-3:      #6B6A73;
+  --ink-4:      #9B988E;
+  --qing:       #2E6E8E;   /* 石青 */
+  --qing-deep:  #1F4E66;
+  --zhu:        #CE4928;   /* 丹朱 */
+  --zhu-wash:   rgba(206,73,40,.10);
+  --qing-wash:  rgba(46,110,142,.08);
+  --rule:       rgba(22,22,29,.16);
+  --rule-soft:  rgba(22,22,29,.085);
+  --rule-faint: rgba(22,22,29,.045);
+
+  --font-display: "Noto Serif SC","Source Han Serif SC","Songti SC","SimSun",serif;
+  --font-ui: "Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","HarmonyOS Sans SC","Microsoft YaHei",sans-serif;
+  --font-mono: ui-monospace,SFMono-Regular,"Cascadia Mono",Consolas,"Courier New",monospace;
+
+  --ease: cubic-bezier(.22,1,.36,1);
+  --nav-h: 64px;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+
+html{
+  -webkit-text-size-adjust:100%;
+  scroll-behavior:smooth;
+  scroll-padding-top:calc(var(--nav-h) + 24px);
+}
+
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-ui);
+  font-size:16px;
+  line-height:1.8;
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* 纸纹（极淡，仅作用于观感，不影响对比度） */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:9000;
+  pointer-events:none;
+  opacity:.05;
+  mix-blend-mode:multiply;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+::selection{background:#DCD6C6;color:var(--ink)}
+
+img,svg{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--qing);outline-offset:3px;border-radius:2px}
+
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding:0 40px}
+.mono{font-family:var(--font-mono)}
+
+/* ---------- 顶部导航 ---------- */
+.nav{
+  position:fixed;top:0;left:0;right:0;z-index:8000;
+  height:var(--nav-h);
+  display:flex;align-items:center;
+  background:rgba(244,240,229,.84);
+  -webkit-backdrop-filter:saturate(150%) blur(14px);
+  backdrop-filter:saturate(150%) blur(14px);
+  border-bottom:1px solid var(--rule-soft);
+}
+.nav .wrap{display:flex;align-items:center;gap:36px}
+.brand{display:flex;align-items:center;gap:11px;flex-shrink:0}
+.brand-mark{width:26px;height:26px;flex-shrink:0}
+.brand-name{font-family:var(--font-display);font-size:19px;font-weight:700;letter-spacing:.06em;line-height:1}
+.brand-en{
+  font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--ink-4);
+  padding-left:11px;margin-left:3px;border-left:1px solid var(--rule);line-height:1.2;
+}
+.nav-links{display:flex;gap:30px;margin-left:auto;font-size:14px;color:var(--ink-3)}
+.nav-links a{position:relative;padding:4px 0;transition:color .18s ease}
+.nav-links a::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:var(--ink);transform:scaleX(0);transform-origin:left;
+  transition:transform .3s var(--ease);
+}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a:hover::after{transform:scaleX(1)}
+.nav-cta{
+  display:flex;align-items:center;gap:18px;margin-left:6px;
+}
+
+.progress{
+  position:fixed;top:0;left:0;height:2px;width:0;
+  background:var(--ink);z-index:8001;transition:width .1s linear;
+}
+
+/* ---------- 按钮 ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  height:46px;padding:0 26px;
+  font-size:14.5px;font-weight:500;letter-spacing:.02em;
+  border-radius:2px;
+  transition:background-color .2s ease,color .2s ease,border-color .2s ease,transform .16s ease,box-shadow .2s ease;
+}
+.btn-ink{background:var(--ink);color:var(--paper-2);box-shadow:0 6px 20px -12px rgba(15,23,42,.7)}
+.btn-ink:hover{background:#2A2A34;transform:translateY(-1px);box-shadow:0 10px 26px -14px rgba(15,23,42,.8)}
+.btn-ink:active{transform:translateY(0) scale(.985)}
+.btn-ghost{border:1px solid var(--rule);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--ink);background:rgba(22,22,29,.03)}
+.btn-text{height:auto;padding:2px 0;color:var(--qing);border-bottom:1px solid transparent}
+.btn-text:hover{border-bottom-color:var(--qing)}
+.btn[disabled],.btn[aria-disabled="true"]{cursor:default;opacity:.55;transform:none!important;box-shadow:none}
+.btn-sm{height:38px;padding:0 18px;font-size:13.5px}
+
+/* ---------- 版块骨架 ---------- */
+.sec{padding:104px 0}
+.sec-tight{padding:76px 0}
+.rule-top{border-top:1px solid var(--rule-soft)}
+.rule-ink{border-top:1px solid var(--ink)}
+
+.eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-family:var(--font-display);
+  font-size:13px;letter-spacing:.34em;color:var(--qing);
+  text-transform:none;
+}
+.eyebrow .seal-dot{width:5px;height:5px;background:var(--zhu);flex-shrink:0}
+
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:700;margin:0;color:var(--ink);letter-spacing:.01em}
+h1{font-size:clamp(2.15rem,5.4vw,4rem);line-height:1.26}
+h2{font-size:clamp(1.65rem,3.3vw,2.5rem);line-height:1.34}
+h3{font-size:clamp(1.05rem,1.6vw,1.28rem);line-height:1.5;font-weight:600}
+p{margin:0}
+.lead{
+  font-size:clamp(.95rem,1.15vw,1.04rem);
+  line-height:2;
+  color:var(--ink-2);
+  max-width:64ch;
+}
+.muted{color:var(--ink-3)}
+.tiny{font-size:12.5px;line-height:1.7;color:var(--ink-3)}
+
+.sec-head{margin-bottom:52px}
+.sec-head .eyebrow{margin-bottom:20px}
+.sec-head h2{margin-bottom:20px;max-width:24ch}
+.sec-head .lead{max-width:60ch}
+
+/* ---------- 滚动进场 ---------- */
+.rv{opacity:0;transform:translateY(16px);transition:opacity .72s var(--ease),transform .72s var(--ease);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+
+/* ============================================================
+   首屏
+   ============================================================ */
+.hero{
+  position:relative;
+  padding:calc(var(--nav-h) + 74px) 0 88px;
+  overflow:hidden;
+}
+.hero::before{
+  content:"";position:absolute;inset:-20% -10% auto auto;width:62%;height:120%;
+  background:radial-gradient(closest-side,rgba(46,110,142,.075),transparent 72%);
+  pointer-events:none;
+}
+.hero-grid{
+  position:relative;
+  display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);
+  gap:64px;align-items:center;
+}
+.hero h1{margin:26px 0 26px}
+.hero h1 .mark{position:relative;white-space:nowrap}
+.hero h1 .mark::after{
+  content:"";position:absolute;left:0;right:.06em;bottom:-.12em;height:4px;
+  background:var(--zhu);opacity:.9;
+}
+.hero .lead{font-size:clamp(1rem,1.25vw,1.1rem);max-width:44ch}
+
+.hero-acts{display:flex;align-items:center;gap:26px;flex-wrap:wrap;margin-top:38px}
+
+/* 双引擎短对照 */
+.engines{
+  margin-top:46px;border-top:1px solid var(--rule);
+  display:grid;grid-template-columns:1fr 1fr;
+}
+.engine{
+  padding:20px 26px 18px 0;
+  border-right:1px solid var(--rule);
+}
+.engine:last-child{border-right:0;padding-right:0;padding-left:26px}
+.engine-tag{
+  display:flex;align-items:baseline;gap:9px;margin-bottom:8px;
+}
+.engine-tag b{font-size:15px;font-weight:700;letter-spacing:.06em}
+.engine-tag span{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--qing);text-transform:uppercase}
+.engine p{font-size:13.5px;line-height:1.8;color:var(--ink-3)}
+
+/* 证据条 */
+.proof{
+  margin-top:34px;display:flex;flex-wrap:wrap;gap:0;
+  border-top:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft);
+}
+.proof li{
+  list-style:none;flex:1 1 130px;padding:13px 18px 13px 0;
+  font-size:12.5px;color:var(--ink-3);border-right:1px solid var(--rule-soft);
+  display:flex;align-items:center;gap:8px;
+}
+.proof li:last-child{border-right:0}
+.proof li:not(:first-child){padding-left:18px}
+.proof b{font-family:var(--font-mono);font-size:13px;color:var(--ink);font-weight:600}
+
+/* 品牌标识列 */
+.hero-visual{
+  position:relative;
+  display:flex;align-items:center;justify-content:center;gap:26px;
+}
+.brand-orb{width:min(100%,368px);height:auto;flex-shrink:0}
+.vertical-word{
+  writing-mode:vertical-rl;
+  font-family:var(--font-display);
+  font-size:14px;letter-spacing:.62em;color:var(--ink-4);
+  align-self:flex-end;margin-bottom:26px;
+}
+.zhu-seal{
+  position:absolute;right:6%;bottom:-4px;
+  width:66px;height:66px;flex-shrink:0;
+  background:var(--zhu);color:#FFF6EF;
+  display:grid;place-items:center;
+  font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:.14em;
+  writing-mode:vertical-rl;
+  transform:rotate(2.2deg);
+  box-shadow:0 6px 18px -10px rgba(206,73,40,.7);
+  border-radius:2px;
+}
+.brand-caption{
+  text-align:center;margin-top:22px;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.24em;
+  text-transform:uppercase;color:var(--ink-4);
+}
+.orb-spin-slow{animation:spin 150s linear infinite;transform-origin:50% 50%}
+.orb-spin-rev{animation:spin 96s linear infinite reverse;transform-origin:50% 50%}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ============================================================
+   双模式
+   ============================================================ */
+.duo{
+  display:grid;grid-template-columns:1fr 1fr;gap:0;
+  border-top:1px solid var(--ink);border-bottom:1px solid var(--rule-soft);
+}
+.duo-col{padding:38px 40px 40px 0}
+.duo-col+ .duo-col{border-left:1px solid var(--rule-soft);padding-left:40px;padding-right:0}
+.duo-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.duo-head h3{font-size:clamp(1.4rem,2.4vw,1.9rem)}
+.duo-head span{font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;color:var(--qing)}
+.duo-sub{font-size:13px;color:var(--ink-4);margin-bottom:22px;letter-spacing:.02em}
+.duo-list{list-style:none;margin:0;padding:0}
+.duo-list li{
+  position:relative;padding:9px 0 9px 20px;font-size:14.5px;color:var(--ink-2);
+  border-bottom:1px dashed var(--rule-faint);
+}
+.duo-list li:last-child{border-bottom:0}
+.duo-list li::before{
+  content:"";position:absolute;left:0;top:1.05em;
+  width:6px;height:1px;background:var(--qing);opacity:.75;
+}
+
+/* 能力索引 */
+.index-list{margin-top:64px;border-top:1px solid var(--ink)}
+.idx{
+  display:grid;grid-template-columns:56px minmax(0,1fr) minmax(0,1.35fr);
+  gap:0 26px;padding:24px 0;border-bottom:1px solid var(--rule-soft);
+  align-items:start;
+}
+.idx-n{font-family:var(--font-display);font-size:15px;color:var(--zhu);padding-top:3px;letter-spacing:.1em}
+.idx-t{font-family:var(--font-display);font-size:1.06rem;font-weight:600}
+.idx-d{font-size:14px;color:var(--ink-3);line-height:1.85}
+
+/* ============================================================
+   执行轨迹
+   ============================================================ */
+.trace-wrap{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:64px;align-items:start}
+.trace{
+  border:1px solid var(--rule);background:var(--paper-2);border-radius:2px;
+  padding:0;
+}
+.trace-bar{
+  display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:12px 18px;border-bottom:1px solid var(--rule-soft);
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.06em;color:var(--ink-3);
+}
+.trace-bar b{color:var(--ink);font-weight:600}
+.trace-step{padding:16px 18px 20px}
+.trace-step-label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--ink-4);text-transform:uppercase;margin:14px 0 12px;padding-left:2px;
+}
+.trace-step:first-child .trace-step-label{margin-top:2px}
+.rail{position:relative;margin-left:4px;padding-left:22px;border-left:1px solid var(--rule)}
+.tnode{position:relative;padding:8px 0 10px}
+.tnode::before{
+  content:"";position:absolute;left:-25.5px;top:15px;width:6px;height:6px;border-radius:50%;
+  background:var(--ink-4);
+}
+.tnode.run::before{background:var(--qing);animation:pulse 1.6s ease-in-out infinite}
+.tnode.err::before{background:var(--zhu)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.32}}
+.tnode-row{display:flex;align-items:baseline;gap:12px}
+.tool{font-family:var(--font-mono);font-size:12.5px;font-weight:600;color:var(--ink);flex-shrink:0}
+.arg{font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:1}
+.dur{font-family:var(--font-mono);font-size:10.5px;color:var(--ink-4);flex-shrink:0}
+.tnode-note{font-size:12.5px;color:var(--ink-3);margin-top:3px;line-height:1.7}
+
+.trace-side{position:sticky;top:calc(var(--nav-h) + 32px)}
+.side-block{border-top:1px solid var(--ink);padding:22px 0 6px}
+.side-block+.side-block{margin-top:34px}
+.side-block h3{margin-bottom:16px}
+.chk{list-style:none;margin:0;padding:0}
+.chk li{
+  position:relative;padding:8px 0 8px 24px;font-size:14px;color:var(--ink-2);
+  border-bottom:1px dashed var(--rule-faint);
+}
+.chk li:last-child{border-bottom:0}
+.chk li::before{
+  content:"";position:absolute;left:2px;top:1.15em;width:9px;height:1px;background:var(--qing)
+}
+.chk li::after{
+  content:"";position:absolute;left:2px;top:1.15em;width:1px;height:1px;
+  box-shadow:none;
+}
+
+/* ============================================================
+   计费逻辑
+   ============================================================ */
+.decouple{
+  display:grid;grid-template-columns:1fr 56px 1fr;gap:0;align-items:stretch;
+  border-top:1px solid var(--ink);border-bottom:1px solid var(--ink);
+}
+.dc-col{padding:30px 30px 32px 0}
+.dc-col:last-child{padding-right:0;padding-left:30px}
+.dc-axis{
+  display:flex;align-items:center;justify-content:center;
+  border-left:1px solid var(--rule-soft);border-right:1px solid var(--rule-soft);
+}
+.dc-axis span{
+  writing-mode:vertical-rl;font-family:var(--font-display);font-size:12px;
+  letter-spacing:.3em;color:var(--ink-4);
+}
+.dc-label{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;color:var(--qing);text-transform:uppercase;margin-bottom:10px}
+.dc-col h3{margin-bottom:6px}
+.dc-col .q{font-size:14.5px;color:var(--ink-2);margin-bottom:18px}
+.dc-items{list-style:none;margin:0;padding:0}
+.dc-items li{
+  padding:10px 0;border-top:1px solid var(--rule-soft);font-size:14px;color:var(--ink-2);
+  display:flex;justify-content:space-between;gap:16px;
+}
+.dc-items li b{font-weight:600;color:var(--ink);flex-shrink:0}
+.dc-note{
+  margin-top:26px;padding:16px 20px;background:var(--paper-2);border-left:3px solid var(--qing);
+  font-size:13.5px;color:var(--ink-2);line-height:1.85;border-radius:0 2px 2px 0;
+}
+
+/* 积分预估器 */
+.est{
+  margin-top:56px;border:1px solid var(--rule);background:var(--paper-2);
+  display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);
+}
+.est-ctrl{padding:30px 32px 34px;border-right:1px solid var(--rule-soft)}
+.est-head{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+.est-head h3{font-size:1.06rem}
+.est-head span{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;color:var(--qing)}
+.est-sub{font-size:13px;color:var(--ink-3);margin-bottom:26px}
+.ctrl{margin-bottom:20px}
+.ctrl-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.ctrl-top label{font-size:13.5px;color:var(--ink-2)}
+.ctrl-top .val{font-family:var(--font-mono);font-size:12.5px;color:var(--ink);font-weight:600}
+.stepper{display:flex;align-items:center;gap:0;border:1px solid var(--rule);width:fit-content}
+.stepper button{
+  width:34px;height:32px;display:grid;place-items:center;color:var(--ink-3);
+  font-family:var(--font-mono);font-size:15px;line-height:1;
+  transition:background-color .16s ease,color .16s ease;
+}
+.stepper button:hover{background:rgba(22,22,29,.05);color:var(--ink)}
+.stepper .num{
+  min-width:52px;text-align:center;font-family:var(--font-mono);font-size:13.5px;font-weight:600;
+  border-left:1px solid var(--rule);border-right:1px solid var(--rule);height:32px;
+  display:grid;place-items:center;
+}
+.seg{display:flex;gap:4px}
+.seg button{
+  flex:1;padding:8px 10px;font-size:12.5px;color:var(--ink-3);
+  border:1px solid var(--rule);border-radius:2px;
+  transition:background-color .18s ease,color .18s ease,border-color .18s ease;
+}
+.seg button:hover{border-color:var(--ink-4);color:var(--ink)}
+.seg button.on{background:var(--ink);color:var(--paper-2);border-color:var(--ink);font-weight:600}
+
+.est-out{
+  padding:30px 32px 34px;display:flex;flex-direction:column;
+}
+.est-total{
+  display:flex;align-items:flex-end;gap:11px;
+  padding-bottom:20px;border-bottom:1px solid var(--rule);margin-bottom:20px;
+}
+.est-total .big{
+  font-family:var(--font-display);font-size:clamp(2.6rem,5vw,3.5rem);font-weight:700;line-height:1;
+  letter-spacing:-.01em;
+}
+.est-total .unit{font-family:var(--font-display);font-size:15px;color:var(--zhu);padding-bottom:6px}
+.est-total .cap{margin-left:auto;font-size:11.5px;color:var(--ink-4);padding-bottom:7px;text-align:right}
+.est-break{list-style:none;margin:0 0 auto;padding:0;font-size:13px}
+.est-break li{
+  display:flex;justify-content:space-between;gap:14px;padding:6.5px 0;
+  color:var(--ink-3);border-bottom:1px dashed var(--rule-faint);
+}
+.est-break li:last-child{border-bottom:0}
+.est-break li b{font-family:var(--font-mono);font-size:12.5px;color:var(--ink);font-weight:600}
+.est-break li.off{opacity:.42}
+.est-foot{margin-top:20px;padding-top:16px;border-top:1px solid var(--rule-soft);font-size:12.5px;color:var(--ink-3);line-height:1.8}
+
+/* 额度面板 */
+.wallet{
+  margin-top:56px;display:grid;grid-template-columns:repeat(4,1fr);
+  border-top:1px solid var(--ink);border-bottom:1px solid var(--rule-soft);
+}
+.wcell{padding:24px 24px 26px 0;border-right:1px solid var(--rule-soft)}
+.wcell:last-child{border-right:0}
+.wcell:not(:first-child){padding-left:24px}
+.wcell dt{font-size:12px;color:var(--ink-4);letter-spacing:.05em;margin-bottom:9px}
+.wcell dd{
+  margin:0;font-family:var(--font-display);font-size:clamp(1.5rem,2.6vw,2rem);font-weight:700;line-height:1.2;
+}
+.wcell dd small{font-family:var(--font-ui);font-size:12px;font-weight:400;color:var(--ink-3);margin-left:5px}
+.wcell .act{margin-top:14px}
+
+/* ============================================================
+   订阅
+   ============================================================ */
+.seg-big{
+  display:inline-flex;gap:0;border:1px solid var(--ink);border-radius:2px;overflow:hidden;
+}
+.seg-big button{
+  padding:11px 30px;font-size:14px;color:var(--ink-3);
+  transition:background-color .2s ease,color .2s ease;
+}
+.seg-big button+button{border-left:1px solid var(--ink)}
+.seg-big button.on{background:var(--ink);color:var(--paper-2);font-weight:600}
+.badge-soon{
+  display:inline-block;margin-left:8px;padding:1px 6px;font-size:10px;letter-spacing:.06em;
+  border:1px solid var(--qing);color:var(--qing);border-radius:2px;vertical-align:1px;font-weight:500;
+}
+.notice{
+  display:flex;gap:14px;align-items:flex-start;
+  margin-top:26px;padding:16px 20px;
+  border:1px solid rgba(46,110,142,.3);background:var(--qing-wash);border-radius:2px;
+  font-size:13.5px;line-height:1.85;color:var(--ink-2);
+}
+.notice .nk{
+  flex-shrink:0;font-family:var(--font-display);font-size:12px;color:var(--qing);
+  border:1px solid var(--qing);padding:1px 7px;border-radius:2px;line-height:1.6;
+}
+
+.tiers{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  margin-top:34px;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule-soft);
+}
+.tiers[data-aud="team"]{grid-template-columns:repeat(3,1fr)}
+.tier{
+  position:relative;text-align:left;
+  padding:28px 24px 32px;border-right:1px solid var(--rule-soft);
+  display:flex;flex-direction:column;gap:0;
+  transition:background-color .26s ease;
+}
+.tier:last-child{border-right:0}
+.tier:hover{background:rgba(22,22,29,.022)}
+.tier.on{background:var(--paper-2)}
+.tier.on::before{
+  content:"";position:absolute;left:0;right:0;top:-1px;height:3px;background:var(--ink);
+}
+.tier-rank{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--ink-4);margin-bottom:12px;
+}
+.tier-name{font-family:var(--font-display);font-size:1.24rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.tier-seal{
+  font-family:var(--font-display);font-size:10px;color:#FFF6EF;background:var(--zhu);
+  padding:2px 5px;letter-spacing:.1em;border-radius:2px;font-weight:600;
+}
+.tier-price{display:flex;align-items:baseline;gap:4px;margin-bottom:4px}
+.tier-price .cur{font-size:15px;color:var(--ink-3)}
+.tier-price .amt{font-family:var(--font-display);font-size:clamp(1.9rem,3.2vw,2.5rem);font-weight:700;line-height:1;letter-spacing:-.01em}
+.tier-price .per{font-size:12.5px;color:var(--ink-3);margin-left:4px}
+.tier-desc{font-size:12.5px;color:var(--ink-4);margin-bottom:20px;padding-bottom:18px;border-bottom:1px solid var(--rule-soft)}
+.tier-quota{display:flex;flex-direction:column;gap:9px;margin-bottom:18px}
+.tier-quota div{display:flex;justify-content:space-between;gap:12px;font-size:12.5px;color:var(--ink-3)}
+.tier-quota b{font-family:var(--font-mono);font-size:12.5px;color:var(--ink);font-weight:600}
+.tier-pick{
+  margin-top:auto;font-size:12.5px;font-weight:600;color:var(--qing);
+  display:flex;align-items:center;gap:7px;
+}
+.tier-pick .radio{
+  width:13px;height:13px;border:1px solid var(--ink-4);border-radius:50%;flex-shrink:0;
+  transition:box-shadow .2s ease,border-color .2s ease;
+}
+.tier.on .tier-pick .radio{border-color:var(--qing);box-shadow:inset 0 0 0 3.5px var(--qing)}
+.tier.on .tier-pick{color:var(--ink)}
+
+.tier-detail{
+  margin-top:44px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;
+  border-top:1px solid var(--ink);padding-top:0;
+}
+.td-col{padding:26px 26px 8px 0;border-right:1px solid var(--rule-soft)}
+.td-col:last-child{border-right:0;padding-right:0}
+.td-col:not(:first-child){padding-left:26px}
+.td-col h4{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--qing);font-weight:600;margin-bottom:16px;
+}
+.td-list{list-style:none;margin:0;padding:0}
+.td-list li{
+  position:relative;padding:8px 0 8px 17px;font-size:13.5px;color:var(--ink-2);line-height:1.75;
+}
+.td-list li::before{
+  content:"";position:absolute;left:0;top:1.1em;width:5px;height:5px;background:var(--qing);opacity:.85;
+}
+.td-list li.no{color:var(--ink-4)}
+.td-list li.no::before{background:var(--ink-4);opacity:.5}
+.td-list li.plus::before{background:var(--zhu)}
+.td-sum{
+  display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  margin-top:34px;padding:24px 0 0;border-top:1px solid var(--rule);
+}
+.td-sum .note{font-size:13.5px;color:var(--ink-3);max-width:60ch;line-height:1.85}
+.td-sum .acts{display:flex;align-items:center;gap:20px}
+
+/* ---------- 对照表 ---------- */
+.cmp-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-top:34px}
+table.cmp{width:100%;border-collapse:collapse;font-size:13.5px;min-width:720px}
+.cmp th,.cmp td{
+  padding:14px 16px;text-align:left;vertical-align:top;
+  border-bottom:1px solid var(--rule-soft);
+}
+.cmp thead th{
+  border-bottom:1px solid var(--ink);border-top:1px solid var(--ink);
+  font-family:var(--font-display);font-size:13.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;background:transparent;
+}
+.cmp thead th:first-child{font-family:var(--font-ui);font-size:12px;letter-spacing:.1em;color:var(--ink-3);font-weight:400}
+.cmp thead th.hi{background:rgba(46,110,142,.09)}
+.cmp tbody th{
+  font-weight:400;color:var(--ink-2);font-size:13.5px;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;
+}
+.cmp tbody td{color:var(--ink-2);font-family:var(--font-mono);font-size:12.5px}
+.cmp tbody td.hi{background:rgba(46,110,142,.07)}
+.cmp tbody tr:hover th,.cmp tbody tr:hover td{background:rgba(22,22,29,.028)}
+.cmp tbody tr:hover td.hi{background:rgba(46,110,142,.10)}
+.mark-soon{
+  font-size:10px;letter-spacing:.06em;color:var(--ink-4);
+  border:1px solid var(--rule);padding:0 5px;border-radius:2px;flex-shrink:0;line-height:1.7;
+}
+.cmp-cap{margin-top:16px;font-size:12.5px;color:var(--ink-3);line-height:1.8}
+.cmp-cap i{font-style:normal;border:1px solid var(--rule);padding:0 5px;border-radius:2px;margin-right:6px;color:var(--ink-4)}
+
+/* ---------- 充值包与到期 ---------- */
+.packs{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--ink);border-bottom:1px solid var(--rule-soft)}
+.pack{padding:30px 34px 34px 0;border-right:1px solid var(--rule-soft)}
+.pack:last-child{border-right:0;padding-right:0;padding-left:34px}
+.pack-tag{font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;color:var(--qing);margin-bottom:12px}
+.pack h3{margin-bottom:10px}
+.pack p{font-size:14px;color:var(--ink-3);line-height:1.85}
+.pack-note{
+  margin-top:20px;padding:12px 16px;border:1px dashed var(--rule);
+  font-size:12.5px;color:var(--ink-3);border-radius:2px;line-height:1.8;
+}
+.pack-note b{color:var(--zhu);font-weight:600}
+
+.expire{margin-top:48px;display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--ink)}
+.exp{padding:26px 28px 30px 0;border-right:1px solid var(--rule-soft)}
+.exp:last-child{border-right:0;padding-right:0}
+.exp:not(:first-child){padding-left:28px}
+.exp h4{font-family:var(--font-ui);font-size:12px;letter-spacing:.1em;color:var(--ink-4);font-weight:500;margin-bottom:14px}
+.exp ul{list-style:none;margin:0;padding:0}
+.exp li{padding:7px 0;font-size:14px;color:var(--ink-2);display:flex;gap:10px;align-items:baseline}
+.exp li span.k{font-family:var(--font-display);font-size:11px;flex-shrink:0;padding-top:2px}
+.exp.rev li span.k{color:var(--zhu)}
+.exp.keep li span.k{color:var(--qing)}
+
+/* ---------- 下载 ---------- */
+.dl{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:60px;align-items:start}
+.dl-btns{display:flex;flex-direction:column;gap:14px;margin-top:32px;max-width:420px}
+.dl-btn{
+  display:flex;align-items:center;gap:18px;width:100%;
+  padding:18px 22px;border:1px solid var(--rule);border-radius:2px;text-align:left;
+  transition:border-color .2s ease,background-color .2s ease;
+}
+.dl-btn:hover{border-color:var(--ink);background:var(--paper-2)}
+.dl-btn .os{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;color:var(--qing);flex-shrink:0;width:74px}
+.dl-btn .nm{font-size:14.5px;font-weight:500}
+.dl-btn .sub{font-size:12px;color:var(--ink-4);margin-left:auto;flex-shrink:0}
+.dl-meta{border-top:1px solid var(--ink);padding-top:22px}
+.dl-meta dl{margin:0;display:grid;gap:0}
+.dl-meta div{display:flex;justify-content:space-between;gap:20px;padding:11px 0;border-bottom:1px solid var(--rule-soft);font-size:13.5px}
+.dl-meta dt{color:var(--ink-4)}
+.dl-meta dd{margin:0;color:var(--ink-2);font-family:var(--font-mono);font-size:12.5px;text-align:right}
+
+/* ---------- FAQ ---------- */
+.faq{border-top:1px solid var(--ink)}
+details.fq{border-bottom:1px solid var(--rule-soft)}
+details.fq summary{
+  list-style:none;cursor:pointer;padding:22px 0;
+  display:flex;align-items:baseline;gap:20px;
+  font-family:var(--font-display);font-size:1.02rem;font-weight:600;
+  transition:color .18s ease;
+}
+details.fq summary::-webkit-details-marker{display:none}
+details.fq summary:hover{color:var(--qing-deep)}
+details.fq summary .q-n{font-family:var(--font-mono);font-size:11px;color:var(--ink-4);flex-shrink:0}
+details.fq summary .plus{
+  margin-left:auto;flex-shrink:0;width:13px;height:13px;position:relative;top:1px;
+}
+details.fq summary .plus::before,
+details.fq summary .plus::after{
+  content:"";position:absolute;background:var(--ink-3);transition:transform .3s var(--ease),opacity .3s ease;
+}
+details.fq summary .plus::before{left:0;right:0;top:6px;height:1px}
+details.fq summary .plus::after{top:0;bottom:0;left:6px;width:1px}
+details.fq[open] summary .plus::after{transform:scaleY(0);opacity:0}
+details.fq[open] summary{color:var(--ink)}
+.fq-body{padding:0 0 26px 50px;max-width:76ch}
+.fq-body p{font-size:14px;color:var(--ink-3);line-height:1.95}
+.fq-body p+p{margin-top:10px}
+.fq-body b{color:var(--ink);font-weight:600}
+
+/* 能力边界 */
+.boundary{margin-top:72px;border-top:1px solid var(--ink)}
+.bd-row{
+  display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+  border-bottom:1px solid var(--rule-soft);
+}
+.bd-row>div{padding:18px 26px 18px 0;font-size:13.5px;line-height:1.8}
+.bd-row>div:last-child{padding-right:0;padding-left:26px;border-left:1px solid var(--rule-soft);color:var(--ink-2)}
+.bd-head>div{font-size:12px;letter-spacing:.1em;color:var(--ink-4)}
+.bd-head>div:last-child{color:var(--qing);letter-spacing:.1em}
+.bd-row .no-say{color:var(--ink-4);text-decoration:line-through;text-decoration-color:rgba(22,22,29,.28)}
+
+/* ---------- 页脚 ---------- */
+.foot{border-top:1px solid var(--ink);padding:56px 0 40px;background:var(--paper-3)}
+.foot-grid{display:grid;grid-template-columns:minmax(0,1.4fr) repeat(3,minmax(0,1fr));gap:40px}
+.foot-brand{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.foot-brand .brand-name{font-size:20px}
+.foot p{font-size:13px;color:var(--ink-3);line-height:1.85;max-width:34ch}
+.foot h5{
+  font-family:var(--font-ui);font-size:11.5px;letter-spacing:.14em;color:var(--ink-4);
+  font-weight:500;margin:0 0 16px;
+}
+.foot ul{list-style:none;margin:0;padding:0}
+.foot li{margin-bottom:10px;font-size:13.5px;color:var(--ink-3)}
+.foot li a:hover{color:var(--ink)}
+.foot-base{
+  margin-top:52px;padding-top:24px;border-top:1px solid var(--rule-soft);
+  display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  font-size:12px;color:var(--ink-4);line-height:1.8;
+}
+
+/* ---------- 结算弹窗 ---------- */
+.overlay{
+  position:fixed;inset:0;z-index:9500;display:none;
+  align-items:center;justify-content:center;padding:24px;
+  background:rgba(22,22,29,.46);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);
+}
+.overlay.show{display:flex;animation:fade .22s ease}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+.modal{
+  width:100%;max-width:540px;max-height:88vh;overflow-y:auto;
+  background:var(--paper-2);border:1px solid var(--ink);border-radius:2px;
+  animation:rise .3s var(--ease);
+}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.modal-head{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:20px 26px;border-bottom:1px solid var(--rule);
+}
+.modal-head h3{font-size:1.08rem}
+.modal-head .close{
+  width:26px;height:26px;display:grid;place-items:center;color:var(--ink-3);border-radius:2px;
+  transition:background-color .16s ease,color .16s ease;flex-shrink:0;
+}
+.modal-head .close:hover{background:rgba(22,22,29,.06);color:var(--ink)}
+.modal-body{padding:24px 26px}
+.steps{display:flex;align-items:center;gap:0;margin-bottom:26px}
+.step-i{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--ink-4)}
+.step-i .dot{
+  width:19px;height:19px;border:1px solid var(--rule);border-radius:50%;
+  display:grid;place-items:center;font-family:var(--font-mono);font-size:10px;flex-shrink:0;
+  transition:background-color .2s ease,color .2s ease,border-color .2s ease;
+}
+.step-i.on{color:var(--ink)}
+.step-i.on .dot{background:var(--ink);color:var(--paper-2);border-color:var(--ink)}
+.step-i.done .dot{background:var(--qing);border-color:var(--qing);color:#fff}
+.step-line{flex:1;height:1px;background:var(--rule-soft);margin:0 12px}
+
+.panel{display:none}
+.panel.on{display:block;animation:fade .24s ease}
+
+.sum{border-top:1px solid var(--ink);margin-bottom:22px}
+.sum div{display:flex;justify-content:space-between;gap:18px;padding:12px 0;border-bottom:1px solid var(--rule-soft);font-size:13.5px}
+.sum div dt,.sum div .k{color:var(--ink-4)}
+.sum div .v{color:var(--ink-2);text-align:right}
+.sum div.total{border-bottom:0;padding-top:16px}
+.sum div.total .v{font-family:var(--font-display);font-size:1.5rem;font-weight:700;color:var(--ink)}
+
+.opt{
+  display:flex;gap:14px;align-items:flex-start;width:100%;text-align:left;
+  padding:16px 18px;border:1px solid var(--rule);border-radius:2px;margin-bottom:12px;
+  transition:border-color .2s ease,background-color .2s ease;
+}
+.opt:hover{border-color:var(--ink-4)}
+.opt.on{border-color:var(--ink);background:rgba(22,22,29,.025)}
+.opt .radio{width:14px;height:14px;border:1px solid var(--ink-4);border-radius:50%;flex-shrink:0;margin-top:4px;transition:box-shadow .2s ease,border-color .2s ease}
+.opt.on .radio{border-color:var(--qing);box-shadow:inset 0 0 0 3.5px var(--qing)}
+.opt .t{font-size:14px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px}
+.opt .d{font-size:12.5px;color:var(--ink-3);line-height:1.75}
+
+.field{display:flex;gap:10px;margin-bottom:12px}
+.field input{
+  flex:1;height:44px;padding:0 14px;font-family:var(--font-mono);font-size:13.5px;
+  background:var(--paper);border:1px solid var(--rule);border-radius:2px;color:var(--ink);
+  transition:border-color .2s ease,box-shadow .2s ease;
+}
+.field input::placeholder{color:var(--ink-4);font-family:var(--font-ui)}
+.field input:focus{outline:none;border-color:var(--qing);box-shadow:0 0 0 3px rgba(46,110,142,.12)}
+.hint{font-size:12px;color:var(--ink-4);line-height:1.75;margin-top:2px}
+.hint.err{color:var(--zhu)}
+
+.modal-foot{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:18px 26px;border-top:1px solid var(--rule);background:var(--paper);
+}
+.modal-foot .lft{font-size:12px;color:var(--ink-4);line-height:1.7}
+.switch{display:flex;align-items:center;gap:11px;font-size:13px;color:var(--ink-2);cursor:pointer}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch .track{
+  width:36px;height:20px;border-radius:999px;background:#C6C2B4;position:relative;flex-shrink:0;
+  transition:background-color .22s ease;
+}
+.switch .track::after{
+  content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;
+  background:#fff;transition:left .22s var(--ease);
+}
+.switch input:checked+.track{background:#2E6E8E}
+.switch input:checked+.track::after{left:18px}
+.switch input:focus-visible+.track{outline:2px solid var(--qing);outline-offset:2px}
+
+.done-mark{
+  width:46px;height:46px;border:1px solid var(--qing);border-radius:50%;
+  display:grid;place-items:center;margin-bottom:20px;color:var(--qing);
+}
+
+/* ---------- Toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:34px;z-index:9600;
+  transform:translate(-50%,18px);
+  padding:11px 22px;background:var(--ink);color:var(--paper-2);
+  font-size:13.5px;letter-spacing:.01em;border-radius:2px;
+  box-shadow:0 12px 34px -10px rgba(15,23,42,.6);
+  opacity:0;pointer-events:none;
+  transition:opacity .24s ease,transform .24s var(--ease);
+  max-width:calc(100vw - 40px);text-align:center;
+}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* ============================================================
+   响应式
+   ============================================================ */
+@media (max-width:1080px){
+  .hero-grid{grid-template-columns:1fr;gap:56px}
+  .hero-visual{order:-1;justify-content:flex-start}
+  .brand-orb{width:min(62%,280px)}
+  .vertical-word{display:none}
+  .zhu-seal{right:auto;left:min(46%,200px);bottom:auto;top:0}
+  .trace-wrap{grid-template-columns:1fr;gap:44px}
+  .trace-side{position:static}
+  .est{grid-template-columns:1fr}
+  .est-ctrl{border-right:0;border-bottom:1px solid var(--rule-soft)}
+  .dl{grid-template-columns:1fr;gap:40px}
+  .foot-grid{grid-template-columns:1fr 1fr;gap:34px}
+  .bd-row{grid-template-columns:1fr}
+  .bd-row>div{padding-right:0}
+  .bd-row>div:last-child{padding-left:0;border-left:0;border-top:1px dashed var(--rule-faint);padding-top:14px}
+}
+
+@media (max-width:900px){
+  .nav-cta{margin-left:auto}
+  .tiers,.tiers[data-aud="team"]{grid-template-columns:repeat(2,1fr)}
+  .tier{border-bottom:1px solid var(--rule-soft)}
+  .tier:nth-child(2n){border-right:0}
+  .tier-detail{grid-template-columns:repeat(2,1fr)}
+  .td-col{padding:24px 24px 8px 0;border-bottom:1px solid var(--rule-soft)}
+  .td-col:nth-child(2n){border-right:0}
+  .td-col:not(:first-child){padding-left:0}
+  .td-col:nth-child(2n){padding-left:24px}
+  .wallet{grid-template-columns:repeat(2,1fr)}
+  .wcell:nth-child(2n){border-right:0}
+  .wcell:not(:first-child){padding-left:0}
+  .wcell:nth-child(2n){padding-left:24px}
+  .wcell:nth-child(-n+2){border-bottom:1px solid var(--rule-soft)}
+  .expire{grid-template-columns:1fr}
+  .exp{padding:22px 0;border-right:0;border-bottom:1px solid var(--rule-soft)}
+  .exp:not(:first-child){padding-left:0}
+  .duo{grid-template-columns:1fr}
+  .duo-col{padding:32px 0 34px}
+  .duo-col+.duo-col{border-left:0;border-top:1px solid var(--rule-soft);padding-left:0}
+  .decouple{grid-template-columns:1fr}
+  .dc-axis{padding:16px 0;border:0;border-top:1px solid var(--rule-soft);border-bottom:1px solid var(--rule-soft)}
+  .dc-axis span{writing-mode:horizontal-tb;letter-spacing:.3em}
+  .dc-col{padding:28px 0 30px}
+  .dc-col:last-child{padding-left:0}
+}
+
+@media (max-width:680px){
+  .wrap{padding:0 20px}
+  .sec{padding:76px 0}
+  .sec-tight{padding:56px 0}
+  .hero{padding:calc(var(--nav-h) + 46px) 0 60px}
+  .engines{grid-template-columns:1fr}
+  .engine{padding:18px 0;border-right:0;border-bottom:1px solid var(--rule-soft)}
+  .engine:last-child{padding-left:0;border-bottom:0}
+  .proof li{flex:1 1 50%;padding:11px 14px}
+  .proof li:nth-child(2n){border-right:0}
+  .proof li:nth-child(n+3){border-top:1px solid var(--rule-soft)}
+  .proof li:nth-child(odd){padding-left:0}
+  .idx{grid-template-columns:34px minmax(0,1fr);gap:4px 14px;padding:20px 0}
+  .idx-d{grid-column:2}
+  .tiers,.tiers[data-aud="team"]{grid-template-columns:1fr}
+  .tier{border-right:0}
+  .tier:nth-child(2n){border-right:0}
+  .tier-detail{grid-template-columns:1fr}
+  .td-col{padding:22px 0 6px}
+  .td-col:nth-child(2n){padding-left:0}
+  .wallet{grid-template-columns:1fr}
+  .wcell{padding:20px 0!important;border-right:0!important;border-bottom:1px solid var(--rule-soft)}
+  .wcell:last-child{border-bottom:0}
+  .packs{grid-template-columns:1fr}
+  .pack{padding:26px 0 30px;border-right:0;border-bottom:1px solid var(--rule-soft)}
+  .pack:last-child{padding-left:0;border-bottom:0}
+  .foot-grid{grid-template-columns:1fr}
+  .nav .wrap{gap:16px}
+  .brand-en{display:none}
+  .tier-price .amt{font-size:1.85rem}
+  .modal{max-height:92vh}
+  .modal-body,.modal-head,.modal-foot{padding-left:20px;padding-right:20px}
+  .fq-body{padding-left:0}
+  .vertical-word{display:none}
+}
+
+/* ---------- 细节修正 ---------- */
+.proof{margin:34px 0 0;padding:0;list-style:none}
+.brand-orb svg{width:100%;height:auto;aspect-ratio:1/1}
+.cmp tbody th{font-weight:400;color:var(--ink-2);font-size:13.5px;white-space:nowrap;display:table-cell}
+.cmp tbody th .mark-soon{margin-left:8px}
+.cmp tbody td{color:var(--ink-2);font-size:13px;font-family:var(--font-ui)}
+.notice[hidden]{display:none}
+.field{align-items:center}
+.opt .d{display:block}
+.tier-quota>span{display:flex;justify-content:space-between;gap:12px}
+
+/* ---------- 站点语言切换（弹簧指示器，可中途打断） ---------- */
+.lang-switch{
+  position:relative;display:flex;align-items:stretch;
+  height:32px;flex-shrink:0;
+  border:1px solid var(--rule);border-radius:2px;overflow:hidden;
+}
+.lang-switch .ind{
+  position:absolute;left:0;top:0;width:50%;height:100%;
+  background:var(--ink);transform:translateX(0);
+  transition:transform .44s cubic-bezier(.34,1.30,.52,1);
+  will-change:transform;
+}
+.lang-switch button{
+  position:relative;z-index:1;width:54px;
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;
+  color:var(--ink-3);transition:color .26s ease;
+}
+.lang-switch button.on{color:var(--paper-2)}
+.lang-switch button+button{border-left:1px solid var(--rule)}
+html[data-lang="en"] .lang-switch .ind{transform:translateX(100%)}
+.lang-switch button:focus-visible{outline-offset:-3px}
+
+/* ---------- 支付方式（按站点切换） ---------- */
+.opt-block{cursor:default}
+.opt-block:hover{border-color:var(--rule)}
+.pay-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.pay-chip{
+  padding:6px 13px;font-size:12.5px;color:var(--ink-3);
+  border:1px solid var(--rule);border-radius:2px;
+  transition:background-color .18s ease,color .18s ease,border-color .18s ease;
+}
+.pay-chip:hover{border-color:var(--ink-4);color:var(--ink)}
+.pay-chip.on{background:var(--ink);border-color:var(--ink);color:var(--paper-2);font-weight:600}
+.pay-strip{
+  margin-top:42px;padding-top:24px;border-top:1px solid var(--ink);
+  display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;
+}
+.pay-strip .ps-label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--qing);flex-shrink:0;
+}
+.pay-strip .ps-chips{display:flex;flex-wrap:wrap;gap:8px}
+.pay-strip .ps-chip{
+  font-size:12.5px;color:var(--ink-2);
+  border:1px solid var(--rule-soft);padding:4px 12px;border-radius:2px;
+}
+.pay-strip .ps-note{font-size:12.5px;color:var(--ink-4)}
+@media (max-width:680px){
+  .pay-strip{gap:12px}
+  .pay-strip .ps-label{width:100%}
+}
+
+/* ---------- 国际站（英文）排版适配 ---------- */
+html[data-lang="en"]{
+  --font-display:"Noto Serif SC",Georgia,"Times New Roman",serif;
+  --font-ui:"Instrument Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+}
+html[data-lang="en"] body{line-height:1.7}
+html[data-lang="en"] h1{font-size:clamp(2.05rem,4.5vw,3.45rem);line-height:1.16;letter-spacing:-.014em}
+html[data-lang="en"] h2{line-height:1.2;letter-spacing:-.01em;max-width:26ch}
+html[data-lang="en"] h3{line-height:1.35}
+html[data-lang="en"] .lead{line-height:1.82;max-width:72ch}
+html[data-lang="en"] .hero .lead{max-width:50ch}
+html[data-lang="en"] .hero h1 .mark::after{bottom:-.05em;height:3px}
+html[data-lang="en"] .eyebrow{letter-spacing:.24em}
+html[data-lang="en"] .idx-t{letter-spacing:0}
+html[data-lang="en"] .idx{grid-template-columns:52px minmax(0,1fr) minmax(0,1.45fr)}
+html[data-lang="en"] .proof li{flex:1 1 152px}
+html[data-lang="en"] .nav-links{gap:24px}
+html[data-lang="en"] .cmp-scroll table.cmp{min-width:880px}
+html[data-lang="en"] .cmp tbody th{white-space:normal;min-width:186px}
+html[data-lang="en"] .cmp thead th{white-space:normal}
+html[data-lang="en"] .tier-desc{min-height:56px}
+html[data-lang="en"] .exp li span.k{font-size:9.5px;letter-spacing:.04em;padding-top:3px}
+html[data-lang="en"] .fq-body{padding-left:0;max-width:82ch}
+html[data-lang="en"] .duo-list li,
+html[data-lang="en"] .chk li,
+html[data-lang="en"] .td-list li{line-height:1.7}
+html[data-lang="en"] .notice div{max-width:78ch}
+html[data-lang="en"] .dc-note{max-width:86ch}
+html[data-lang="en"] .vertical-word,
+html[data-lang="en"] .zhu-seal,
+html[data-lang="en"] .brand-name{font-family:var(--font-display)}
+@media (max-width:900px){
+  .lang-switch{height:30px}
+  .lang-switch button{width:50px}
+}
+@media (max-width:680px){
+  .lang-switch button{width:46px;font-size:10px;letter-spacing:.06em}
+}
+
+/* ---------- 三页路由（哈希路由，非滚动切换） ---------- */
+.page{display:none}
+.page.active{display:block}
+.page-lead{padding-top:calc(var(--nav-h) + 56px)}
+.nav-links a.active{color:var(--ink)}
+.nav-links a.active::after{transform:scaleX(1)}
+@media (max-width:900px){
+  .nav-links{gap:22px;font-size:13.5px}
+}
+@media (max-width:680px){
+  :root{--nav-h:98px}
+  .nav .wrap{flex-wrap:wrap;align-content:center;gap:8px 12px}
+  .nav-links{order:3;flex:0 0 100%;justify-content:space-between;
+             margin-left:0;gap:0;border-top:1px solid var(--rule-soft);padding-top:8px}
+  .nav-links a{font-size:13.5px;padding:3px 0}
+  .nav-cta{margin-left:auto}
+  .nav-cta .btn{display:none}
+  .page-lead{padding-top:calc(var(--nav-h) + 40px)}
+}
+
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+  html{scroll-behavior:auto}
+  .rv{opacity:1;transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress" aria-hidden="true"></div>
+
+<!-- ================= 导航 ================= -->
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#/product" aria-label="墨台 首页">
+      <span class="brand-mark" data-orb="mini" aria-hidden="true"></span>
+      <span class="brand-name">墨台</span>
+      <span class="brand-en">ChatScience</span>
+    </a>
+    <nav class="nav-links" aria-label="页面导航">
+      <a href="#/product" data-route="product">产品</a>
+      <a href="#/pricing" data-route="pricing">订阅</a>
+      <a href="#/download" data-route="download">下载</a>
+    </nav>
+    <div class="nav-cta">
+      <div class="lang-switch" role="group" aria-label="站点语言">
+        <span class="ind" aria-hidden="true"></span>
+        <button type="button" data-lang-btn="zh" class="on" aria-pressed="true" title="中国站 · 人民币结算">CN</button>
+        <button type="button" data-lang-btn="en" aria-pressed="false" title="Global site · USD pricing">GLOBAL</button>
+      </div>
+      <a class="btn btn-ink btn-sm" href="#/download">下载客户端</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ================= 首屏 ================= -->
+<div class="page active" id="page-product" data-page="product">
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>桌面端科研 AI 工作台</span>
+      <h1>轻对话用 Chat，<br>深科研交给<span class="mark">墨道</span></h1>
+      <p class="lead">一个软件覆盖即时问答与体系化科研。Chat 负责轻量对话、文献速读与通用任务；墨道负责文献调研、实验设计、数据处理、论文写作与归档的全流程编排。</p>
+
+      <div class="hero-acts">
+        <a class="btn btn-ink" href="#/download">下载客户端</a>
+        <a class="btn-text" href="#/pricing">查看订阅方案</a>
+      </div>
+
+      <div class="engines">
+        <div class="engine">
+          <div class="engine-tag"><b>Chat</b><span>轻对话</span></div>
+          <p>即时间答、报告与文案、通用编程、文献速读。零配置，打开就能用。</p>
+        </div>
+        <div class="engine">
+          <div class="engine-tag"><b>墨道</b><span>Work · 多智能体</span></div>
+          <p>搭建智能体、连接工具、在沙箱里跑通实验。运行轨迹逐步可追溯。</p>
+        </div>
+      </div>
+
+      <ul class="proof">
+        <li><b>12</b> 科研技能</li>
+        <li><b>6</b> 科研工具</li>
+        <li><b>沙箱</b> 真实执行</li>
+        <li><b>本地</b> 数据优先</li>
+      </ul>
+    </div>
+
+    <div class="hero-visual rv" style="--d:.12s">
+      <span class="brand-orb" data-orb="full" aria-hidden="true"></span>
+      <span class="vertical-word" data-no-i18n aria-hidden="true">格物砺知</span>
+      <span class="zhu-seal" data-no-i18n aria-hidden="true">墨台</span>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 壹 · 产品介绍 ================= -->
+<section class="sec rule-top" id="intro">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>壹 · 产品介绍</span>
+      <h2>一个工作台，两条互不干扰的引擎</h2>
+      <p class="lead">通用对话工具把一切塞进同一个对话框，科研流程却是有阶段的：先要快速问清楚，再要一步步把实验跑通。墨台把这两件事拆成两套引擎，各自的界面、上下文与运行方式都是为它自己设计的。</p>
+    </div>
+
+    <div class="duo rv">
+      <div class="duo-col">
+        <div class="duo-head"><h3>Chat</h3><span>轻量对话</span></div>
+        <p class="duo-sub">为「马上想知道答案」而设计</p>
+        <ul class="duo-list">
+          <li>即时问答与长文献速读，支持整篇论文注入上下文</li>
+          <li>报告、文案与通用编程任务</li>
+          <li>对话仅存本地，不上传</li>
+          <li>会员档位下基础模型无限畅用</li>
+        </ul>
+      </div>
+      <div class="duo-col">
+        <div class="duo-head"><h3>墨道</h3><span>Work · 多智能体</span></div>
+        <p class="duo-sub">为「把一件事做完」而设计</p>
+        <ul class="duo-list">
+          <li>可视化智能体工作台，逐步串联科研流程</li>
+          <li>沙箱内真实执行代码：Python、NumPy、Matplotlib</li>
+          <li>Jupyter 式研究笔记，智能体写入的笔记立即可编辑</li>
+          <li>全流程轨迹可追溯：工具名、参数、耗时、输入响应</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="index-list">
+      <div class="idx rv">
+        <span class="idx-n">一</span>
+        <span class="idx-t">双引擎分离</span>
+        <span class="idx-d">Chat 与墨道在界面、上下文与计量上完全独立。轻对话不占用科研任务的资源，科研任务也不被对话历史拖累。</span>
+      </div>
+      <div class="idx rv" style="--d:.05s">
+        <span class="idx-n">二</span>
+        <span class="idx-t">科研全流程技能覆盖</span>
+        <span class="idx-d">内置文献精读、消融实验设计、数据分析、学术绘图、论文审校、框架复现等科研技能，覆盖从读文献到成稿的关键环节。</span>
+      </div>
+      <div class="idx rv" style="--d:.1s">
+        <span class="idx-n">三</span>
+        <span class="idx-t">沙箱内真实执行</span>
+        <span class="idx-d">代码在独立进程里真跑，产物回传。超时强杀无残留、路径守卫、危险操作静态拦截，可声明断网运行。</span>
+      </div>
+      <div class="idx rv" style="--d:.15s">
+        <span class="idx-n">四</span>
+        <span class="idx-t">可插拔的科研 MCP 生态</span>
+        <span class="idx-d">内置科研工具集，同时支持接入外部 MCP 服务。工具可见范围随档位开放，避免无效工具干扰。</span>
+      </div>
+      <div class="idx rv" style="--d:.2s">
+        <span class="idx-n">五</span>
+        <span class="idx-t">本地优先</span>
+        <span class="idx-d">数据默认留在本机，模型 Key 仅存于本机后端，不随界面状态落盘。</span>
+      </div>
+      <div class="idx rv" style="--d:.25s">
+        <span class="idx-n">六</span>
+        <span class="idx-t">克制的界面</span>
+        <span class="idx-d">中性色打底、墨色主按钮、克制的蓝链接，界面内零 emoji。为长时间科研工作设计，不喧宾夺主。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 贰 · 执行轨迹 ================= -->
+<section class="sec rule-top" id="trace">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>贰 · 看得见的执行</span>
+      <h2>智能体做了什么，一步一步都摊开给你看</h2>
+      <p class="lead">科研工作最怕黑箱。墨道把每一次工具调用、每一个参数、每一步耗时都摊在时间线上，可以展开查看完整的输入与响应——过程可追溯，结果才可复现。</p>
+    </div>
+
+    <div class="trace-wrap">
+      <div class="trace rv">
+        <div class="trace-bar">
+          <span>墨道 · 运行轨迹</span>
+          <span>步骤 <b>3</b> · 工具调用 <b>7</b> 次 · 总耗时 <b>12.4s</b></span>
+        </div>
+        <div class="trace-step">
+          <div class="trace-step-label">Step 1 · 检索与入库</div>
+          <div class="rail">
+            <div class="tnode">
+              <div class="tnode-row"><span class="tool">arxiv_search</span><span class="arg">"scaled dot-product attention" · limit 12</span><span class="dur">0.9s</span></div>
+            </div>
+            <div class="tnode">
+              <div class="tnode-row"><span class="tool">arxiv_fetch</span><span class="arg">arXiv:1706.03762 · full text</span><span class="dur">1.1s</span></div>
+            </div>
+            <div class="tnode">
+              <div class="tnode-row"><span class="tool">kb_index</span><span class="arg">11 pages · chunk 512</span><span class="dur">0.5s</span></div>
+              <div class="tnode-note">已入个人知识库，后续可多文档分片检索。</div>
+            </div>
+          </div>
+        </div>
+        <div class="trace-step">
+          <div class="trace-step-label">Step 2 · 沙箱执行</div>
+          <div class="rail">
+            <div class="tnode run">
+              <div class="tnode-row"><span class="tool">run_code</span><span class="arg">python · attention_demo.py · seed=0</span><span class="dur">2.3s</span></div>
+              <div class="tnode-note">真实执行 scaled dot-product attention，张量 2×4×8，输出均值 −0.1572。</div>
+            </div>
+            <div class="tnode">
+              <div class="tnode-row"><span class="tool">figure_plot</span><span class="arg">attention_weights.png · 1600×900</span><span class="dur">1.4s</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="trace-step">
+          <div class="trace-step-label">Step 3 · 记录与结论</div>
+          <div class="rail">
+            <div class="tnode">
+              <div class="tnode-row"><span class="tool">note_write</span><span class="arg">研究笔记 · 复现记录（markdown 单元格）</span><span class="dur">0.4s</span></div>
+            </div>
+            <div class="tnode">
+              <div class="tnode-row"><span class="tool">analysis_summary</span><span class="arg">结论草稿 + 复现步骤清单</span><span class="dur">5.8s</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <aside class="trace-side">
+        <div class="side-block rv">
+          <h3>为什么敢把过程摊开</h3>
+          <ul class="chk">
+            <li>工具名与参数以等宽字体原样呈现，不做美化包装</li>
+            <li>每步耗时独立标注，便于定位真正的瓶颈</li>
+            <li>节点状态区分运行中、完成与失败，失败不隐藏</li>
+            <li>用户中断的任务标记为「已中断」，不伪装成错误</li>
+          </ul>
+        </div>
+        <div class="side-block rv" style="--d:.06s">
+          <h3>能力边界，如实说明</h3>
+          <ul class="chk">
+            <li>沙箱定位是「防误操作」，静态拦截可被绕过，我们不宣称绝对隔离</li>
+            <li>断网为声明式控制，不宣称绝对安全</li>
+            <li>知识库检索为词法检索，不是全语义向量检索</li>
+            <li>不承诺自动产出论文或保证实验结论，研究结论仍需研究者把关</li>
+          </ul>
+          <p class="tiny" style="margin-top:16px">主动说明边界，是专业工具应有的诚实。</p>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 叁 · 计费逻辑 ================= -->
+<section class="sec rule-top" id="billing">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>叁 · 计费逻辑</span>
+      <h2>算力归算力，会员归会员</h2>
+      <p class="lead">墨台把付费拆成两条完全独立的判断链：余额决定「能不能跑」，档位决定「能用哪些高级功能」。不做「买积分送功能」，也不做「买会员送算力」——两件事各有各的价，心里才清楚。</p>
+    </div>
+
+    <div class="decouple rv">
+      <div class="dc-col">
+        <div class="dc-label">Dimension 01</div>
+        <h3>算力维度</h3>
+        <p class="q">回答「这一次能不能跑起来」</p>
+        <ul class="dc-items">
+          <li><span>Chat 高阶 Token 账户</span><b>按 Token 计量</b></li>
+          <li><span>墨道积分账户</span><b>按任务复杂度计量</b></li>
+          <li><span>判断条件</span><b>余额 &gt; 0 即可运行</b></li>
+          <li><span>获取方式</span><b>会员月发放 · 签到 · 充值包</b></li>
+        </ul>
+      </div>
+      <div class="dc-axis" aria-hidden="true"><span>解 耦</span></div>
+      <div class="dc-col">
+        <div class="dc-label">Dimension 02</div>
+        <h3>权限维度</h3>
+        <p class="q">回答「能用哪些高级功能」</p>
+        <ul class="dc-items">
+          <li><span>会员档位</span><b>个人四档 · 团队三档</b></li>
+          <li><span>覆盖范围</span><b>技能 / MCP / 迭代 / 容量</b></li>
+          <li><span>判断条件</span><b>档位达标才解锁</b></li>
+          <li><span>到期行为</span><b>权益收回，余额保留</b></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="dc-note rv">
+      <b>免费用户不会被挡在门外。</b>注册即赠 200 初始积分，按基础工作流约 1 积分一次计算，足以跑通相当数量的完整流程——先完整体验墨道的价值，再遇到额度墙。这是我们的获客设计，不是试用陷阱。
+    </div>
+
+    <!-- 积分预估器 -->
+    <div class="est rv">
+      <div class="est-ctrl">
+        <div class="est-head"><h3>单次任务积分预估</h3><span>透明计价</span></div>
+        <p class="est-sub">调整下面几个变量，看这次任务大概要花多少积分。</p>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><label>智能体数量</label><span class="val"><span data-out="agent">1</span> 个</span></div>
+          <div class="stepper">
+            <button type="button" data-step="agent" data-delta="-1" aria-label="减少智能体数量">−</button>
+            <span class="num" id="v-agent">1</span>
+            <button type="button" data-step="agent" data-delta="1" aria-label="增加智能体数量">+</button>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><label>工具调用次数</label><span class="val"><span data-out="tool">0</span> 次</span></div>
+          <div class="stepper">
+            <button type="button" data-step="tool" data-delta="-5" aria-label="减少工具调用次数">−</button>
+            <span class="num" id="v-tool">0</span>
+            <button type="button" data-step="tool" data-delta="5" aria-label="增加工具调用次数">+</button>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><label>审辨迭代轮次</label><span class="val"><span data-out="iter">0</span> 轮</span></div>
+          <div class="stepper">
+            <button type="button" data-step="iter" data-delta="-1" aria-label="减少迭代轮次">−</button>
+            <span class="num" id="v-iter">0</span>
+            <button type="button" data-step="iter" data-delta="1" aria-label="增加迭代轮次">+</button>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><label>沙箱执行时长</label></div>
+          <div class="seg" data-seg="sandbox" role="group" aria-label="沙箱执行时长">
+            <button type="button" data-val="0" class="on">不执行</button>
+            <button type="button" data-val="0.2">30 秒内</button>
+            <button type="button" data-val="0.5">30–120 秒</button>
+            <button type="button" data-val="1">超过 120 秒</button>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <div class="ctrl-top"><label>仿真解析</label></div>
+          <div class="seg" data-seg="sim" role="group" aria-label="是否仿真解析">
+            <button type="button" data-val="0" class="on">不需要</button>
+            <button type="button" data-val="2">需要（+2.0 起）</button>
+          </div>
+        </div>
+
+        <div class="ctrl" style="margin-bottom:0">
+          <div class="ctrl-top"><label>批量文献篇数</label><span class="val"><span data-out="paper">0</span> 篇</span></div>
+          <div class="stepper">
+            <button type="button" data-step="paper" data-delta="-10" aria-label="减少批量文献篇数">−</button>
+            <span class="num" id="v-paper">0</span>
+            <button type="button" data-step="paper" data-delta="10" aria-label="增加批量文献篇数">+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="est-out">
+        <div class="est-total">
+          <span class="big" id="est-total">1.0</span>
+          <span class="unit">积分</span>
+          <span class="cap">预估消耗<br>任务结束后按实际结算</span>
+        </div>
+        <ul class="est-break" id="est-break"></ul>
+        <p class="est-foot">基础工作流 1 积分起。多智能体串联、工具密集调用、审辨迭代、沙箱计算、仿真解析与批量文献按复杂度上浮。任务启动前显示预估，结束后显示实际消耗与计算依据。</p>
+      </div>
+    </div>
+
+    <!-- 额度指示器示意 -->
+    <dl class="wallet rv">
+      <div class="wcell">
+        <dt>当前身份</dt>
+        <dd>免费版<small style="display:block;margin-left:0;margin-top:6px">到期降级后仍可运行基础能力</small></dd>
+      </div>
+      <div class="wcell">
+        <dt>墨道积分</dt>
+        <dd><span id="w-credit">200</span><small style="display:block;margin-left:0;margin-top:6px">注册初始赠送</small></dd>
+      </div>
+      <div class="wcell">
+        <dt>Chat 高阶 Token</dt>
+        <dd>0<small style="display:block;margin-left:0;margin-top:6px">免费版不赠送</small></dd>
+      </div>
+      <div class="wcell">
+        <dt>每日签到</dt>
+        <dd style="font-size:1.15rem">+100 积分</dd>
+        <div class="act"><button class="btn btn-ghost btn-sm" type="button" id="checkin">今日签到</button></div>
+      </div>
+    </dl>
+    <p class="tiny rv" style="margin-top:18px;max-width:72ch">额度指示器为界面示意。本地版计费属于自律性计量，不是安全计费——真实商业化需要引入云端账号与可信账本，这一点我们如实标注。</p>
+  </div>
+</section>
+
+<!-- ================= 肆 · 能力边界 ================= -->
+<section class="sec rule-top" id="boundary">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>肆 · 能力边界</span>
+      <h2>先把不该说的说清楚</h2>
+      <p class="lead">产品里存在不少「策划案写了、代码还没做」的能力。我们给自己立了一条硬约束：宣传口径必须与实现状态一致——不宣称未上线的能力，也不为凑齐一张功能表而含糊其辞。</p>
+    </div>
+
+    <div class="boundary rv">
+      <div class="bd-row bd-head"><div>我们不会这样说</div><div>我们这样说</div></div>
+      <div class="bd-row"><div class="no-say">自动写论文 / 一键出论文</div><div>辅助论文撰写与审校，结论仍需研究者把关</div></div>
+      <div class="bd-row"><div class="no-say">完全隔离的沙箱</div><div>沙箱内执行代码，危险操作静态拦截 + 独立进程隔离</div></div>
+      <div class="bd-row"><div class="no-say">保证实验结论正确</div><div>全流程轨迹可追溯，结果可复现</div></div>
+      <div class="bd-row"><div class="no-say">断网运行绝对安全</div><div>可声明断网运行</div></div>
+      <div class="bd-row"><div class="no-say">全部额度无限</div><div>Chat 基础模型无限 / 高阶模型耗 Token / 墨道运行耗积分</div></div>
+      <div class="bd-row"><div class="no-say">替代科研人员</div><div>把重复劳动交给 AI，把思考留给研究者</div></div>
+      <div class="bd-row"><div class="no-say">智能体自主调度七类子智能体</div><div>内置科研技能与工具，覆盖从文献到论文的全流程</div></div>
+    </div>
+    <p class="tiny rv" style="margin-top:24px;max-width:76ch">这份「不说什么 / 说什么」的对照来自产品内部的能力边界核对表。宣传口径必须与实现状态一致，这是我们对自己最硬的一条约束。</p>
+  </div>
+</section>
+
+</div>
+
+<!-- ================= 壹 · 会员订阅 ================= -->
+<div class="page" id="page-pricing" data-page="pricing">
+
+
+<section class="sec page-lead" id="pricing">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>壹 · 会员订阅</span>
+      <h2>选一个档位，解锁需要的高级能力</h2>
+      <p class="lead">个人四档、团队三档。权益沿「算力额度 → 核心功能 → 知识库容量 → 通用服务」四条线逐级递进，每一档都比上一档多给一点，而不是把基础功能扣着卖。全部档位均享 Chat 基础模型无限畅用。</p>
+    </div>
+
+    <div class="rv" style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+      <div class="seg-big" role="tablist" aria-label="会员类型">
+        <button type="button" role="tab" id="tab-personal" aria-selected="true" aria-controls="tiers" data-aud="personal" class="on">个人会员</button>
+        <button type="button" role="tab" id="tab-team" aria-selected="false" aria-controls="tiers" data-aud="team">团队会员<span class="badge-soon">筹备中</span></button>
+      </div>
+      <p class="tiny" style="margin:0">点击档位查看完整权益。</p>
+    </div>
+
+    <div class="notice rv" id="team-notice" hidden>
+      <span class="nk">说明</span>
+      <div>团队版依赖账号体系与云端服务，而墨台当前是纯本地单机应用——团队能力属于架构级建设，不是加一个页面就能补上的。因此团队三档目前<strong>处于内测筹备阶段，不开放购买</strong>。档位与权益在此公示，只用于提前说明方向：团队能力就绪之前，我们不会以任何形式宣传它已经可用。</div>
+    </div>
+
+    <div class="tiers" id="tiers" data-aud="personal" role="tabpanel" aria-labelledby="tab-personal"></div>
+    <div class="tier-detail" id="tier-detail"></div>
+
+    <div class="td-sum rv">
+      <p class="note" id="pick-note"></p>
+      <div class="acts">
+        <button class="btn-text" type="button" id="cmp-link">查看权益对照表</button>
+        <button class="btn btn-ink" type="button" id="subscribe">立即订阅</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 贰 · 权益对照 ================= -->
+<section class="sec rule-top" id="rights">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>贰 · 权益对照</span>
+      <h2>放在同一把尺子上比</h2>
+      <p class="lead">免费档与各付费档横向铺开，差在哪一行一目了然。选定上方档位后，对应列会高亮。</p>
+    </div>
+
+    <div class="notice rv" id="rights-notice" hidden>
+      <span class="nk">说明</span>
+      <div>团队三档依赖账号体系与云端服务，当前不开放购买；下表仅作方向公示。</div>
+    </div>
+
+    <div class="cmp-scroll rv">
+      <table class="cmp" id="cmp-table" aria-label="会员权益逐级对照表"></table>
+    </div>
+
+    <p class="cmp-cap rv"><i>筹备</i>标记的权益依赖尚未落地的能力（审辨迭代循环、快照与检查点、工作流模板、知识库容量配额、团队与客服体系等），将按「计费地基 → 体验型权益 → Agent 演进 → 团队与企业」四批依次开放。未上线的能力我们不做宣传，也不会为凑齐一张权益表而宣称它已经可用。</p>
+  </div>
+</section>
+
+<!-- ================= 叁 · 充值包与到期规则 ================= -->
+<section class="sec rule-top" id="topup">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>叁 · 充值包与到期规则</span>
+      <h2>算力用完了，可以单独补</h2>
+      <p class="lead">会员额度之外，墨台另设两类充值包。它们只补充算力，不附带任何会员功能权益——这是「算力归算力、会员归会员」最直接的体现。</p>
+    </div>
+
+    <div class="packs rv">
+      <div class="pack">
+        <div class="pack-tag">Pack 01</div>
+        <h3>墨道积分充值包</h3>
+        <p>单独补充积分，用于继续运行墨道工作流。适合任务量大、但当前档位的功能已经够用的用户。</p>
+        <div class="pack-note">只补充算力，<b>不含</b>任何功能权益。以免费身份运行时，高级功能依然要对应档位才能解锁。面额与定价处于配置阶段，暂以占位呈现。</div>
+      </div>
+      <div class="pack">
+        <div class="pack-tag">Pack 02</div>
+        <h3>Chat 高阶 Token 充值包</h3>
+        <p>单独补充高阶模型 Token，用于继续调用高阶模型的对话与长文献任务。</p>
+        <div class="pack-note">同样<b>不含</b>功能权益。高阶模型的计价表可配置更新，模型价格变动无需改动客户端。</div>
+      </div>
+    </div>
+
+    <div class="pay-strip rv" id="pay-strip"></div>
+
+    <div class="expire rv">
+      <div class="exp rev">
+        <h4>会员到期后 · 收回</h4>
+        <ul>
+          <li><span class="k">收</span>高级功能权限</li>
+          <li><span class="k">收</span>知识库超额容量（超额部分只读或限制新增）</li>
+          <li><span class="k">收</span>Chat 基础模型无限畅用权益</li>
+        </ul>
+      </div>
+      <div class="exp keep">
+        <h4>会员到期后 · 保留</h4>
+        <ul>
+          <li><span class="k">留</span>账户内剩余积分，可继续消耗</li>
+          <li><span class="k">留</span>剩余高阶 Token，可继续消耗</li>
+          <li><span class="k">留</span>个人知识库、研究笔记与历史会话</li>
+        </ul>
+      </div>
+      <div class="exp">
+        <h4>身份变化</h4>
+        <ul>
+          <li><span class="k">降</span>以免费用户身份运行墨道基础能力</li>
+          <li><span class="k">续</span>随时重新订阅，权益立即恢复</li>
+          <li><span class="k">清</span>套餐额度仍按「当月有效、月底清零」处理</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<!-- ================= 壹 · 下载 ================= -->
+<div class="page" id="page-download" data-page="download">
+
+
+<section class="sec page-lead" id="download">
+  <div class="wrap">
+    <div class="dl">
+      <div class="rv">
+        <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>壹 · 下载</span>
+        <h2 style="margin:22px 0 18px">把这套工作台装到本机</h2>
+        <p class="lead">墨台是桌面客户端。数据、知识库与运行环境都在你自己的机器上，模型 Key 只存于本机后端。当前为预览版本，安装包通道即将开放。</p>
+        <div class="dl-btns">
+          <button class="dl-btn" type="button" data-dl="Windows">
+            <span class="os">WINDOWS</span>
+            <span class="nm">Windows 10 / 11</span>
+            <span class="sub">即将开放</span>
+          </button>
+          <button class="dl-btn" type="button" data-dl="macOS">
+            <span class="os">MACOS</span>
+            <span class="nm">macOS 12 及以上</span>
+            <span class="sub">即将开放</span>
+          </button>
+          <button class="dl-btn" type="button" data-dl="Linux">
+            <span class="os">LINUX</span>
+            <span class="nm">Linux 桌面版</span>
+            <span class="sub">规划中</span>
+          </button>
+        </div>
+        <p class="tiny" style="margin-top:22px;max-width:48ch">下载入口与版本号均为占位状态。正式版本发布后，此处会替换为真实安装包、版本说明与校验值。</p>
+      </div>
+
+      <div class="dl-meta rv" id="dlmeta" style="--d:.08s">
+        <dl>
+          <div><dt>当前版本</dt><dd>v0.1.0-preview</dd></div>
+          <div><dt>安装包大小</dt><dd>—</dd></div>
+          <div><dt>系统要求</dt><dd>Windows 10/11 · macOS 12+</dd></div>
+          <div><dt>运行时依赖</dt><dd>内置 · 无需预装</dd></div>
+          <div><dt>沙箱依赖</dt><dd>本机 Python</dd></div>
+          <div><dt>数据存储</dt><dd>本机</dd></div>
+          <div><dt>完整性校验</dt><dd>SHA-256（发布后提供）</dd></div>
+        </dl>
+      </div>
+    </div>
+
+    <div class="rv" style="margin-top:72px">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>安装之后</span>
+      <h3 style="margin:16px 0 10px;font-size:1.3rem">三步跑起来</h3>
+      <p class="lead" style="max-width:62ch">装上之后建议按这个顺序走一遍，大约十分钟就能把两条引擎都摸清。</p>
+    </div>
+
+    <div class="index-list rv" style="margin-top:32px">
+      <div class="idx">
+        <span class="idx-n">一</span>
+        <span class="idx-t">先问一个真问题</span>
+        <span class="idx-d">打开就是 Chat，零配置。把手头那个具体问题直接丢进去——论文里的某个方法、一段看不懂的推导，先拿到即时价值。</span>
+      </div>
+      <div class="idx">
+        <span class="idx-n">二</span>
+        <span class="idx-t">跑通第一个墨道工作流</span>
+        <span class="idx-d">切换墨道，用「检索并精读一篇 arXiv 论文」起步——这是我们反复验证过的黄金路径：检索、入知识库、沙箱跑代码、笔记落盘，全程轨迹可见。</span>
+      </div>
+      <div class="idx">
+        <span class="idx-n">三</span>
+        <span class="idx-t">靠签到把积分攒起来</span>
+        <span class="idx-d">注册赠送 200 初始积分，每日签到再领 100，与套餐积分合并使用、同有效期。先跑够再决定要不要订阅。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 贰 · 常见问题 ================= -->
+<section class="sec rule-top" id="faq">
+  <div class="wrap">
+    <div class="sec-head rv">
+      <span class="eyebrow"><span class="seal-dot" aria-hidden="true"></span>贰 · 常见问题</span>
+      <h2>先把该说清楚的说完</h2>
+    </div>
+
+    <div class="faq rv">
+      <details class="fq">
+        <summary><span class="q-n">01</span>Chat 和墨道有什么区别？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>它们是两套独立引擎。<b>Chat</b> 面向「马上想知道答案」——即时间答、文献速读、报告与通用编程，零配置，打开就能用。<b>墨道</b>面向「把一件事做完」——可视化工作台里搭建智能体、连接科研工具、在沙箱里真跑代码，一路跑到结论与记录落盘。</p><p>两者在界面、上下文与计量上互不干扰：轻对话不会占用科研任务的算力，科研任务也不会被冗长的对话历史拖慢。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">02</span>不付费能用吗？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>能，而且不是「只能看一眼」。注册即赠 <b>200 初始积分</b>，按基础工作流约 1 积分一次计算，足以跑通相当数量的完整流程；每日签到再领 <b>100 积分</b>，签到积分与套餐积分合并使用、遵循相同有效期。</p><p>免费档的能力边界也如实列出：Chat 基础模型按每日限额使用（不享无限、不赠送高阶 Token），不能单独设置子智能体模型（强制跟随主模型），仅开放少量基础技能，不支持手动编排、快照与 fork，高级 MCP 全部关闭，模板最多保存 2 套，知识库仅支持本地极简文档上传（不提供向量库与数据库）。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">03</span>为什么积分和 Token 是两套额度？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>因为它们回答的是两个不同的问题。<b>余额</b>决定「这一次能不能跑起来」——Chat 的高阶模型按 Token 计量，墨道的任务按积分计量，只要余额大于 0 就能运行。<b>档位</b>决定「能用哪些高级功能」——技能范围、MCP 等级、迭代次数、存储容量。</p><p>两者彻底解耦、互不占用。所以买积分不会解锁功能，买会员也不会额外送算力。这不是为了复杂，而是为了让「我这次为什么不能跑」和「我为什么点不了这个按钮」两个问题的答案各自清晰。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">04</span>任务按次收费吗？积分怎么算出来的？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>基础工作流约 <b>1 积分</b>一次，之后按任务复杂度上浮：每增加一个智能体 +0.5，每 10 次工具调用 +0.3，每一轮审辨迭代 +1.0，沙箱执行按 30 秒内 +0.2 / 30–120 秒 +0.5 / 超过 120 秒 +1.0 分档，仿真解析 +2.0 起，批量文献每 10 篇 +1.0。</p><p>阶梯计价对用户透明：<b>任务启动前显示预估消耗，任务结束后显示实际消耗与计算依据</b>。中途中断按已完成步骤计量，不会让用户为没跑完的任务全额付费。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">05</span>套餐额度会结转吗？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>按月发放，<b>当月有效、月底清零、不结转</b>。签到获得的积分与套餐积分合并使用，遵循同一套有效期规则——不做两套有效期，避免用户需要同时记两本账。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">06</span>会员到期了，账户里的积分会作废吗？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>不会。到期只收回<b>权益</b>：高级功能权限、知识库超额容量、Chat 基础模型无限畅用。而<b>余额保留</b>：账户内剩余积分与剩余高阶 Token 都可以继续消耗，你以免费用户身份继续运行墨道基础能力。</p><p>换句话说，你已经买的算力不会因为到期而作废。这也是为什么在数据结构上，余额账户与会员订阅是两条独立生命周期。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">07</span>买充值包会解锁高级功能吗？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>不会。充值包<b>只补充算力，不附带任何会员功能权益</b>。积分用完后你可以单独购买积分继续跑墨道基础任务，但高级功能仍然需要对应档位才解锁。这条边界是刻意划死的，不打算为短期转化而模糊它。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">08</span>支持哪些支付方式？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>规划的路径是「<b>兑换码激活</b>（冷启动）→ <b>在线支付</b>（成长期）」。兑换码方案把订单与支付解耦：你可以在任意渠道购得兑换码后在本机激活，无需支付资质与回调服务，适合内测期先验证真实的付费意愿。在线支付通道集成中，支持微信支付、支付宝、抖音支付与云闪付。</p><p>本页的支付流程为交互演示，未接入真实支付与账本。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">09</span>沙箱是绝对隔离的吗？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>不是，我们也不会这样说。沙箱提供的是<b>真实执行 + 危险操作静态拦截 + 独立进程隔离 + 超时强杀 + 路径守卫</b>，定位是「防误操作」而非「防恶意突破」。静态拦截存在被绕过的可能，声明式断网也无法被强制保证。</p><p>把边界说清楚，比给一个漂亮但守不住的承诺更有用。</p></div>
+      </details>
+
+      <details class="fq">
+        <summary><span class="q-n">10</span>我的数据和模型 Key 存在哪里？<span class="plus" aria-hidden="true"></span></summary>
+        <div class="fq-body"><p>本地优先。数据默认留在本机，模型 Key 仅存于本机后端，不随界面状态落盘。免费用户的对话也只保存在本地。</p></div>
+      </details>
+    </div>
+
+
+  </div>
+</section>
+
+</div>
+
+</main>
+
+<!-- ================= 页脚 ================= -->
+<footer class="foot">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="foot-brand">
+          <span class="brand-mark" data-orb="mini" aria-hidden="true"></span>
+          <span class="brand-name">墨台</span>
+        </div>
+        <p>桌面端科研 AI 工作台。轻对话用 Chat，深科研交给墨道。</p>
+        <p data-no-i18n style="margin-top:14px;font-family:var(--font-display);color:var(--ink-4);letter-spacing:.24em;font-size:12px">格物砺知</p>
+      </div>
+      <div>
+        <h5>产品</h5>
+        <ul>
+          <li><a href="#/product/intro">功能与定位</a></li>
+          <li><a href="#/product/trace">运行轨迹</a></li>
+          <li><a href="#/product/billing">计费逻辑</a></li>
+          <li><a href="#/download">下载</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>订阅</h5>
+        <ul>
+          <li><a href="#/pricing">个人会员四档</a></li>
+          <li><a href="#/pricing">团队会员三档</a></li>
+          <li><a href="#/pricing/rights">权益对照</a></li>
+          <li><a href="#/pricing/topup">充值包与到期规则</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>说明</h5>
+        <ul>
+          <li><a href="#/download/faq">常见问题</a></li>
+          <li><a href="#/product/boundary">能力边界</a></li>
+          <li><a href="#/download/dlmeta">系统要求</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="foot-base">
+      <span>墨台 MoTai · 工程代号 ChatScience　|　本页为产品预览页，下载与支付通道均为占位。</span>
+      <span>团队版、审辨迭代、工作流模板等标注「筹备中」的能力尚未上线，不作宣传。</span>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= 结算弹窗 ================= -->
+<div class="overlay" id="checkout" role="dialog" aria-modal="true" aria-labelledby="ck-title" hidden>
+  <div class="modal" role="document">
+    <div class="modal-head">
+      <h3 id="ck-title">订阅墨台会员</h3>
+      <button class="close" type="button" id="ck-close" aria-label="关闭">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="steps" id="ck-steps" aria-hidden="true">
+        <div class="step-i on" data-s="1"><span class="dot">1</span>确认档位</div>
+        <div class="step-line"></div>
+        <div class="step-i" data-s="2"><span class="dot">2</span>支付方式</div>
+        <div class="step-line"></div>
+        <div class="step-i" data-s="3"><span class="dot">3</span>完成</div>
+      </div>
+
+      <div class="panel on" data-p="1">
+        <div class="sum" id="ck-sum"></div>
+        <label class="switch" for="ck-renew">
+          <input type="checkbox" id="ck-renew" checked>
+          <span class="track"></span>
+          <span>开启自动续费</span>
+        </label>
+        <p class="hint" style="margin-top:14px">订阅读满一个月后自动续费，可随时关闭。到期后高级功能权限收回，账户内剩余积分与高阶 Token 保留、可继续消耗。</p>
+      </div>
+
+      <div class="panel" data-p="2">
+        <button class="opt on" type="button" data-pay="code">
+          <span class="radio"></span>
+          <span style="flex:1;min-width:0">
+            <span class="t">兑换码激活<span class="badge-soon" style="border-color:var(--zhu);color:var(--zhu)">推荐</span></span>
+            <span class="d" style="display:block">在任意渠道购得兑换码后在此输入激活。无需支付资质与后端回调服务，订单与支付解耦，适合冷启动阶段先验证付费意愿。</span>
+          </span>
+        </button>
+        <div class="field">
+          <input type="text" id="ck-code" placeholder="MO-XXXX-XXXX-XXXX" autocomplete="off" spellcheck="false" aria-label="兑换码">
+          <button class="btn btn-ghost btn-sm" type="button" id="ck-redeem">激活</button>
+        </div>
+        <p class="hint" id="ck-code-hint">演示环境：输入 8 位以上任意字符即可模拟激活成功。</p>
+
+        <div class="opt opt-block" data-pay="online" style="margin-top:20px">
+          <span class="radio"></span>
+          <span style="flex:1;min-width:0">
+            <span class="t">在线支付<span class="badge-soon">集成中</span></span>
+            <span class="d" style="display:block">选择一种方式完成支付。渠道集成中，当前为演示流程，未接入真实扣款。</span>
+            <span class="pay-chips" id="pay-chips" role="group" aria-label="支付方式"></span>
+          </span>
+        </div>
+      </div>
+
+      <div class="panel" data-p="3">
+        <div class="done-mark" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+        </div>
+        <h3 style="font-size:1.05rem;margin-bottom:16px">权益已生效</h3>
+        <div class="sum" id="ck-done-sum"></div>
+        <p class="hint">本页为产品预览页，未接入真实支付与账本。正式版将通过云端账号与可信账本完成订阅、计量与对账。</p>
+      </div>
+    </div>
+
+    <div class="modal-foot">
+      <div class="lft" id="ck-footnote">订阅即时生效 · 额度按月发放 · 月底清零不结转</div>
+      <div style="display:flex;gap:12px;align-items:center;flex-shrink:0">
+        <button class="btn btn-ghost btn-sm" type="button" id="ck-back" hidden>上一步</button>
+        <button class="btn btn-ink btn-sm" type="button" id="ck-next">下一步</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  'use strict';
+
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ==========================================================
+     I18N · 中国站 / 国际站
+     静态文案按「文本节点原文」查表翻译（父元素限定键用于消歧），
+     不改动任何 HTML 结构；动态区块由双语数据渲染。
+     语言切换属于「内容更新」，因此只动切换器自身的指示器，
+     不给任何容器加过渡 —— 与产品内「内容更新不触发容器动画」一致。
+     ========================================================== */
+  var LANG = { cur: 'zh' };
+  var CUR = { zh: '¥', en: '$' };
+
+  var META = {
+    zh: {
+      product: { title: "墨台 · 桌面端科研 AI 工作台",
+                 desc: "墨台 ChatScience —— 轻对话用 Chat，深科研交给墨道。桌面端科研 AI 工作台，Chat 即时问答与墨道多智能体双引擎。" },
+      pricing: { title: "墨台 · 会员订阅方案",
+                 desc: "墨台会员订阅：个人四档、团队三档，算力与权限彻底解耦。额度逐级递进，到期只收回权益、余额保留。" },
+      download: { title: "墨台 · 客户端下载",
+                  desc: "下载墨台桌面客户端：本地优先，数据与知识库留在本机。含系统要求、安装后上手三步与常见问题。" }
+    },
+    en: {
+      product: { title: "MoTai · An AI research workbench for the desktop",
+                 desc: "MoTai — Chat for the quick ask, Modao for serious research. A desktop AI workbench with two independent engines, real sandbox execution and fully traceable runs." },
+      pricing: { title: "MoTai · Membership plans",
+                 desc: "MoTai membership: four personal tiers and three team tiers, with compute and entitlements fully decoupled. Quotas step up by tier; on expiry entitlements are revoked and your balance is kept." },
+      download: { title: "MoTai · Download the desktop client",
+                  desc: "Download the MoTai desktop client: local first, with your data and knowledge base kept on your machine. Includes system requirements, a three-step start and FAQ." }
+    }
+  };
+
+  /* 静态文本节点词条（键为中文原文） */
+  var EN_TXT = {
+    "墨台": "MoTai",
+    "产品": "Product",
+    "执行": "Execution",
+    "计费": "Billing",
+    "订阅": "Pricing",
+    "权益": "Entitlements",
+    "b|权益": "entitlements",
+    "下载": "Download",
+    "说明": "Note",
+    "方案与价格": "Plans & pricing",
+    "下载客户端": "Download app",
+    "桌面端科研 AI 工作台": "Desktop AI research workbench",
+    "轻对话用 Chat，": "Chat for the quick ask,",
+    "深科研交给": "serious research goes to ",
+    "墨道": "Modao",
+    "一个软件覆盖即时问答与体系化科研。Chat 负责轻量对话、文献速读与通用任务；墨道负责文献调研、实验设计、数据处理、论文写作与归档的全流程编排。": "One app covering instant Q&A and structured research. Chat handles lightweight conversation, fast paper reading and general tasks; Modao orchestrates literature review, experiment design, data processing, paper writing and archiving.",
+    "查看订阅方案": "See plans",
+    "轻对话": "lightweight chat",
+    "即时间答、报告与文案、通用编程、文献速读。零配置，打开就能用。": "Instant Q&A, reports and copy, general programming, fast paper reading. Zero configuration — ready the moment you open it.",
+    "Work · 多智能体": "Work · multi-agent",
+    "搭建智能体、连接工具、在沙箱里跑通实验。运行轨迹逐步可追溯。": "Build agents, connect tools, get experiments running in the sandbox. Every step of the run is traceable.",
+    "科研技能": "Research skills",
+    "科研工具": "Research tools",
+    "沙箱": "Sandbox",
+    "真实执行": "execution",
+    "本地": "Local",
+    "数据优先": "data first",
+    "壹 · 产品介绍": "01 · Product",
+    "一个工作台，两条互不干扰的引擎": "One workbench, two engines that stay out of each other's way",
+    "通用对话工具把一切塞进同一个对话框，科研流程却是有阶段的：先要快速问清楚，再要一步步把实验跑通。墨台把这两件事拆成两套引擎，各自的界面、上下文与运行方式都是为它自己设计的。": "General chat tools cram everything into one dialog box, but research moves in stages: first you need a fast answer, then you need to run the experiment step by step. MoTai splits those into two engines, each with an interface, context and runtime designed for its own job.",
+    "轻量对话": "lightweight chat",
+    "为「马上想知道答案」而设计": "Built for the answer you want right now",
+    "即时问答与长文献速读，支持整篇论文注入上下文": "Instant Q&A and fast long-document reading, with whole papers injected into context",
+    "报告、文案与通用编程任务": "Reports, copy and general programming work",
+    "对话仅存本地，不上传": "Conversations stay on your machine and are never uploaded",
+    "会员档位下基础模型无限畅用": "Unlimited basic models on any paid tier",
+    "为「把一件事做完」而设计": "Built for getting a job finished",
+    "可视化智能体工作台，逐步串联科研流程": "A visual agent workbench that chains research steps together",
+    "沙箱内真实执行代码：Python、NumPy、Matplotlib": "Real code execution in the sandbox: Python, NumPy, Matplotlib",
+    "Jupyter 式研究笔记，智能体写入的笔记立即可编辑": "Jupyter-style research notes that agents write to and you can edit immediately",
+    "全流程轨迹可追溯：工具名、参数、耗时、输入响应": "Fully traceable runs: tool names, arguments, timings, full input and response",
+    "一": "01",
+    "双引擎分离": "Two engines, cleanly separated",
+    "Chat 与墨道在界面、上下文与计量上完全独立。轻对话不占用科研任务的资源，科研任务也不被对话历史拖累。": "Chat and Modao are fully independent in interface, context and metering. Lightweight conversation never consumes research compute, and research runs are never slowed down by chat history.",
+    "二": "02",
+    "科研全流程技能覆盖": "Skills across the whole research loop",
+    "内置文献精读、消融实验设计、数据分析、学术绘图、论文审校、框架复现等科研技能，覆盖从读文献到成稿的关键环节。": "Built-in skills for close reading, ablation design, data analysis, academic plotting, paper review and framework reproduction — covering the path from reading to a finished draft.",
+    "三": "03",
+    "沙箱内真实执行": "Real execution inside the sandbox",
+    "代码在独立进程里真跑，产物回传。超时强杀无残留、路径守卫、危险操作静态拦截，可声明断网运行。": "Code really runs in a separate process and artefacts come back. Timeouts are hard-killed with no residue, paths are guarded, dangerous operations are statically blocked, and offline mode can be declared.",
+    "四": "04",
+    "可插拔的科研 MCP 生态": "A pluggable research MCP ecosystem",
+    "内置科研工具集，同时支持接入外部 MCP 服务。工具可见范围随档位开放，避免无效工具干扰。": "A built-in research toolset plus support for external MCP services. Tool visibility opens up with your tier, so irrelevant tools stay out of the way.",
+    "五": "05",
+    "本地优先": "Local first",
+    "数据默认留在本机，模型 Key 仅存于本机后端，不随界面状态落盘。": "Data stays on your machine by default, and model keys live only in the local backend — never in interface state.",
+    "六": "06",
+    "克制的界面": "A restrained interface",
+    "中性色打底、墨色主按钮、克制的蓝链接，界面内零 emoji。为长时间科研工作设计，不喧宾夺主。": "Neutral greys, ink-black primary buttons, restrained blue links and zero emoji. Designed for long research sessions, never competing for attention.",
+    "贰 · 看得见的执行": "02 · Visible execution",
+    "智能体做了什么，一步一步都摊开给你看": "Everything the agent does, laid out step by step",
+    "科研工作最怕黑箱。墨道把每一次工具调用、每一个参数、每一步耗时都摊在时间线上，可以展开查看完整的输入与响应——过程可追溯，结果才可复现。": "Black boxes are the last thing research needs. Modao puts every tool call, every argument and every timing on a timeline you can expand to read the full input and response — a traceable process is what makes results reproducible.",
+    "墨道 · 运行轨迹": "Modao · run trace",
+    "步骤": "Step",
+    "· 工具调用": "· tool calls:",
+    "次 · 总耗时": "· total",
+    "Step 1 · 检索与入库": "Step 1 · Retrieve and index",
+    "已入个人知识库，后续可多文档分片检索。": "Stored in the personal knowledge base, retrievable across documents later.",
+    "Step 2 · 沙箱执行": "Step 2 · Sandbox execution",
+    "真实执行 scaled dot-product attention，张量 2×4×8，输出均值 −0.1572。": "Really executes scaled dot-product attention, tensor 2×4×8, mean output −0.1572.",
+    "Step 3 · 记录与结论": "Step 3 · Notes and conclusion",
+    "研究笔记 · 复现记录（markdown 单元格）": "research note · reproduction log (markdown cell)",
+    "结论草稿 + 复现步骤清单": "conclusion draft + reproduction steps",
+    "为什么敢把过程摊开": "Why we show the whole process",
+    "工具名与参数以等宽字体原样呈现，不做美化包装": "Tool names and arguments appear verbatim in a monospace face, never prettified",
+    "每步耗时独立标注，便于定位真正的瓶颈": "Every step's duration is labelled, so you can find the real bottleneck",
+    "节点状态区分运行中、完成与失败，失败不隐藏": "Node states distinguish running, done and failed — failures are never hidden",
+    "用户中断的任务标记为「已中断」，不伪装成错误": "Tasks you interrupt are marked “interrupted”, not disguised as errors",
+    "能力边界，如实说明": "Capability limits, stated plainly",
+    "沙箱定位是「防误操作」，静态拦截可被绕过，我们不宣称绝对隔离": "The sandbox exists to prevent mistakes. Static blocking can be bypassed, so we do not claim absolute isolation.",
+    "断网为声明式控制，不宣称绝对安全": "Offline mode is declarative, not a guarantee of absolute safety",
+    "知识库检索为词法检索，不是全语义向量检索": "Knowledge base search is lexical, not fully semantic vector search",
+    "不承诺自动产出论文或保证实验结论，研究结论仍需研究者把关": "We do not promise to produce papers automatically or to guarantee experimental conclusions — researchers still hold the judgement",
+    "主动说明边界，是专业工具应有的诚实。": "Being upfront about limits is simply what an honest professional tool does.",
+    "叁 · 计费逻辑": "03 · Billing model",
+    "算力归算力，会员归会员": "Compute is compute. Membership is membership.",
+    "墨台把付费拆成两条完全独立的判断链：余额决定「能不能跑」，档位决定「能用哪些高级功能」。不做「买积分送功能」，也不做「买会员送算力」——两件事各有各的价，心里才清楚。": "MoTai splits payment into two completely independent decision chains: your balance decides whether something can run, your tier decides which advanced features are available. No “buy credits, get features” and no “buy membership, get compute” — each is priced on its own, which is what keeps things clear.",
+    "算力维度": "Compute",
+    "回答「这一次能不能跑起来」": "Answers: can this run at all?",
+    "Chat 高阶 Token 账户": "Advanced Chat token account",
+    "按 Token 计量": "Metered by token",
+    "墨道积分账户": "Modao credit account",
+    "按任务复杂度计量": "Metered by task complexity",
+    "判断条件": "Gate",
+    "余额 > 0 即可运行": "Runs on any positive balance",
+    "获取方式": "How you get it",
+    "会员月发放 · 签到 · 充值包": "Monthly grant · check-in · top-up",
+    "解 耦": "DECOUPLED",
+    "权限维度": "Entitlement",
+    "回答「能用哪些高级功能」": "Answers: which advanced features are unlocked",
+    "会员档位": "Membership tier",
+    "个人四档 · 团队三档": "4 personal · 3 team",
+    "覆盖范围": "Scope",
+    "技能 / MCP / 迭代 / 容量": "Skills / MCP / iteration / storage",
+    "档位达标才解锁": "Only the right tier unlocks it",
+    "到期行为": "On expiry",
+    "权益收回，余额保留": "Entitlements revoked, balance kept",
+    "免费用户不会被挡在门外。": "Free users are not locked out.",
+    "注册即赠 200 初始积分，按基础工作流约 1 积分一次计算，足以跑通相当数量的完整流程——先完整体验墨道的价值，再遇到额度墙。这是我们的获客设计，不是试用陷阱。": "Signup grants 200 starting credits. At roughly 1 credit per base workflow that is enough to complete a good number of full runs — so you experience Modao's real value before you ever hit a limit. That is our acquisition design, not a trial trap.",
+    "单次任务积分预估": "Per-task credit estimate",
+    "透明计价": "Transparent pricing",
+    "调整下面几个变量，看这次任务大概要花多少积分。": "Adjust the variables below to see roughly what a task will cost in credits.",
+    "智能体数量": "Agents",
+    "个": "",
+    "工具调用次数": "Tool calls",
+    "次": "",
+    "审辨迭代轮次": "Critique rounds",
+    "轮": "",
+    "沙箱执行时长": "Sandbox runtime",
+    "不执行": "None",
+    "30 秒内": "Under 30s",
+    "30–120 秒": "30–120s",
+    "超过 120 秒": "Over 120s",
+    "仿真解析": "Simulation parsing",
+    "不需要": "Not needed",
+    "需要（+2.0 起）": "Yes (+2.0 and up)",
+    "批量文献篇数": "Batch papers",
+    "篇": "",
+    "积分": "credits",
+    "预估消耗": "Estimated",
+    "任务结束后按实际结算": "settled after the run by actual usage",
+    "基础工作流 1 积分起。多智能体串联、工具密集调用、审辨迭代、沙箱计算、仿真解析与批量文献按复杂度上浮。任务启动前显示预估，结束后显示实际消耗与计算依据。": "A base workflow starts at 1 credit. Agent chains, tool-heavy runs, critique rounds, sandbox compute, simulation parsing and batch literature scale it up with complexity. You see the estimate before a task starts, and the actual usage plus its calculation basis after it ends.",
+    "当前身份": "Current plan",
+    "免费版": "Free",
+    "到期降级后仍可运行基础能力": "Base capability still runs after expiry",
+    "墨道积分": "Modao credits",
+    "注册初始赠送": "Granted at signup",
+    "Chat 高阶 Token": "Advanced Chat tokens",
+    "免费版不赠送": "Not granted on Free",
+    "每日签到": "Daily check-in",
+    "+100 积分": "+100 credits",
+    "今日签到": "Check in today",
+    "额度指示器为界面示意。本地版计费属于自律性计量，不是安全计费——真实商业化需要引入云端账号与可信账本，这一点我们如实标注。": "The quota panel is an interface sample. Local billing is self-declared metering rather than secure billing — real commercialisation requires cloud accounts and a trusted ledger, and we label it as such.",
+    "壹 · 会员订阅": "01 · Membership",
+    "选一个档位，解锁需要的高级能力": "Pick a tier. Unlock the advanced capability you actually need.",
+    "个人四档、团队三档。权益沿「算力额度 → 核心功能 → 知识库容量 → 通用服务」四条线逐级递进，每一档都比上一档多给一点，而不是把基础功能扣着卖。全部档位均享 Chat 基础模型无限畅用。": "Four personal tiers and three team tiers. Entitlements step up along four lines — compute quota → core features → knowledge base capacity → support — and each tier gives a little more than the last rather than withholding the basics. Every tier includes unlimited basic-model Chat.",
+    "个人会员": "Personal",
+    "团队会员": "Team",
+    "筹备中": "In preview",
+    "点击档位查看完整权益。": "Click a tier to see its full entitlements.",
+    "团队版依赖账号体系与云端服务，而墨台当前是纯本地单机应用——团队能力属于架构级建设，不是加一个页面就能补上的。因此团队三档目前": "The team edition depends on an account system and cloud services, while MoTai today is a purely local desktop app — team capability is an architectural build, not something a page can patch in. So the three team tiers are ",
+    "处于内测筹备阶段，不开放购买": "in internal preview and are not available for purchase",
+    "。档位与权益在此公示，只用于提前说明方向：团队能力就绪之前，我们不会以任何形式宣传它已经可用。": ". The tiers and entitlements are listed here only to explain our direction: until team capability ships, we will not promote it as available in any form.",
+    "查看权益对照表": "See the comparison table",
+    "立即订阅": "Subscribe",
+    "贰 · 权益对照": "02 · Entitlements",
+    "放在同一把尺子上比": "Measured on one ruler",
+    "免费档与各付费档横向铺开，差在哪一行一目了然。选定上方档位后，对应列会高亮。": "Free and every paid tier laid out side by side, so the difference is visible at a glance. Pick a tier above and its column highlights.",
+    "团队三档依赖账号体系与云端服务，当前不开放购买；下表仅作方向公示。": "The three team tiers depend on accounts and cloud services and are not for sale today; the table is a statement of direction only.",
+    "筹备": "planned",
+    "标记的权益依赖尚未落地的能力（审辨迭代循环、快照与检查点、工作流模板、知识库容量配额、团队与客服体系等），将按「计费地基 → 体验型权益 → Agent 演进 → 团队与企业」四批依次开放。未上线的能力我们不做宣传，也不会为凑齐一张权益表而宣称它已经可用。": " marks entitlements that depend on capabilities not yet shipped (critique iteration, snapshots and checkpoints, workflow templates, knowledge base quota, team and support systems). They open in four waves: billing foundation → experience entitlements → agent evolution → team and enterprise. We do not promote unshipped capability, and we will not claim it is ready just to fill out a comparison table.",
+    "叁 · 充值包与到期规则": "03 · Top-ups and expiry",
+    "算力用完了，可以单独补": "Run out of compute? Top it up separately.",
+    "会员额度之外，墨台另设两类充值包。它们只补充算力，不附带任何会员功能权益——这是「算力归算力、会员归会员」最直接的体现。": "Beyond plan quotas, MoTai offers two kinds of top-up pack. They add compute only and carry no membership entitlement — the most direct expression of “compute is compute, membership is membership”.",
+    "墨道积分充值包": "Modao credit top-up",
+    "单独补充积分，用于继续运行墨道工作流。适合任务量大、但当前档位的功能已经够用的用户。": "Add credits on their own to keep Modao workflows running. Suited to heavy workloads where your current tier's features are already enough.",
+    "只补充算力，": "Adds compute only — ",
+    "不含": "no",
+    "任何功能权益。以免费身份运行时，高级功能依然要对应档位才能解锁。面额与定价处于配置阶段，暂以占位呈现。": " feature entitlement is included. Running on a free account, advanced features still require the matching tier. Face values and pricing are still being configured and appear here as placeholders.",
+    "Chat 高阶 Token 充值包": "Advanced Chat token top-up",
+    "单独补充高阶模型 Token，用于继续调用高阶模型的对话与长文献任务。": "Add advanced-model tokens on their own to continue advanced conversations and long-document tasks.",
+    "同样": "Likewise, ",
+    "功能权益。高阶模型的计价表可配置更新，模型价格变动无需改动客户端。": " feature entitlement. The advanced-model pricing table is configurable, so model price changes need no client update.",
+    "会员到期后 · 收回": "On expiry · revoked",
+    "收": "OUT",
+    "高级功能权限": "Advanced feature access",
+    "知识库超额容量（超额部分只读或限制新增）": "Knowledge base over-quota capacity (the over-quota part becomes read-only or is blocked from new uploads)",
+    "Chat 基础模型无限畅用权益": "Unlimited basic-model Chat",
+    "会员到期后 · 保留": "On expiry · kept",
+    "留": "KEEP",
+    "账户内剩余积分，可继续消耗": "Remaining account credits stay spendable",
+    "剩余高阶 Token，可继续消耗": "Remaining advanced tokens stay spendable",
+    "个人知识库、研究笔记与历史会话": "Personal knowledge base, research notes and conversation history",
+    "身份变化": "Status change",
+    "降": "FREE",
+    "以免费用户身份运行墨道基础能力": "Runs Modao base capability as a free user",
+    "续": "RESUME",
+    "随时重新订阅，权益立即恢复": "Resubscribe any time; access returns immediately",
+    "清": "RESET",
+    "套餐额度仍按「当月有效、月底清零」处理": "Plan quotas still follow monthly validity with a month-end reset",
+    "壹 · 下载": "01 · Download",
+    "把这套工作台装到本机": "Put this workbench on your own machine",
+    "墨台是桌面客户端。数据、知识库与运行环境都在你自己的机器上，模型 Key 只存于本机后端。当前为预览版本，安装包通道即将开放。": "MoTai is a desktop client. Your data, knowledge base and runtime live on your own machine, and model keys stay in the local backend. This is a preview build; installer channels open soon.",
+    "即将开放": "Coming soon",
+    "macOS 12 及以上": "macOS 12 or later",
+    "Linux 桌面版": "Linux desktop",
+    "规划中": "Planned",
+    "下载入口与版本号均为占位状态。正式版本发布后，此处会替换为真实安装包、版本说明与校验值。": "Both the download entry and the version number are placeholders. Once a release ships, this becomes a real installer with release notes and checksums.",
+    "当前版本": "Version",
+    "安装包大小": "Installer size",
+    "系统要求": "Requires",
+    "运行时依赖": "Runtime",
+    "内置 · 无需预装": "Bundled · nothing to preinstall",
+    "沙箱依赖": "Sandbox",
+    "本机 Python": "Local Python",
+    "数据存储": "Data",
+    "本机": "On device",
+    "完整性校验": "Checksum",
+    "SHA-256（发布后提供）": "SHA-256 (with release)",
+    "贰 · 常见问题": "02 · FAQ",
+    "先把该说清楚的说完": "The things worth saying up front",
+    "肆 · 能力边界": "04 · Capability limits",
+    "先把不该说的说清楚": "Say the unwelcome part first",
+    "产品里存在不少「策划案写了、代码还没做」的能力。我们给自己立了一条硬约束：宣传口径必须与实现状态一致——不宣称未上线的能力，也不为凑齐一张功能表而含糊其辞。": "Plenty of the capability described in our planning is still unbuilt. So we hold ourselves to one hard rule: marketing language must match implementation state — we do not promote unshipped capability, and we do not blur the line just to make a feature table look complete.",
+    "安装之后": "After installing",
+    "三步跑起来": "Three steps to get going",
+    "装上之后建议按这个顺序走一遍，大约十分钟就能把两条引擎都摸清。": "Once installed, walk through it in this order — about ten minutes and you will have a feel for both engines.",
+    "先问一个真问题": "Ask it a real question first",
+    "打开就是 Chat，零配置。把手头那个具体问题直接丢进去——论文里的某个方法、一段看不懂的推导，先拿到即时价值。": "Chat is right there with zero configuration. Drop in the question you actually have — a method from a paper, a derivation you cannot follow — and get value immediately.",
+    "跑通第一个墨道工作流": "Get one Modao workflow running",
+    "切换墨道，用「检索并精读一篇 arXiv 论文」起步——这是我们反复验证过的黄金路径：检索、入知识库、沙箱跑代码、笔记落盘，全程轨迹可见。": "Switch to Modao and start with “find and closely read an arXiv paper” — the golden path we have verified repeatedly: retrieve, index into the knowledge base, run code in the sandbox, write the note, with the whole trace visible.",
+    "靠签到把积分攒起来": "Bank credits with check-in",
+    "注册赠送 200 初始积分，每日签到再领 100，与套餐积分合并使用、同有效期。先跑够再决定要不要订阅。": "Signup grants 200 credits and daily check-in adds another 100, merged with plan credits under one validity window. Run enough of it before deciding whether to subscribe.",
+    "Chat 和墨道有什么区别？": "What is the difference between Chat and Modao?",
+    "它们是两套独立引擎。": "They are two independent engines. ",
+    "面向「马上想知道答案」——即时间答、文献速读、报告与通用编程，零配置，打开就能用。": "handles the quick ask — instant Q&A, fast paper reading, reports and general programming. Zero configuration, ready the moment you open it.",
+    "面向「把一件事做完」——可视化工作台里搭建智能体、连接科研工具、在沙箱里真跑代码，一路跑到结论与记录落盘。": "handles finishing the job — build agents in a visual workbench, connect research tools, really run code in the sandbox, and carry it all the way to conclusions and notes on disk.",
+    "两者在界面、上下文与计量上互不干扰：轻对话不会占用科研任务的算力，科研任务也不会被冗长的对话历史拖慢。": "The two never interfere in interface, context or metering: lightweight conversation does not consume research compute, and research runs are not slowed down by long chat history.",
+    "不付费能用吗？": "Can I use it without paying?",
+    "能，而且不是「只能看一眼」。注册即赠": "Yes — and not in a “barely a look” sense. Signup grants ",
+    "200 初始积分": "200 starting credits",
+    "，按基础工作流约 1 积分一次计算，足以跑通相当数量的完整流程；每日签到再领": ", which at roughly 1 credit per base workflow is enough to complete a good number of full runs. Daily check-in adds another ",
+    "100 积分": "100 credits",
+    "，签到积分与套餐积分合并使用、遵循相同有效期。": ", merged with plan credits and following the same validity window.",
+    "免费档的能力边界也如实列出：Chat 基础模型按每日限额使用（不享无限、不赠送高阶 Token），不能单独设置子智能体模型（强制跟随主模型），仅开放少量基础技能，不支持手动编排、快照与 fork，高级 MCP 全部关闭，模板最多保存 2 套，知识库仅支持本地极简文档上传（不提供向量库与数据库）。": "The free tier's limits are listed just as plainly: basic-model Chat runs against a daily cap (no unlimited use, no advanced tokens granted); sub-agent models cannot be set individually and follow the main model; only a small set of basic skills is open; manual orchestration is unsupported; snapshots and forks are unsupported; all advanced MCP is off; at most 2 templates can be saved; and the knowledge base accepts local minimal document uploads only, with no vector store or database.",
+    "为什么积分和 Token 是两套额度？": "Why are credits and tokens two separate balances?",
+    "因为它们回答的是两个不同的问题。": "Because they answer two different questions: ",
+    "余额": "balance",
+    "决定「这一次能不能跑起来」——Chat 的高阶模型按 Token 计量，墨道的任务按积分计量，只要余额大于 0 就能运行。": " decides whether a run can start at all — advanced Chat models are metered by token and Modao tasks by credit, so any positive balance runs them.",
+    "档位": "tier",
+    "决定「能用哪些高级功能」——技能范围、MCP 等级、迭代次数、存储容量。": " decides which advanced features are available — skill scope, MCP level, iteration count and storage capacity.",
+    "两者彻底解耦、互不占用。所以买积分不会解锁功能，买会员也不会额外送算力。这不是为了复杂，而是为了让「我这次为什么不能跑」和「我为什么点不了这个按钮」两个问题的答案各自清晰。": "The two are fully decoupled and never consume each other. Buying credits does not unlock features, and buying membership does not hand you extra compute. That is not complexity for its own sake — it is so that “why can't this run?” and “why can't I click this?” each have a clear answer.",
+    "任务按次收费吗？积分怎么算出来的？": "Is a task billed per run? How are the credits worked out?",
+    "基础工作流约": "A base workflow costs about ",
+    "1 积分": "1 credit",
+    "一次，之后按任务复杂度上浮：每增加一个智能体 +0.5，每 10 次工具调用 +0.3，每一轮审辨迭代 +1.0，沙箱执行按 30 秒内 +0.2 / 30–120 秒 +0.5 / 超过 120 秒 +1.0 分档，仿真解析 +2.0 起，批量文献每 10 篇 +1.0。": " per run, then scales with task complexity: +0.5 per extra agent, +0.3 per 10 tool calls, +1.0 per critique round, sandbox runtime banded at +0.2 under 30s / +0.5 for 30–120s / +1.0 over 120s, simulation parsing from +2.0, and +1.0 per 10 papers for batch literature.",
+    "阶梯计价对用户透明：": "Tiered pricing is transparent: ",
+    "任务启动前显示预估消耗，任务结束后显示实际消耗与计算依据": "the estimate appears before a task starts, and the actual usage with its calculation basis after it ends",
+    "。中途中断按已完成步骤计量，不会让用户为没跑完的任务全额付费。": ". Interrupted runs are metered by completed steps, so you are never charged in full for work that did not finish.",
+    "套餐额度会结转吗？": "Do plan quotas roll over?",
+    "按月发放，": "Granted monthly, ",
+    "当月有效、月底清零、不结转": "valid within the month, reset at month end, no rollover",
+    "。签到获得的积分与套餐积分合并使用，遵循同一套有效期规则——不做两套有效期，避免用户需要同时记两本账。": ". Check-in credits and plan credits are merged and follow a single validity rule — never two, so you never have to keep two ledgers in your head.",
+    "会员到期了，账户里的积分会作废吗？": "If my membership expires, do my credits expire with it?",
+    "不会。到期只收回": "No. Expiry revokes only ",
+    "：高级功能权限、知识库超额容量、Chat 基础模型无限畅用。而": ": advanced feature access, over-quota knowledge base capacity and unlimited basic-model Chat. It keeps ",
+    "余额保留": "the balance",
+    "：账户内剩余积分与剩余高阶 Token 都可以继续消耗，你以免费用户身份继续运行墨道基础能力。": ": remaining credits and advanced tokens stay spendable, and you keep running Modao base capability as a free user.",
+    "换句话说，你已经买的算力不会因为到期而作废。这也是为什么在数据结构上，余额账户与会员订阅是两条独立生命周期。": "In other words, compute you already paid for does not evaporate when a membership ends. That is also why, in the data model, the balance account and the membership subscription are two independent lifecycles.",
+    "买充值包会解锁高级功能吗？": "Does buying a top-up unlock advanced features?",
+    "不会。充值包": "No. Top-up packs ",
+    "只补充算力，不附带任何会员功能权益": "add compute only and carry no membership entitlement",
+    "。积分用完后你可以单独购买积分继续跑墨道基础任务，但高级功能仍然需要对应档位才解锁。这条边界是刻意划死的，不打算为短期转化而模糊它。": ". Once credits run out you can buy more to keep running Modao base tasks, but advanced features still require the matching tier. That line is drawn deliberately; we are not going to blur it for short-term conversion.",
+    "支持哪些支付方式？": "What payment methods are supported?",
+    "规划的路径是「": "The planned path is ",
+    "兑换码激活": "redeem-code activation",
+    "（冷启动）→": " (cold start) → ",
+    "（成长期）」。兑换码方案把订单与支付解耦：你可以在任意渠道购得兑换码后在本机激活，无需支付资质与回调服务，适合内测期先验证真实的付费意愿。在线支付通道集成中，支持微信支付、支付宝、抖音支付与云闪付。": " (growth stage). Redeem codes decouple the order from the payment: buy a code on any channel and activate it locally, with no payment licence or callback service needed — which suits validating real willingness to pay during preview. The online payment channel is being integrated: Visa, Mastercard, American Express, PayPal, Apple Pay and Google Pay are supported.",
+    "本页的支付流程为交互演示，未接入真实支付与账本。": "The payment flow on this page is an interaction demo; no real payment or ledger is connected.",
+    "沙箱是绝对隔离的吗？": "Is the sandbox absolutely isolated?",
+    "不是，我们也不会这样说。沙箱提供的是": "No, and we will not claim otherwise. What the sandbox provides is ",
+    "真实执行 + 危险操作静态拦截 + 独立进程隔离 + 超时强杀 + 路径守卫": "real execution, static blocking of dangerous operations, separate process isolation, hard timeouts and path guards",
+    "，定位是「防误操作」而非「防恶意突破」。静态拦截存在被绕过的可能，声明式断网也无法被强制保证。": ", positioned to prevent mistakes rather than to stop a determined attacker. Static blocking can be bypassed, and declarative offline mode cannot be forcibly guaranteed.",
+    "把边界说清楚，比给一个漂亮但守不住的承诺更有用。": "Stating the limits clearly is more useful than a beautiful promise we cannot keep.",
+    "我的数据和模型 Key 存在哪里？": "Where do my data and model keys live?",
+    "本地优先。数据默认留在本机，模型 Key 仅存于本机后端，不随界面状态落盘。免费用户的对话也只保存在本地。": "Local first. Data stays on your machine by default, model keys live only in the local backend and never in interface state, and free-tier conversations are stored locally too.",
+    "我们不会这样说": "What we will not say",
+    "我们这样说": "What we do say",
+    "自动写论文 / 一键出论文": "Auto-writes your paper / one-click papers",
+    "辅助论文撰写与审校，结论仍需研究者把关": "Assists with drafting and review; researchers still hold the judgement",
+    "完全隔离的沙箱": "A completely isolated sandbox",
+    "沙箱内执行代码，危险操作静态拦截 + 独立进程隔离": "Runs code in a sandbox with static blocking and separate process isolation",
+    "保证实验结论正确": "Guarantees correct experimental conclusions",
+    "全流程轨迹可追溯，结果可复现": "Fully traceable runs and reproducible results",
+    "断网运行绝对安全": "Offline mode is absolutely safe",
+    "可声明断网运行": "Offline mode can be declared",
+    "全部额度无限": "Everything is unlimited",
+    "Chat 基础模型无限 / 高阶模型耗 Token / 墨道运行耗积分": "Unlimited basic Chat / advanced models consume tokens / Modao runs consume credits",
+    "替代科研人员": "Replaces researchers",
+    "把重复劳动交给 AI，把思考留给研究者": "Hand the repetitive work to AI and keep the thinking for the researcher",
+    "智能体自主调度七类子智能体": "The agent autonomously orchestrates seven kinds of sub-agent",
+    "内置科研技能与工具，覆盖从文献到论文的全流程": "Built-in research skills and tools covering the whole path from papers to a finished draft",
+    "这份「不说什么 / 说什么」的对照来自产品内部的能力边界核对表。宣传口径必须与实现状态一致，这是我们对自己最硬的一条约束。": "This “what we will not say / what we do say” table comes from the product's internal capability-boundary checklist. Marketing language has to match implementation state — that is the hardest rule we hold ourselves to.",
+    "桌面端科研 AI 工作台。轻对话用 Chat，深科研交给墨道。": "The AI research workbench for your desktop. Chat for the quick ask, Modao for serious research.",
+    "功能与定位": "Features and positioning",
+    "运行轨迹": "Run trace",
+    "计费逻辑": "Billing model",
+    "个人会员四档": "Four personal tiers",
+    "团队会员三档": "Three team tiers",
+    "权益对照": "Entitlement comparison",
+    "充值包与到期规则": "Top-ups and expiry",
+    "常见问题": "FAQ",
+    "能力边界": "Capability limits",
+    "墨台 MoTai · 工程代号 ChatScience　|　本页为产品预览页，下载与支付通道均为占位。": "MoTai · engineering codename ChatScience　|　A product preview page; download and payment channels are placeholders.",
+    "团队版、审辨迭代、工作流模板等标注「筹备中」的能力尚未上线，不作宣传。": "The team edition, critique iteration, workflow templates and other items marked “in preview” are not shipped and are not promoted.",
+    "订阅墨台会员": "Subscribe to MoTai",
+    "确认档位": "Plan",
+    "支付方式": "Payment",
+    "完成": "Done",
+    "开启自动续费": "Auto-renew monthly",
+    "订阅读满一个月后自动续费，可随时关闭。到期后高级功能权限收回，账户内剩余积分与高阶 Token 保留、可继续消耗。": "Renews automatically after one month; turn it off any time. On expiry, advanced feature access is revoked while remaining credits and advanced tokens are kept and stay spendable.",
+    "推荐": "Recommended",
+    "在线支付": "Online payment",
+    "b|在线支付": "online payment",
+    "集成中": "Integrating",
+    "选择一种方式完成支付。渠道集成中，当前为演示流程，未接入真实扣款。": "Pick a method to complete payment. Channel integration is in progress; this is a demo flow with no real charge.",
+    "在任意渠道购得兑换码后在此输入激活。无需支付资质与后端回调服务，订单与支付解耦，适合冷启动阶段先验证付费意愿。": "Enter a code bought on any channel to activate it. No payment licence or backend callback service is needed — the order is decoupled from the payment, which suits validating willingness to pay during cold start.",
+    "激活": "Activate",
+    "跳转浏览器完成支付后回调客户端。需要支付资质与后端回调服务，将在成长期开放。": "Opens the browser to complete payment and calls back to the client. Requires a payment licence and a backend callback service; opens during the growth stage.",
+    "权益已生效": "Your plan is active",
+    "本页为产品预览页，未接入真实支付与账本。正式版将通过云端账号与可信账本完成订阅、计量与对账。": "This is a product preview page with no real payment or ledger connected. The shipping version will handle subscription, metering and reconciliation through cloud accounts and a trusted ledger.",
+    "订阅即时生效 · 额度按月发放 · 月底清零不结转": "Starts immediately · quotas granted monthly · no month-end rollover",
+    "上一步": "Back",
+    "下一步": "Next"
+  };
+
+  /* 属性词条（键为中文原值） */
+  var EN_ATTR = {
+    "站点语言": "Site language",
+    "墨台 首页": "MoTai home",
+    "页面导航": "Page sections",
+    "减少智能体数量": "Fewer agents",
+    "增加智能体数量": "More agents",
+    "减少工具调用次数": "Fewer tool calls",
+    "增加工具调用次数": "More tool calls",
+    "减少迭代轮次": "Fewer critique rounds",
+    "增加迭代轮次": "More critique rounds",
+    "沙箱执行时长": "Sandbox runtime",
+    "是否仿真解析": "Simulation parsing",
+    "减少批量文献篇数": "Fewer papers",
+    "增加批量文献篇数": "More papers",
+    "会员类型": "Membership type",
+    "会员权益逐级对照表": "Membership entitlement comparison table",
+    "关闭": "Close",
+    "兑换码": "Redeem code",
+    "支付方式": "Payment methods"
+  };
+
+  /* JS 侧文案：不由文本节点承载，需按语言取用 */
+  var T = {
+    zh: {
+      soonTag: "筹备",
+      soonTip: "依赖尚未落地的能力，将随批次开放，当前不作宣传",
+      personalMember: "个人会员", teamMember: "团队会员", perMo: "/ 月",
+      tierDesc: "算力与容量按档递增，全部档位均享 Chat 基础模型无限畅用",
+      qToken: "高阶 Token", qCredits: "墨道积分", qKb: "知识库",
+      pickSel: "已选档位", pickDo: "选择该档位",
+      colQuota: "算力额度", colCore: "核心功能权限", colGen: "通用权益",
+      colKbPersonal: "个人知识库", colKbTeam: "团队知识库",
+      rowToken: "Chat 高阶 Token", rowCredits: "墨道积分", rowBasic: "Chat 基础模型",
+      rowBasicV: "无限畅用", rowCap: "容量", rowSep: "　",
+      pickNote: "当前选择：<b>{plan} · ¥{price} / 月</b>。订阅即时生效，额度按月发放、当月有效、月底清零不结转；签到积分与套餐积分合并使用并遵循相同有效期。",
+      estBase: "基础工作流", estAgents: "智能体 {n} 个（+0.5 每个）", estTools: "工具调用 {n} 次",
+      estIter: "审辨迭代 {n} 轮", estSandbox: "沙箱执行", estSim: "仿真解析", estPaper: "批量文献 {n} 篇",
+      ciDone: "今日已签到", ciAgain: "今日已签到，明天再来",
+      ciOk: "签到成功，+100 积分（与套餐积分合并、同有效期）",
+      toastTeam: "团队版处于内测筹备阶段，暂不开放购买",
+      toastNeedCode: "请先输入兑换码并点击「激活」",
+      toastActivated: "订阅已激活（演示）：{plan} 档权益已生效",
+      toastDownload: "{os} 版安装包通道即将开放，当前为占位入口",
+      hintDemo: "演示环境：输入 8 位以上任意字符即可模拟激活成功。",
+      hintErr: "兑换码格式不正确：请输入 8 位以上的有效兑换码。",
+      hintOk: "兑换码校验通过，权益已激活。",
+      btnNext: "下一步", btnConfirm: "确认激活", btnFinish: "完成",
+      footNormal: "订阅即时生效 · 额度按月发放 · 月底清零不结转",
+      footDemo: "本页为演示流程 · 未接入真实支付",
+      planTier: "会员档位", planCycle: "计费周期", planToken: "Chat 高阶 Token",
+      planCredits: "墨道积分", planKb: "知识库容量", planRenew: "自动续费",
+      planAmount: "应付金额", planMethod: "激活方式", planValid: "有效期至",
+      oneMonth: "1 个月", oneMonthFrom: "自激活日起 1 个月",
+      renewOn: "开启", renewOff: "关闭", viaCode: "兑换码",
+      payLede: "支付方式", payNote: "亦支持兑换码激活",
+      payPick: "请先选择一种支付方式", payConfirm: "确认支付",
+      toastOnline: "在线支付通道集成中（演示）：已按 {method} 完成支付"
+    },
+    en: {
+      soonTag: "planned",
+      soonTip: "Depends on capability that has not shipped. Opens in a later wave; not promoted today.",
+      personalMember: "Personal", teamMember: "Team", perMo: "/ month",
+      tierDesc: "Compute and capacity scale with the tier. Every tier includes unlimited basic-model Chat.",
+      qToken: "Advanced tokens", qCredits: "Modao credits", qKb: "Knowledge base",
+      pickSel: "Selected", pickDo: "Select this tier",
+      colQuota: "Compute quota", colCore: "Core features", colGen: "Support & extras",
+      colKbPersonal: "Personal knowledge base", colKbTeam: "Team knowledge base",
+      rowToken: "Advanced Chat tokens", rowCredits: "Modao credits", rowBasic: "Basic-model Chat",
+      rowBasicV: "unlimited", rowCap: "Capacity", rowSep: ": ",
+      pickNote: "Selected: <b>{plan} · ${price} / month</b>. Access starts immediately. Quotas are granted monthly, valid within the month and reset at month end with no rollover. Check-in credits merge with plan credits under the same validity window.",
+      estBase: "Base workflow", estAgents: "{n} agents (+0.5 each)", estTools: "{n} tool calls",
+      estIter: "{n} critique rounds", estSandbox: "Sandbox run", estSim: "Simulation parsing",
+      estPaper: "{n} papers (batch)",
+      ciDone: "Checked in", ciAgain: "Already checked in today — see you tomorrow",
+      ciOk: "Checked in. +100 credits (merged with plan credits, same validity)",
+      toastTeam: "The team edition is in internal preview and not for sale",
+      toastNeedCode: "Enter a redeem code and press Activate first",
+      toastActivated: "Subscription activated (demo): {plan} entitlements are live",
+      toastDownload: "The {os} installer channel opens soon — this is a placeholder entry",
+      hintDemo: "Demo environment: any code of 8 characters or more will simulate a successful activation.",
+      hintErr: "Invalid code. Enter a valid redeem code of 8 characters or more.",
+      hintOk: "Code verified. Your entitlements are active.",
+      btnNext: "Next", btnConfirm: "Activate", btnFinish: "Done",
+      footNormal: "Starts immediately · quotas granted monthly · no month-end rollover",
+      footDemo: "Demo flow · no real payment connected",
+      planTier: "Tier", planCycle: "Billing cycle", planToken: "Advanced Chat tokens",
+      planCredits: "Modao credits", planKb: "Knowledge base", planRenew: "Auto-renew",
+      planAmount: "Total due", planMethod: "Activation", planValid: "Valid until",
+      oneMonth: "1 month", oneMonthFrom: "1 month from activation",
+      renewOn: "On", renewOff: "Off", viaCode: "Redeem code",
+      payLede: "Payment methods", payNote: "Redeem codes also supported",
+      payPick: "Choose a payment method first", payConfirm: "Confirm payment",
+      toastOnline: "Online payment is being integrated (demo): completed via {method}"
+    }
+  };
+
+  function t(k, map){
+    var tbl = T[LANG.cur] || T.zh;
+    var s = (tbl[k] !== undefined) ? tbl[k] : ((T.zh[k] !== undefined) ? T.zh[k] : k);
+    if (map){
+      for (var p in map){
+        if (Object.prototype.hasOwnProperty.call(map, p)) s = s.split('{' + p + '}').join(map[p]);
+      }
+    }
+    return s;
+  }
+
+  /* ---------- 静态文本节点：收集并缓存原始中文，可无损切回 ---------- */
+  var i18nNodes = null;
+  var I18N_SKIP_IDS = { 'ck-code-hint': 1, 'ck-footnote': 1 };
+
+  function i18nCollect(){
+    if (i18nNodes) return i18nNodes;
+    i18nNodes = [];
+    if (typeof document.createTreeWalker !== 'function' || typeof NodeFilter === 'undefined') return i18nNodes;
+    var w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+    var n;
+    while ((n = w.nextNode())){
+      var v = n.nodeValue;
+      if (!v || !/\S/.test(v)) continue;
+      var p = n.parentNode, skip = false;
+      while (p && p !== document.body){
+        if (p.nodeType === 1){
+          if (p.hasAttribute && p.hasAttribute('data-no-i18n')){ skip = true; break; }
+          if (p.tagName === 'SCRIPT' || p.tagName === 'STYLE'){ skip = true; break; }
+          if (p.id && I18N_SKIP_IDS[p.id]){ skip = true; break; }
+          if (p.classList && p.classList.contains('lang-switch')){ skip = true; break; }
+        }
+        p = p.parentNode;
+      }
+      if (!skip) i18nNodes.push(n);
+    }
+    return i18nNodes;
+  }
+
+  function applyLang(lang){
+    LANG.cur = (lang === 'en') ? 'en' : 'zh';
+    var en = LANG.cur === 'en';
+    var root = document.documentElement;
+    root.setAttribute('data-lang', LANG.cur);
+    root.setAttribute('lang', en ? 'en' : 'zh-CN');
+    applyMeta();
+
+    /* 1 · 静态文本 */
+    var nodes = i18nCollect();
+    for (var i = 0; i < nodes.length; i++){
+      var nd = nodes[i];
+      if (nd.__zh === undefined) nd.__zh = nd.nodeValue;
+      var raw = nd.__zh;
+      if (!en){ nd.nodeValue = raw; continue; }
+      var m = /^(\s*)([\s\S]*?\S)(\s*)$/.exec(raw);
+      if (!m){ nd.nodeValue = raw; continue; }
+      var pa = nd.parentNode;
+      var tag = (pa && pa.tagName) ? pa.tagName.toLowerCase() : '';
+      var cls = (pa && pa.classList && pa.classList.length) ? pa.classList[0] : '';
+      var hit = EN_TXT[tag + '.' + cls + '|' + m[2]];
+      if (hit === undefined) hit = EN_TXT[tag + '|' + m[2]];
+      if (hit === undefined) hit = EN_TXT[m[2]];
+      nd.nodeValue = (hit === undefined) ? raw : (m[1] + hit + m[3]);
+    }
+
+    /* 2 · 属性（aria-label / placeholder / title） */
+    var attrEls = document.querySelectorAll('[aria-label],[placeholder],[title]');
+    var ATTRS = ['aria-label', 'placeholder', 'title'];
+    for (var q = 0; q < attrEls.length; q++){
+      for (var a = 0; a < ATTRS.length; a++){
+        var name = ATTRS[a];
+        var cur = attrEls[q].getAttribute(name);
+        if (cur === null) continue;
+        var slot = '__zh_' + name.replace(/-/g, '_');
+        if (attrEls[q][slot] === undefined) attrEls[q][slot] = cur;
+        var src = attrEls[q][slot];
+        attrEls[q].setAttribute(name, (en && EN_ATTR[src] !== undefined) ? EN_ATTR[src] : src);
+      }
+    }
+
+    /* 3 · 切换器状态 */
+    var lbs = document.querySelectorAll('[data-lang-btn]');
+    for (var b = 0; b < lbs.length; b++){
+      var on = lbs[b].getAttribute('data-lang-btn') === LANG.cur;
+      lbs[b].classList.toggle('on', on);
+      lbs[b].setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+
+    /* 4 · 被 JS 接管的文案 */
+    var hint = document.getElementById('ck-code-hint');
+    if (hint){ hint.textContent = t('hintDemo'); hint.className = 'hint'; }
+    var foot = document.getElementById('ck-footnote');
+    if (foot) foot.textContent = t('footNormal');
+    if (checked && ciBtn){ ciBtn.textContent = t('ciDone'); ciBtn.setAttribute('aria-disabled', 'true'); }
+
+    /* 5 · 动态区块重渲染（内容更新，不加过渡） */
+    renderTiers(); renderDetail(); renderCmp(); renderNote(); estRender();
+    renderPayStrip();
+    if (overlay && !overlay.hidden) refreshModal();
+  }
+
+  /* ==========================================================
+     0 · 品牌标识：同心墨痕 + 分子网络 + 朱红圆心
+     ========================================================== */
+  function markSVG(px, animate){
+    var cx = 100, cy = 100;
+    var rOuter = 76, rMid = 56, rNode = 31, rHub = 13.5;
+    var cOuter = 2 * Math.PI * rOuter, cMid = 2 * Math.PI * rMid;
+    var dOuter = (cOuter * 74 / 360).toFixed(2) + ' ' + (cOuter * 286 / 360).toFixed(2);
+    var dMid   = (cMid   * 78 / 360).toFixed(2) + ' ' + (cMid   * 282 / 360).toFixed(2);
+
+    var angs = [0, 60, 120, 180, 240, 300];
+    var pts = angs.map(function(a){
+      var r = a * Math.PI / 180;
+      return [ (cx + rNode * Math.cos(r)).toFixed(1), (cy + rNode * Math.sin(r)).toFixed(1) ];
+    });
+    var poly = pts.map(function(p){ return p[0] + ',' + p[1]; }).join(' ');
+
+    var spokes = '', dots = '', hubLines = '';
+    angs.forEach(function(a){
+      var r = a * Math.PI / 180;
+      var nx = (cx + rNode * Math.cos(r)).toFixed(1), ny = (cy + rNode * Math.sin(r)).toFixed(1);
+      var hx = (cx + rHub  * Math.cos(r)).toFixed(1), hy = (cy + rHub  * Math.sin(r)).toFixed(1);
+      spokes   += '<line x1="' + hx + '" y1="' + hy + '" x2="' + nx + '" y2="' + ny + '"/>';
+      hubLines += '<circle cx="' + hx + '" cy="' + hy + '" r="1.7" fill="#2E6E8E"/>';
+      dots     += '<circle cx="' + nx + '" cy="' + ny + '" r="3.6" fill="#2E6E8E"/>';
+    });
+
+    var spin = animate && !reduce ? ' class="orb-spin-slow"' : '';
+
+    return '<svg viewBox="0 0 200 200" width="' + px + '" height="' + px + '" aria-hidden="true">' +
+      '<g fill="none" stroke-linecap="round">' +
+        '<circle cx="100" cy="100" r="' + rOuter + '" stroke="#16161D" stroke-width="12" stroke-dasharray="' + dOuter + '" transform="rotate(0 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rOuter + '" stroke="#16161D" stroke-width="12" stroke-dasharray="' + dOuter + '" transform="rotate(180 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rOuter + '" stroke="#2E6E8E" stroke-width="12" stroke-dasharray="' + dOuter + '" transform="rotate(90 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rOuter + '" stroke="#2E6E8E" stroke-width="12" stroke-dasharray="' + dOuter + '" transform="rotate(270 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rMid + '" stroke="#16161D" stroke-width="8.5" stroke-dasharray="' + dMid + '" transform="rotate(0 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rMid + '" stroke="#16161D" stroke-width="8.5" stroke-dasharray="' + dMid + '" transform="rotate(180 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rMid + '" stroke="#2E6E8E" stroke-width="8.5" stroke-dasharray="' + dMid + '" transform="rotate(90 100 100)"/>' +
+        '<circle cx="100" cy="100" r="' + rMid + '" stroke="#2E6E8E" stroke-width="8.5" stroke-dasharray="' + dMid + '" transform="rotate(270 100 100)"/>' +
+      '</g>' +
+      '<g' + spin + '>' +
+        '<g fill="none" stroke="#2E6E8E" stroke-width="1.25" opacity=".92">' +
+          '<polygon points="' + poly + '"/>' + spokes +
+        '</g>' +
+        hubLines + dots +
+        '<circle cx="100" cy="100" r="' + rHub + '" fill="none" stroke="#2E6E8E" stroke-width="1.6"/>' +
+      '</g>' +
+      '<circle cx="100" cy="100" r="6" fill="#CE4928"/>' +
+    '</svg>';
+  }
+
+  document.querySelectorAll('[data-orb]').forEach(function(el){
+    var mini = el.getAttribute('data-orb') === 'mini';
+    el.innerHTML = markSVG(mini ? 26 : 999, !mini);
+    if (!mini){
+      var s = el.querySelector('svg');
+      s.style.width = '100%';
+      s.style.height = 'auto';
+      s.removeAttribute('width');
+      s.removeAttribute('height');
+      el.style.display = 'block';
+    }
+  });
+
+  /* ==========================================================
+     1 · 顶部滚动进度
+     ========================================================== */
+  var progress = document.getElementById('progress');
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    var p = h > 0 ? (window.scrollY / h) * 100 : 0;
+    progress.style.width = Math.min(100, Math.max(0, p)) + '%';
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  /* ==========================================================
+     2 · 滚动进场
+     ========================================================== */
+  var rvs = document.querySelectorAll('.rv');
+  if (!reduce && 'IntersectionObserver' in window){
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){
+        if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { rootMargin: '0px 0px -8% 0px', threshold: .06 });
+    rvs.forEach(function(el){ io.observe(el); });
+  } else {
+    rvs.forEach(function(el){ el.classList.add('in'); });
+  }
+
+  /* ==========================================================
+     3 · Toast
+     ========================================================== */
+  var toastEl = document.getElementById('toast'), toastTimer;
+  function toast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){ toastEl.classList.remove('on'); }, 2600);
+  }
+
+  /* ==========================================================
+     4 · 积分预估器
+     ========================================================== */
+  var estState = { agent: 1, tool: 0, iter: 0, sandbox: 0, sim: 0, paper: 0 };
+  var estLimits = { agent: [1, 8, 1], tool: [0, 60, 5], iter: [0, 5, 1], paper: [0, 100, 10] };
+  var segVal = { sandbox: 0, sim: 0 };
+
+  function estFactor(){
+    var f = [['estBase', 1, null]];
+    if (estState.agent > 1) f.push(['estAgents', (estState.agent - 1) * .5, { n: estState.agent }]);
+    if (estState.tool > 0) f.push(['estTools', Math.ceil(estState.tool / 10) * .3, { n: estState.tool }]);
+    if (estState.iter > 0) f.push(['estIter', estState.iter * 1, { n: estState.iter }]);
+    if (estState.sandbox > 0) f.push(['estSandbox', estState.sandbox, null]);
+    if (estState.sim > 0) f.push(['estSim', estState.sim, null]);
+    if (estState.paper > 0) f.push(['estPaper', Math.ceil(estState.paper / 10) * 1, { n: estState.paper }]);
+    return f;
+  }
+
+  function estRender(){
+    var f = estFactor();
+    var total = f.reduce(function(s, x){ return s + x[1]; }, 0);
+    document.getElementById('est-total').textContent = total.toFixed(1);
+    document.getElementById('est-break').innerHTML = f.map(function(x){
+      return '<li><span>' + t(x[0], x[2]) + '</span><b>' + x[1].toFixed(1) + '</b></li>';
+    }).join('');
+  }
+
+  document.querySelectorAll('.stepper button[data-step]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var k = btn.getAttribute('data-step');
+      var lim = estLimits[k];
+      var next = estState[k] + parseInt(btn.getAttribute('data-delta'), 10);
+      next = Math.min(lim[1], Math.max(lim[0], next));
+      estState[k] = next;
+      document.getElementById('v-' + k).textContent = next;
+      var out = document.querySelector('[data-out="' + k + '"]');
+      if (out) out.textContent = next;
+      estRender();
+    });
+  });
+
+  document.querySelectorAll('.seg').forEach(function(seg){
+    var key = seg.getAttribute('data-seg');
+    seg.querySelectorAll('button').forEach(function(b){
+      b.addEventListener('click', function(){
+        seg.querySelectorAll('button').forEach(function(x){ x.classList.remove('on'); });
+        b.classList.add('on');
+        var v = parseFloat(b.getAttribute('data-val'));
+        if (key === 'sandbox') estState.sandbox = v; else estState.sim = v;
+        estRender();
+      });
+    });
+  });
+  estRender();
+
+  /* ==========================================================
+     5 · 每日签到（示意）
+     ========================================================== */
+  var ciBtn = document.getElementById('checkin');
+  var creditEl = document.getElementById('w-credit');
+  var checked = false;
+  if (ciBtn){
+    ciBtn.addEventListener('click', function(){
+      if (checked){ toast(t('ciAgain')); return; }
+      checked = true;
+      var v = parseInt(creditEl.textContent, 10) + 100;
+      creditEl.textContent = v;
+      ciBtn.textContent = t('ciDone');
+      ciBtn.setAttribute('aria-disabled', 'true');
+      toast(t('ciOk'));
+    });
+  }
+
+  /* ==========================================================
+     6 · 订阅数据
+     ========================================================== */
+  var TIERS = {
+    personal: [
+      { name:'基础', rank:'个人会员 · 第一档', price:49, seal:'',
+        token:'200 万 / 月', credits:'2,000 / 月', kb:'500 MB', kbSub:'单项目 · 基础检索',
+        core:['独立选模型','基础 Skill / MCP','迭代上限 5 次','模板 10 套','快照 5 个'],
+        off:['高级仿真 MCP 关闭','批量文献关闭'],
+        gen:['全部主题','无广告','邮件客服'] },
+      { name:'进阶', rank:'个人会员 · 第二档', price:139, seal:'',
+        token:'600 万 / 月', credits:'6,000 / 月', kb:'2 GB', kbSub:'单项目 · 多文档分片检索',
+        core:['绝大多数 Skill / MCP','迭代不限','模板 50 套','快照不限','仿真基础 MCP','Chat 导入 Work'],
+        off:[],
+        gen:['优先工单','新插件内测','云端备份'] },
+      { name:'专业', rank:'个人会员 · 第三档', price:299, seal:'',
+        token:'1,500 万 / 月', credits:'13,000 / 月', kb:'10 GB', kbSub:'单项目 · 多表与自定义索引',
+        core:['全部科研 Skill / MCP','模板不限','fork 与检查点全开','归档智能体完整能力'],
+        off:[],
+        gen:['专属客服','跨设备同步','月度积分赠送'] },
+      { name:'旗舰', rank:'个人会员 · 第四档', price:699, seal:'旗舰',
+        token:'3,000 万 / 月', credits:'30,000 / 月', kb:'20 GB', kbSub:'单项目 · 完整自定义字段与复杂查询',
+        core:['全部能力','集群仿真','批量运行与批量导出','项目分享','最高调度优先级','自定义 API 接入','商用基础授权'],
+        off:[],
+        gen:['一对一科研技术支持','新功能抢先体验','需求优先处理','专属模板包','商用授权'] }
+    ],
+    team: [
+      { name:'团队 · 一档', rank:'团队会员 · 对标个人 49 档', price:89, seal:'',
+        token:'合计 300 万 / 月', credits:'3,000 / 月', kb:'2 GB', kbSub:'团队库 · 基础检索',
+        core:['独立选模型','基础 Skill / MCP','迭代上限 5 次','共享模板 15 套','快照 8 个','成员管理与审计'],
+        off:[],
+        gen:['额度略高于对应个人档','积分与 Token 团队总额、成员共用'] },
+      { name:'团队 · 二档', rank:'团队会员 · 对标个人 139 档', price:199, seal:'',
+        token:'合计 800 万 / 月', credits:'8,000 / 月', kb:'10 GB', kbSub:'团队库 · 分片检索',
+        core:['多数 Skill / MCP','迭代不限','模板与快照不限','仿真基础 MCP','角色权限','云端备份'],
+        off:[],
+        gen:['额度略高于对应个人档','积分与 Token 团队总额、成员共用'] },
+      { name:'团队 · 三档', rank:'团队会员 · 对标个人 299 档', price:369, seal:'',
+        token:'合计 2,000 万 / 月', credits:'16,000 / 月', kb:'30 GB', kbSub:'团队库 · 多表与自定义索引',
+        core:['全部科研 Skill / MCP','fork 与检查点全开','完整归档','自定义角色','团队模板库','用量看板'],
+        off:[],
+        gen:['额度略高于对应个人档','积分与 Token 团队总额、成员共用'] }
+    ]
+  };
+
+  var state = { aud: 'personal', idx: 0 };
+
+  var tiersEl = document.getElementById('tiers');
+  var detailEl = document.getElementById('tier-detail');
+  var pickNote = document.getElementById('pick-note');
+
+  /* ---------- 国际站档位数据（同结构，仅英文与定价不同） ---------- */
+  var TIERS_EN = {
+    personal: [
+      { name:'Essential', rank:'Personal · Tier 1', price:20, seal:'',
+        token:'2M / mo', credits:'2,000 / mo', kb:'500 MB', kbSub:'Per project · basic search',
+        core:['Independent model selection','Basic skills / MCP','Iteration cap: 5','10 templates','5 snapshots'],
+        off:['Advanced simulation MCP off','Batch literature off'],
+        gen:['All themes','No ads','Email support'] },
+      { name:'Plus', rank:'Personal · Tier 2', price:50, seal:'',
+        token:'6M / mo', credits:'6,000 / mo', kb:'2 GB', kbSub:'Per project · multi-document search',
+        core:['Most skills / MCP','Unlimited iteration','50 templates','Unlimited snapshots','Basic simulation MCP','Chat to Work import'],
+        off:[],
+        gen:['Priority tickets','Early access to new plugins','Cloud backup'] },
+      { name:'Pro', rank:'Personal · Tier 3', price:100, seal:'',
+        token:'15M / mo', credits:'13,000 / mo', kb:'10 GB', kbSub:'Per project · multi-table and custom index',
+        core:['All research skills / MCP','Unlimited templates','Forks and checkpoints fully open','Full archive agent'],
+        off:[],
+        gen:['Dedicated support','Cross-device sync','Monthly bonus credits'] },
+      { name:'Ultra', rank:'Personal · Tier 4', price:200, seal:'Ultra',
+        token:'30M / mo', credits:'30,000 / mo', kb:'20 GB', kbSub:'Per project · full custom fields and complex queries',
+        core:['Everything unlocked','Cluster simulation','Batch runs and batch export','Project sharing','Highest scheduling priority','Custom API access','Commercial licence'],
+        off:[],
+        gen:['One-to-one research support','First access to new features','Prioritised requests','Dedicated template pack','Commercial licence'] }
+    ],
+    team: [
+      { name:'Team · Tier 1', rank:'Team · maps to personal tier 1', price:39, seal:'',
+        token:'3M combined / mo', credits:'3,000 / mo', kb:'2 GB', kbSub:'Team library · basic search',
+        core:['Independent model selection','Basic skills / MCP','Iteration cap: 5','15 shared templates','8 snapshots','Member management and audit'],
+        off:[],
+        gen:['Quotas set above the matching personal tier','Credits and tokens pooled across the team'] },
+      { name:'Team · Tier 2', rank:'Team · maps to personal tier 2', price:99, seal:'',
+        token:'8M combined / mo', credits:'8,000 / mo', kb:'10 GB', kbSub:'Team library · sharded search',
+        core:['Most skills / MCP','Unlimited iteration','Unlimited templates and snapshots','Basic simulation MCP','Role permissions','Cloud backup'],
+        off:[],
+        gen:['Quotas set above the matching personal tier','Credits and tokens pooled across the team'] },
+      { name:'Team · Tier 3', rank:'Team · maps to personal tier 3', price:189, seal:'',
+        token:'20M combined / mo', credits:'16,000 / mo', kb:'30 GB', kbSub:'Team library · multi-table and custom index',
+        core:['All research skills / MCP','Forks and checkpoints fully open','Full archiving','Custom roles','Team template library','Usage dashboard'],
+        off:[],
+        gen:['Quotas set above the matching personal tier','Credits and tokens pooled across the team'] }
+    ]
+  };
+
+  function tierList(aud){ return LANG.cur === 'en' ? TIERS_EN[aud] : TIERS[aud]; }
+
+  /* 「筹备」标记以中文原文判定，与语言无关 */
+  var SOON_RE = /迭代|快照|fork|检查点|模板|批量|集群|归档|项目分享|自定义 API|商用|成员|角色|用量看板/;
+
+  function renderTiers(){
+    var list = tierList(state.aud);
+    tiersEl.setAttribute('data-aud', state.aud);
+    tiersEl.innerHTML = list.map(function(data, i){
+      return '<button type="button" class="tier' + (i === state.idx ? ' on' : '') + '" data-i="' + i + '" aria-pressed="' + (i === state.idx) + '">' +
+        '<span class="tier-rank">' + data.rank + '</span>' +
+        '<span class="tier-name">' + data.name + (data.seal ? '<span class="tier-seal">' + data.seal + '</span>' : '') + '</span>' +
+        '<span class="tier-price"><span class="cur">' + CUR[LANG.cur] + '</span><span class="amt">' + data.price + '</span><span class="per">' + t('perMo') + '</span></span>' +
+        '<span class="tier-desc">' + t('tierDesc') + '</span>' +
+        '<span class="tier-quota">' +
+          '<span style="display:flex;justify-content:space-between;gap:12px"><span>' + t('qToken') + '</span><b>' + data.token + '</b></span>' +
+          '<span style="display:flex;justify-content:space-between;gap:12px"><span>' + t('qCredits') + '</span><b>' + data.credits + '</b></span>' +
+          '<span style="display:flex;justify-content:space-between;gap:12px"><span>' + t('qKb') + '</span><b>' + data.kb + '</b></span>' +
+        '</span>' +
+        '<span class="tier-pick"><span class="radio"></span>' + (i === state.idx ? t('pickSel') : t('pickDo')) + '</span>' +
+      '</button>';
+    }).join('');
+
+    tiersEl.querySelectorAll('.tier').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.idx = parseInt(btn.getAttribute('data-i'), 10);
+        renderTiers(); renderDetail(); renderCmp(); renderNote();
+      });
+    });
+  }
+
+  function renderDetail(){
+    var data = tierList(state.aud)[state.idx];
+    var zhCore = TIERS[state.aud][state.idx].core;  /* 用中文原文判定「筹备」标记 */
+    var kbTitle = state.aud === 'team' ? t('colKbTeam') : t('colKbPersonal');
+    var core = data.core.map(function(x, i){
+      var soon = SOON_RE.test(zhCore[i] || '');
+      return '<li' + (soon ? ' class="plus"' : '') + '>' + x + '</li>';
+    }).join('');
+    var off = data.off.map(function(x){ return '<li class="no">' + x + '</li>'; }).join('');
+    var gen = data.gen.map(function(x){ return '<li>' + x + '</li>'; }).join('');
+    var sep = t('rowSep');
+
+    detailEl.innerHTML =
+      '<div class="td-col"><h4>' + t('colQuota') + '</h4><ul class="td-list">' +
+        '<li>' + t('rowToken') + sep + data.token + '</li>' +
+        '<li>' + t('rowCredits') + sep + data.credits + '</li>' +
+        '<li>' + t('rowBasic') + sep + t('rowBasicV') + '</li>' +
+      '</ul></div>' +
+      '<div class="td-col"><h4>' + t('colCore') + '</h4><ul class="td-list">' + core + off + '</ul></div>' +
+      '<div class="td-col"><h4>' + kbTitle + '</h4><ul class="td-list">' +
+        '<li>' + t('rowCap') + sep + data.kb + '</li>' +
+        '<li>' + data.kbSub + '</li>' +
+      '</ul></div>' +
+      '<div class="td-col"><h4>' + t('colGen') + '</h4><ul class="td-list">' + gen + '</ul></div>';
+
+    detailEl.querySelectorAll('li.plus').forEach(function(li){
+      li.title = t('soonTip');
+    });
+  }
+
+  function renderNote(){
+    var data = tierList(state.aud)[state.idx];
+    var label = state.aud === 'team' ? t('teamMember') : t('personalMember');
+    pickNote.innerHTML = t('pickNote', {
+      plan: label + ' · ' + data.name,
+      price: data.price
+    });
+  }
+
+  /* ==========================================================
+     7 · 权益对照表
+     ========================================================== */
+  var CMP = {
+    personal: {
+      heads: ['功能 / 能力', '免费', '基础 ¥49', '进阶 ¥139', '专业 ¥299', '旗舰 ¥699'],
+      rows: [
+        ['Chat 高阶 Token（每月）', '不赠送', '200 万', '600 万', '1,500 万', '3,000 万', 0],
+        ['墨道积分（每月）', '200（注册赠送）', '2,000', '6,000', '13,000', '30,000', 0],
+        ['Chat 基础模型', '每日限额', '无限', '无限', '无限', '无限', 0],
+        ['墨道运行（有积分即可）', '基础', '支持', '支持', '支持', '支持', 0],
+        ['子智能体独立选模型', '不支持', '支持', '支持', '支持', '支持', 0],
+        ['自定义工作流配置', '不支持', '支持', '支持', '支持', '支持', 0],
+        ['自定义 API 接入', '不支持', '不支持', '不支持', '不支持', '支持', 0],
+        ['科研 MCP 等级', '极少基础', '基础', '多数', '全部', '全部 + 集群', 0],
+        ['单项目知识库容量', '极简本地上传', '500 MB', '2 GB', '10 GB', '20 GB', 1],
+        ['迭代次数', '受限', '上限 5 次', '不限', '不限', '不限', 1],
+        ['fork 分支 / 检查点', '不支持', '不支持', '部分', '全开', '全开', 1],
+        ['批量运行 / 导出', '不支持', '不支持', '不支持', '不支持', '支持', 1],
+        ['客服与支持', '—', '邮件客服', '优先工单', '专属客服', '一对一技术支持', 1]
+      ]
+    },
+    team: {
+      heads: ['功能 / 能力', '免费', '团队 ¥89', '团队 ¥199', '团队 ¥369'],
+      rows: [
+        ['Chat 高阶 Token（团队合计 / 月）', '不赠送', '300 万', '800 万', '2,000 万', 0],
+        ['墨道积分（团队共用 / 月）', '200（注册赠送）', '3,000', '8,000', '16,000', 0],
+        ['Chat 基础模型', '每日限额', '无限', '无限', '无限', 0],
+        ['科研 MCP 等级', '极少基础', '基础', '多数', '全部', 0],
+        ['团队知识库容量', '—', '2 GB', '10 GB', '30 GB', 1],
+        ['成员管理与审计', '不支持', '支持', '支持', '支持', 1],
+        ['角色权限', '不支持', '不支持', '角色权限', '自定义角色', 1],
+        ['团队模板库 / 用量看板', '不支持', '不支持', '不支持', '支持', 1],
+        ['云端备份 / 跨设备同步', '不支持', '不支持', '云端备份', '云端备份', 1],
+        ['迭代次数', '受限', '上限 5 次', '不限', '不限', 1],
+        ['fork 分支 / 检查点', '不支持', '不支持', '部分', '全开', 1]
+      ]
+    }
+  };
+
+  /* ---------- 国际站权益对照数据 ---------- */
+  var CMP_EN = {
+    personal: {
+      heads: ['Capability', 'Free', 'Essential $20', 'Plus $50', 'Pro $100', 'Ultra $200'],
+      rows: [
+        ['Advanced Chat tokens (monthly)', 'Not included', '2M', '6M', '15M', '30M', 0],
+        ['Modao credits (monthly)', '200 at signup', '2,000', '6,000', '13,000', '30,000', 0],
+        ['Basic-model Chat', 'Daily cap', 'Unlimited', 'Unlimited', 'Unlimited', 'Unlimited', 0],
+        ['Modao runs (any credit balance)', 'Basic', 'Yes', 'Yes', 'Yes', 'Yes', 0],
+        ['Per sub-agent model selection', 'No', 'Yes', 'Yes', 'Yes', 'Yes', 0],
+        ['Custom workflow config', 'No', 'Yes', 'Yes', 'Yes', 'Yes', 0],
+        ['Custom API access', 'No', 'No', 'No', 'No', 'Yes', 0],
+        ['Research MCP level', 'Minimal', 'Basic', 'Most', 'All', 'All + cluster', 0],
+        ['Knowledge base per project', 'Minimal local upload', '500 MB', '2 GB', '10 GB', '20 GB', 1],
+        ['Iteration count', 'Limited', 'Cap 5', 'Unlimited', 'Unlimited', 'Unlimited', 1],
+        ['Forks / checkpoints', 'No', 'No', 'Partial', 'Full', 'Full', 1],
+        ['Batch runs / export', 'No', 'No', 'No', 'No', 'Yes', 1],
+        ['Support', '—', 'Email', 'Priority tickets', 'Dedicated', 'One-to-one', 1]
+      ]
+    },
+    team: {
+      heads: ['Capability', 'Free', 'Team $39', 'Team $99', 'Team $189'],
+      rows: [
+        ['Advanced Chat tokens (team, monthly)', 'Not included', '3M', '8M', '20M', 0],
+        ['Modao credits (team pool, monthly)', '200 at signup', '3,000', '8,000', '16,000', 0],
+        ['Basic-model Chat', 'Daily cap', 'Unlimited', 'Unlimited', 'Unlimited', 0],
+        ['Research MCP level', 'Minimal', 'Basic', 'Most', 'All', 0],
+        ['Team knowledge base', '—', '2 GB', '10 GB', '30 GB', 1],
+        ['Member management and audit', 'No', 'Yes', 'Yes', 'Yes', 1],
+        ['Role permissions', 'No', 'No', 'Role permissions', 'Custom roles', 1],
+        ['Team template library / usage dashboard', 'No', 'No', 'No', 'Yes', 1],
+        ['Cloud backup / cross-device sync', 'No', 'No', 'Cloud backup', 'Cloud backup', 1],
+        ['Iteration count', 'Limited', 'Cap 5', 'Unlimited', 'Unlimited', 1],
+        ['Forks / checkpoints', 'No', 'No', 'Partial', 'Full', 1]
+      ]
+    }
+  };
+
+  var cmpTable = document.getElementById('cmp-table');
+
+  function renderCmp(){
+    var cfg = LANG.cur === 'en' ? CMP_EN[state.aud] : CMP[state.aud];
+    var selCol = state.idx + 2; /* 第 0 列为行标签，第 1 列为免费档 */
+    var head = '<thead><tr>' + cfg.heads.map(function(h, i){
+      return '<th' + (i === selCol ? ' class="hi"' : '') + ' scope="col">' + h + '</th>';
+    }).join('') + '</tr></thead>';
+
+    var body = '<tbody>' + cfg.rows.map(function(r){
+      var soon = r[r.length - 1] === 1;
+      var label = '<th scope="row">' + r[0] + (soon ? '<span class="mark-soon">' + t('soonTag') + '</span>' : '') + '</th>';
+      var cells = r.slice(1, -1).map(function(v, i){
+        return '<td' + ((i + 1) === selCol ? ' class="hi"' : '') + '>' + v + '</td>';
+      }).join('');
+      return '<tr>' + label + cells + '</tr>';
+    }).join('') + '</tbody>';
+
+    cmpTable.innerHTML = head + body;
+  }
+
+  /* ==========================================================
+     8 · 会员类型切换
+     ========================================================== */
+  var teamNotice = document.getElementById('team-notice');
+  var rightsNotice = document.getElementById('rights-notice');
+
+  document.querySelectorAll('.seg-big button[data-aud]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      state.aud = btn.getAttribute('data-aud');
+      state.idx = 0;
+      document.querySelectorAll('.seg-big button[data-aud]').forEach(function(b){
+        var on = b === btn;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      var isTeam = state.aud === 'team';
+      teamNotice.hidden = !isTeam;
+      rightsNotice.hidden = !isTeam;
+      document.getElementById('tiers').setAttribute('aria-labelledby', isTeam ? 'tab-team' : 'tab-personal');
+      renderTiers(); renderDetail(); renderCmp(); renderNote();
+    });
+  });
+
+  renderTiers(); renderDetail(); renderCmp(); renderNote();
+
+  document.getElementById('cmp-link').addEventListener('click', function(){
+    document.getElementById('rights').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+  });
+
+  /* ==========================================================
+     9 · 结算流程
+     ========================================================== */
+  var overlay = document.getElementById('checkout');
+  var step = 1;
+  var pay = 'code';
+  var lastFocus = null;
+
+  function fmtSum(rows){
+    return rows.map(function(r){
+      return '<div' + (r.total ? ' class="total"' : '') + '><span class="k">' + r.k + '</span><span class="v">' + r.v + '</span></div>';
+    }).join('');
+  }
+
+  function planRows(data, aud){
+    var label = aud === 'team' ? t('teamMember') : t('personalMember');
+    return [
+      { k: t('planTier'), v: label + ' · ' + data.name },
+      { k: t('planCycle'), v: t('oneMonth') },
+      { k: t('planToken'), v: data.token },
+      { k: t('planCredits'), v: data.credits },
+      { k: t('planKb'), v: data.kb + ' · ' + data.kbSub },
+      { k: t('planRenew'), v: document.getElementById('ck-renew').checked ? t('renewOn') : t('renewOff') },
+      { k: t('planAmount'), v: CUR[LANG.cur] + ' ' + data.price, total: true }
+    ];
+  }
+
+  function setStep(n){
+    step = n;
+    document.querySelectorAll('#ck-steps .step-i').forEach(function(el){
+      var s = parseInt(el.getAttribute('data-s'), 10);
+      el.classList.toggle('on', s === n);
+      el.classList.toggle('done', s < n);
+    });
+    document.querySelectorAll('#checkout .panel').forEach(function(p){
+      p.classList.toggle('on', parseInt(p.getAttribute('data-p'), 10) === n);
+    });
+    document.getElementById('ck-back').hidden = n !== 2;
+    var next = document.getElementById('ck-next');
+    next.textContent = n === 1
+      ? t('btnNext')
+      : (n === 2 ? (pay === 'online' ? t('payConfirm') : t('btnConfirm')) : t('btnFinish'));
+    document.getElementById('ck-footnote').textContent = n === 3 ? t('footDemo') : t('footNormal');
+  }
+
+  /* 完成页摘要行（兑换码 / 在线支付两条路径共用） */
+  function doneRows(data){
+    var rows = planRows(data, 'personal');
+    if (lastMethod){
+      rows.splice(rows.length - 1, 0, { k: t('planMethod'), v: lastMethod });
+    } else if (lastCode){
+      rows.splice(rows.length - 1, 0, { k: t('planMethod'), v: t('viaCode') + ' · ' + lastCode.slice(0, 4) + '****' });
+      rows.splice(rows.length - 1, 0, { k: t('planValid'), v: t('oneMonthFrom') });
+    }
+    return rows;
+  }
+
+  /* 语言 / 站点切换后刷新已打开的弹窗（不改变当前步骤） */
+  function refreshModal(){
+    if (!overlay || overlay.hidden) return;
+    var data = tierList('personal')[state.idx];
+    document.getElementById('ck-sum').innerHTML = fmtSum(planRows(data, 'personal'));
+    if (step === 3 && (lastCode || lastMethod)){
+      document.getElementById('ck-done-sum').innerHTML = fmtSum(doneRows(data));
+    }
+    renderPayChips();
+    syncPaySelection();
+    setStep(step);
+  }
+
+  function openCheckout(){
+    if (state.aud === 'team'){
+      toast(t('toastTeam'));
+      return;
+    }
+    var data = tierList('personal')[state.idx];
+    lastFocus = document.activeElement;
+    lastCode = '';
+    lastMethod = '';
+    pay = 'code';
+    payMethod = '';
+    document.getElementById('ck-renew').checked = true;
+    document.getElementById('ck-sum').innerHTML = fmtSum(planRows(data, 'personal'));
+    document.getElementById('ck-done-sum').innerHTML = '';
+    document.getElementById('ck-code').value = '';
+    document.getElementById('ck-code-hint').className = 'hint';
+    document.getElementById('ck-code-hint').textContent = t('hintDemo');
+    renderPayChips();
+    syncPaySelection();
+    overlay.hidden = false;
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    setStep(1);
+    setTimeout(function(){ document.getElementById('ck-next').focus(); }, 60);
+  }
+
+  function closeCheckout(){
+    overlay.classList.remove('show');
+    overlay.hidden = true;
+    document.body.style.overflow = '';
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  document.getElementById('subscribe').addEventListener('click', openCheckout);
+  document.getElementById('ck-close').addEventListener('click', closeCheckout);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) closeCheckout(); });
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && !overlay.hidden) closeCheckout();
+  });
+
+  var lastCode = '';
+  var lastMethod = '';
+
+  /* ---------- 支付方式：中国站与国外主流方式各自成组 ---------- */
+  var PAY = {
+    zh: ['微信支付', '支付宝', '抖音支付', '云闪付'],
+    en: ['Visa', 'Mastercard', 'American Express', 'PayPal', 'Apple Pay', 'Google Pay']
+  };
+  var payMethod = '';
+  var payCodeBtn = document.querySelector('#checkout .opt[data-pay="code"]');
+  var payOnlineBox = document.querySelector('#checkout .opt-block');
+  var chipsBox = document.getElementById('pay-chips');
+
+  function syncPaySelection(){
+    if (payCodeBtn) payCodeBtn.classList.toggle('on', pay === 'code');
+    if (payOnlineBox) payOnlineBox.classList.toggle('on', pay === 'online');
+    var nb = document.getElementById('ck-next');
+    if (nb && step === 2) nb.textContent = pay === 'online' ? t('payConfirm') : t('btnConfirm');
+  }
+
+  function renderPayChips(){
+    if (!chipsBox) return;
+    var list = PAY[LANG.cur] || PAY.zh;
+    chipsBox.innerHTML = list.map(function(m){
+      return '<button type="button" class="pay-chip' + (m === payMethod ? ' on' : '') +
+        '" data-method="' + m + '">' + m + '</button>';
+    }).join('');
+    chipsBox.querySelectorAll('.pay-chip').forEach(function(c){
+      c.addEventListener('click', function(){
+        pay = 'online';
+        payMethod = c.getAttribute('data-method');
+        renderPayChips();
+        syncPaySelection();
+      });
+    });
+  }
+
+  /* 充值包区块的支付方式一览（随站点切换） */
+  function renderPayStrip(){
+    var el = document.getElementById('pay-strip');
+    if (!el) return;
+    var list = PAY[LANG.cur] || PAY.zh;
+    el.innerHTML =
+      '<span class="ps-label">' + t('payLede') + '</span>' +
+      '<span class="ps-chips">' + list.map(function(m){ return '<span class="ps-chip">' + m + '</span>'; }).join('') + '</span>' +
+      '<span class="ps-note">' + t('payNote') + '</span>';
+  }
+
+  if (payCodeBtn){
+    payCodeBtn.addEventListener('click', function(){
+      pay = 'code';
+      payMethod = '';
+      renderPayChips();
+      syncPaySelection();
+    });
+  }
+
+  document.getElementById('ck-renew').addEventListener('change', function(){
+    var data = tierList('personal')[state.idx];
+    document.getElementById('ck-sum').innerHTML = fmtSum(planRows(data, 'personal'));
+  });
+
+  document.getElementById('ck-back').addEventListener('click', function(){ setStep(1); });
+
+  document.getElementById('ck-redeem').addEventListener('click', function(){
+    var code = document.getElementById('ck-code').value.trim();
+    var hint = document.getElementById('ck-code-hint');
+    if (code.length < 8){
+      hint.className = 'hint err';
+      hint.textContent = t('hintErr');
+      return;
+    }
+    hint.className = 'hint';
+    hint.textContent = t('hintOk');
+    pay = 'code';
+    syncPaySelection();
+    finishCheckout(code, '');
+  });
+
+  function finishCheckout(code, method){
+    var data = tierList('personal')[state.idx];
+    lastCode = code || '';
+    lastMethod = method || '';
+    document.getElementById('ck-done-sum').innerHTML = fmtSum(doneRows(data));
+    setStep(3);
+    toast(method
+      ? t('toastOnline', { method: method })
+      : t('toastActivated', { plan: data.name }));
+  }
+
+  document.getElementById('ck-next').addEventListener('click', function(){
+    if (step === 1){ setStep(2); return; }
+    if (step === 2){
+      if (pay === 'online'){
+        if (!payMethod){ toast(t('payPick')); return; }
+        finishCheckout('', payMethod);
+        return;
+      }
+      document.getElementById('ck-code').focus();
+      toast(t('toastNeedCode'));
+      return;
+    }
+    closeCheckout();
+  });
+
+  /* ==========================================================
+     10 · 下载占位
+     ========================================================== */
+  document.querySelectorAll('.dl-btn').forEach(function(b){
+    b.addEventListener('click', function(){
+      toast(t('toastDownload', { os: b.getAttribute('data-dl') }));
+    });
+  });
+
+  /* ==========================================================
+     11 · 站点切换（中国站 / 国际站）
+     指示器由 CSS 弹簧过渡承担；站点切换属内容更新，
+     因此不给任何容器加过渡 —— 与产品内纪律一致。
+     ========================================================== */
+  var langBtns = document.querySelectorAll('[data-lang-btn]');
+  for (var li = 0; li < langBtns.length; li++){
+    (function(lb){
+      lb.addEventListener('click', function(){
+        var target = lb.getAttribute('data-lang-btn');
+        if (target === LANG.cur) return;
+        applyLang(target);
+      });
+    })(langBtns[li]);
+  }
+
+  /* ==========================================================
+     12 · 路由：三个独立页面
+     哈希路由（#/product · #/pricing · #/download[/锚点]）。
+     页面切换是「显示/隐藏 + 定位到顶」，不是滚动 —— 三页互不叠加。
+     ========================================================== */
+  var ROUTES = ['product', 'pricing', 'download'];
+  var route = { page: 'product', anchor: '' };
+  var pages = {};
+
+  /* 标题与描述随「语言 + 当前页」双维更新 */
+  function applyMeta(){
+    var m = META[LANG.cur][route.page] || META.zh.product;
+    document.title = m.title;
+    var md = document.querySelector('meta[name="description"]');
+    if (md) md.setAttribute('content', m.desc);
+  }
+
+  function instantScroll(y){
+    try { window.scrollTo({ top: y, behavior: 'instant' }); }
+    catch (e){ window.scrollTo(0, y); }
+  }
+
+  /* 切页后补一次进场：隐藏期间 IntersectionObserver 不会触发 */
+  function revealVisible(){
+    var act = pages[route.page];
+    if (!act || !act.querySelectorAll) return;
+    var els = act.querySelectorAll('.rv');
+    var h = window.innerHeight || 800;
+    for (var i = 0; i < els.length; i++){
+      if (els[i].classList.contains('in')) continue;
+      var r = els[i].getBoundingClientRect();
+      if (r.top < h * 0.98 && r.bottom > 0) els[i].classList.add('in');
+    }
+  }
+
+  function parseRoute(){
+    var seg = (location.hash || '').replace(/^#\/?/, '').split('/');
+    var page = seg[0] && ROUTES.indexOf(seg[0]) > -1 ? seg[0] : 'product';
+    return { page: page, anchor: seg[1] || '' };
+  }
+
+  function applyRoute(){
+    route = parseRoute();
+    for (var i = 0; i < ROUTES.length; i++){
+      if (pages[ROUTES[i]]) pages[ROUTES[i]].classList.toggle('active', ROUTES[i] === route.page);
+    }
+    var links = document.querySelectorAll('.nav-links a[data-route]');
+    for (var j = 0; j < links.length; j++){
+      links[j].classList.toggle('active', links[j].getAttribute('data-route') === route.page);
+    }
+    document.documentElement.setAttribute('data-page', route.page);
+    applyMeta();
+
+    requestAnimationFrame(function(){
+      var el = route.anchor ? document.getElementById(route.anchor) : null;
+      if (el) el.scrollIntoView({ block: 'start' });
+      else instantScroll(0);
+      onScroll();
+      revealVisible();
+    });
+  }
+
+  pages.product = document.getElementById('page-product');
+  pages.pricing = document.getElementById('page-pricing');
+  pages.download = document.getElementById('page-download');
+
+  window.addEventListener('hashchange', applyRoute);
+
+  /* 点当前页导航项时（哈希不变）回到页首 */
+  var navLinks = document.querySelectorAll('.nav-links a[data-route]');
+  for (var nk = 0; nk < navLinks.length; nk++){
+    (function(link){
+      link.addEventListener('click', function(){
+        var seg = (location.hash || '').replace(/^#\/?/, '').split('/');
+        if (link.getAttribute('data-route') === route.page && !seg[1]) window.scrollTo(0, 0);
+      });
+    })(navLinks[nk]);
+  }
+
+  /* 初始化：先落语言（建立文本节点缓存），再落路由 */
+  applyLang('zh');
+  applyRoute();
+
+})();
+</script>
+</body>
+</html>

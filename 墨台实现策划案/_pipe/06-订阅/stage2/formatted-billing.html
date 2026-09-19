@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="docx-page-size" content="A4">
+<title>墨台 · 订阅预付费板块实现策划案</title>
+<style>
+@page { @bottom-center { content: counter(page); } }
+@page cover { @bottom-center { content: none; } }
+section[role="cover"] { page: cover; }
+
+:root {
+  --fs-h1: 20pt;
+  --fs-h2: 11pt;
+  --fs-h3: 10pt;
+  --fs-h4: 9pt;
+  --fs-body: 9pt;
+  --fs-small: 8pt;
+  --fs-tiny: 7pt;
+  --ff-heading: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-body: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-mono: Consolas, Source Code Pro, monospace;
+  --lh-body: 1.6;
+  --lh-title: 1.3;
+  --fw-bold: 700;
+  --fw-em: 500;
+  --fw-normal: 400;
+
+  --color-primary: #1565C0;
+  --color-secondary: #0288D1;
+  --color-accent: #00897B;
+  --color-text: #212121;
+  --color-heading: #1A237E;
+  --color-muted: #616161;
+  --color-border: #E0E0E0;
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F7FA;
+  --color-divider: #E0E0E0;
+  --color-danger: #C62828;
+  --color-emphasis: #C62828;
+  --color-success: #2E7D32;
+  --color-warn: #B26A00;
+  --color-code-bg: #F5F7FA;
+
+  --spacing-paragraph: 0.75em;
+  --spacing-section: 2.5em;
+  --spacing-block: 1.5em;
+  --spacing-card: 1.5em;
+  --margin-page: 2.5cm;
+  --page-content-width: 15.6cm;
+  --radius-card: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------- cover ---------------- */
+section[role="cover"] { padding: 0; }
+.cover-inner { padding: 4.2cm 0 0 0; }
+.cover-category {
+  font-family: var(--ff-heading); font-size: var(--fs-small);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  letter-spacing: 0.18em; text-align: left; margin-bottom: 1.1em;
+}
+.cover-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); text-align: left; margin-bottom: 0.55em;
+}
+.cover-subtitle {
+  font-size: var(--fs-h3); color: var(--color-muted);
+  text-align: left; line-height: 1.5; margin-bottom: 2.6em;
+}
+.cover-info { width: 100%; border-collapse: collapse; margin-top: 2.4cm; }
+.cover-info td {
+  padding: 0.42em 0; font-size: var(--fs-small);
+  color: var(--color-muted); border-bottom: 1px solid var(--color-divider);
+  text-align: left;
+}
+.cover-info td:first-child {
+  width: 6.2em; color: var(--color-text); font-weight: var(--fw-em);
+}
+.cover-foot {
+  margin-top: 1.6cm; font-size: var(--fs-tiny); color: var(--color-muted);
+  text-align: left;
+}
+
+/* ---------------- body ---------------- */
+.body-wrap { padding: 0; }
+h1 {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-bottom: 0.8em;
+}
+h2 {
+  font-family: var(--ff-heading); font-size: var(--fs-h2);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-top: 1.9em; margin-bottom: 0.62em;
+  padding-bottom: 0.22em; border-bottom: 1px solid var(--color-divider);
+}
+h3 {
+  font-family: var(--ff-heading); font-size: var(--fs-h3);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  margin-top: 1.35em; margin-bottom: 0.5em;
+}
+h4 {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-text);
+  margin-top: 1.05em; margin-bottom: 0.4em;
+}
+p { margin-bottom: var(--spacing-paragraph); text-align: left; }
+ul, ol { margin: 0 0 var(--spacing-paragraph) 1.5em; }
+li { margin-bottom: 0.32em; line-height: var(--lh-body); }
+strong { font-weight: var(--fw-bold); color: var(--color-heading); }
+code {
+  font-family: var(--ff-mono); font-size: 0.92em;
+  background: var(--color-code-bg); padding: 1px 4px;
+  border-radius: 3px; color: var(--color-heading);
+}
+pre {
+  background: var(--color-code-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card); padding: 0.72em 0.9em;
+  margin-bottom: var(--spacing-paragraph); overflow-x: auto;
+}
+pre code { background: none; padding: 0; font-size: 0.86em; }
+
+/* ---------------- toc ---------------- */
+.doc-toc {
+  margin-bottom: 1.8em; padding: 1.05em 1.2em;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.toc-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  margin-bottom: 0.6em;
+}
+.toc-list, .toc-list ol, .toc-list ul { list-style: none; list-style-type: none;
+  padding-left: 0; margin: 0; }
+.toc-list li { margin-bottom: 0.3em; text-indent: 0; font-size: var(--fs-small); }
+.toc-list a { color: var(--color-primary); text-decoration: none; }
+
+/* ---------------- table ---------------- */
+.doc-table {
+  width: 100%; border-collapse: collapse; margin-bottom: var(--spacing-block);
+  table-layout: fixed; font-size: var(--fs-small);
+}
+.doc-table th {
+  background: var(--color-primary); color: #FFFFFF;
+  font-family: var(--ff-heading); font-weight: var(--fw-bold);
+  padding: 0.5em 0.62em; border: 1px solid var(--color-primary);
+  text-align: left; font-size: var(--fs-tiny);
+}
+.doc-table td {
+  padding: 0.46em 0.62em; border: 1px solid var(--color-border);
+  vertical-align: top; text-align: left; word-wrap: break-word;
+}
+.doc-table tbody tr:nth-child(even) td { background: var(--color-surface); }
+
+/* ---------------- callout ---------------- */
+.callout {
+  margin-bottom: var(--spacing-paragraph);
+  padding: 0.62em 0.85em 0.62em 0.9em;
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface);
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+}
+.callout--warning {
+  border-left-color: var(--color-warn); background: #FFFBEB;
+}
+.callout--danger {
+  border-left-color: var(--color-danger); background: #FEF2F2;
+}
+
+/* ---------------- misc ---------------- */
+section[role="body"] { padding: 0; }
+h2 + p, h3 + p, h4 + p { text-align: left; }
+</style>
+</head>
+<body>
+<section role="cover">
+  <div class="cover-inner">
+    <p class="cover-category">PRODUCT IMPLEMENTATION PLAN · 06</p>
+    <h1 class="cover-title">墨台 · 订阅预付费板块实现策划案</h1>
+    <p class="cover-subtitle">双计量模型、积分阶梯计价、权益体系、功能门禁与分批上线策略</p>
+    <table class="cover-info"><tr><td>文档主题</td><td>付费与订阅体系</td></tr><tr><td>产品名称</td><td>墨台（ChatScience）</td></tr><tr><td>基准原则</td><td>已实现内容优先于策划案原文</td></tr><tr><td>编制依据</td><td>D:\ChatScience 项目源码实测</td></tr><tr><td>编制时间</td><td>2026 年 9 月</td></tr><tr><td>文档版本</td><td>v1.0</td></tr></table>
+    <p class="cover-foot">本策划案全部「已实现」结论均以项目源码行号为证据，冲突项一律以已实现内容为准。</p>
+  </div>
+</section>
+<section role="body" data-page-restart="1">
+<div class="body-wrap">
+<nav class="doc-toc" aria-label="文档目录"><p class="toc-title">目录</p><ol class="toc-list"><li><a href="#section-1">一、板块定位与现状说明</a></li><li><a href="#section-2">二、双计量模型：积分与 Token【策划确认】</a></li><li><a href="#section-3">三、个人会员四档【策划确认】</a></li><li><a href="#section-4">四、团队会员三档【策划确认】</a></li><li><a href="#section-5">五、免费用户与每日签到【策划确认】</a></li><li><a href="#section-6">六、增值充值包与到期规则【策划确认】</a></li><li><a href="#section-7">七、核心功能权益对照</a></li><li><a href="#section-8">八、技术落地方案【待实现】</a></li><li><a href="#section-9">九、实施优先级与任务拆解</a></li><li><a href="#section-10">十、关键设计要点总结</a></li><li><a href="#section-11">十一、已实现 / 待实现速查总表</a></li><li><a href="#section-12">十二、修改方向与补充内容（落地清单）</a></li></ol></nav><h1>墨台 · 订阅预付费板块实现策划案</h1>
+<h2 id="section-1">一、板块定位与现状说明</h2>
+<h3>1.1 板块范围</h3>
+<p>本板块覆盖墨台的<strong>商业化计量与订阅体系</strong>：双计量模型（积分与 Token）、个人会员四档、团队会员三档、免费用户与每日签到、增值充值包与到期规则、核心功能权益对照，以及<strong>从零实现的技术落地方案</strong>。</p>
+<h3>1.2 现状：完全零实现【关键结论】</h3>
+<p>经对全代码库（排除 <code>node_modules</code>/<code>dist</code>）的系统检索（关键词：积分 / 签到 / 充值 / 会员 / 订阅 / 付费 / credits / points / pricing / billing / quota / tier / plan / membership / subscription / checkin），<strong>结论是：订阅付费体系实质上零实现，仅有 1 处孤立字符串残留。</strong></p>
+<table class="doc-table"><thead><tr><th>维度</th><th>现状</th><th>证据</th></tr></thead><tbody><tr><td>计费 API</td><td><strong>无</strong></td><td>后端约 40 个端点中<strong>无任何</strong> <code>/api/billing</code> / <code>/credits</code> / <code>/subscription</code> / <code>/checkin</code> / <code>/usage</code> 端点</td></tr><tr><td>计费数据字段</td><td><strong>无</strong></td><td><code>server/config.json</code> 仅 6 个字段：<code>providerId</code> / <code>model</code> / <code>apiKey</code> / <code>note</code>，<strong>无配额、无 tier、无额度</strong></td></tr><tr><td><strong>Token 计量</strong></td><td><strong>无</strong></td><td><code>ai.ts</code> 的 <code>chatStream()</code> <strong>只解析 <code>choices[].delta</code>，完全不读取上游 <code>usage</code> 字段</strong>；全库检索 <code>prompt_tokens</code> / <code>completion_tokens</code> / <code>usage_metadata</code> <strong>零命中</strong></td></tr><tr><td>用量落盘</td><td><strong>无</strong></td><td><code>/api/chat</code> 流式代理<strong>只统计字符数与耗时</strong>（<code>chars</code> / <code>ttftMs</code> / <code>totalMs</code>），无累计用量</td></tr><tr><td>用量看板</td><td><strong>无</strong></td><td>检索 <code>统计</code> / <code>用量</code> / <code>看板</code> / <code>dashboard</code> / <code>stats</code>，命中项均为文件系统 <code>fs.statSync</code>、沙箱内存占位、或技能描述文本</td></tr><tr><td>积分账户</td><td><strong>无</strong></td><td>—</td></tr><tr><td>会员档位</td><td><strong>无</strong></td><td>—</td></tr><tr><td>签到</td><td><strong>无</strong></td><td>—</td></tr><tr><td>充值包</td><td><strong>无</strong></td><td>—</td></tr><tr><td>功能门禁（Feature Flag）</td><td><strong>无</strong></td><td>—</td></tr><tr><td>唯一残留</td><td><code>01/webapp.js:182</code> 与 <code>:276</code> 定义 i18n 键 <code>upgrade: '升级 Pro'</code> / <code>'Upgrade to Pro'</code></td><td>该键<strong>仅定义、无任何 <code>t('upgrade')</code> 调用点</strong>，即"升级 Pro"按钮<strong>从未渲染</strong>。同期 <code>app/src/webapp/work/80-i18n.ts</code> 中<strong>已无此键</strong></td></tr></tbody></table>
+<p><strong>结论</strong>：本板块<strong>无历史包袱</strong>，可全新设计实现。同时也意味着<strong>工作量最大</strong>——策划案规划的全部权益体系需从零建设。</p>
+<h3>1.3 澄清两个易误判项</h3>
+<p>调研中易被误认为"已有计费痕迹"的两个点，经核实<strong>与本板块无关</strong>：</p>
+<table class="doc-table"><thead><tr><th>项</th><th>实际用途</th><th>结论</th></tr></thead><tbody><tr><td><code>modelToolSupport</code>（store 分区）</td><td>记录某模型走 <strong>Function Calling（fc）还是 ReAct</strong> 工具调用协议（注释：`'providerId/modelId' -&gt; 'fc' \</td><td>'react'`）</td><td><strong>与计费无关</strong>。且该字段仅有类型声明与默认值 <code>{}</code> 两处，<strong>无任何读写逻辑</strong>，是一个<strong>预留未使用的空字段</strong></td></tr><tr><td><code>agentsview-report/</code> 目录</td><td><strong>第三方工具</strong>（AgentsView v0.42.0，<code>kenn-io/agentsview</code>）的导出报告，旁路读取 <code>~/.workbuddy/projects/</code> 会话文件统计历史用量</td><td><strong>非本项目代码</strong>，无任何 import 或读取关系</td></tr></tbody></table>
+<p><strong>但 <code>agentsview-report/</code> 具有参考价值</strong>：其 <code>usage-daily.json</code>（schema v6）提供了成熟的 <strong>Token/成本计量模型样例</strong>：</p>
+<table class="doc-table"><thead><tr><th>内容</th><th>说明</th></tr></thead><tbody><tr><td><code>pricing</code> 计价表</td><td>microdollars 计价，含各模型的 <code>input_cost_per_mtok</code> / <code>output_cost_per_mtok</code>（如 deepseek-v4.1-flash：输入 $0.15/M tok，输出 $0.6/M tok）</td></tr><tr><td><code>daily[]</code></td><td>逐日 <code>inputTokens</code> / <code>outputTokens</code> / <code>totalCost</code></td></tr><tr><td><code>totals</code></td><td>累计（示例：27.18M input / 139K output / $6.29）</td></tr><tr><td><code>stats.json</code></td><td>28 天窗口会话统计、工具调用分布、时长与上下文 token 分桶</td></tr><tr><td><code>sessions.json</code></td><td>会话清单（含 health_score / tool_failure / quality_signals）</td></tr></tbody></table>
+<p><strong>建议</strong>：自建用量看板时<strong>复用这一数据形态</strong>（按日分桶、按模型计价、双字段 input/output、累计汇总），可显著降低设计成本。</p>
+<h3>1.4 状态标记约定</h3>
+<p>本板块<strong>绝大多数内容为【待实现】</strong>。为便于阅读，本板块采用不同标记方式：</p>
+<ul><li><strong>【策划确认】</strong> — 策划案原有设计，经审阅后可原样采用</li><li><strong>【策划修正】</strong> — 策划案设计与已实现架构冲突或不可落地，已调整</li><li><strong>【待实现】</strong> — 需从零建设</li></ul>
+<div data-component="divider"></div>
+<h2 id="section-2">二、双计量模型：积分与 Token【策划确认】</h2>
+<h3>2.1 核心设计</h3>
+<p>策划案的双计量设计是本套商业化体系的核心，逻辑清晰且与已实现架构契合度高：</p>
+<pre><code>┌──────────────────────────────────────────────────────────────┐
+│  算力维度（能不能跑）         │  权限维度（能用哪些功能）      │
+├───────────────────────────────┼───────────────────────────────┤
+│  Chat 高阶 Token 账户          │  会员档位（个人四档/团队三档）  │
+│  Work 积分账户                 │                               │
+├───────────────────────────────┼───────────────────────────────┤
+│  余额 &gt; 0 即可运行             │  决定高级功能是否解锁          │
+└───────────────────────────────┴───────────────────────────────┘</code></pre>
+<p><strong>两条铁律</strong>：</p>
+<ol><li><strong>算力与权限彻底解耦</strong>——积分/Token 余额决定"能不能跑"，会员档位决定"能用哪些高级功能"，<strong>二者互不占用</strong>。</li><li><strong>免费用户有积分即可体验 Work 基础能力</strong>——这是获客设计的关键，绝不能做成"Work 必须付费才能用"。</li></ol>
+<h3>2.2 计量规则明细</h3>
+<table class="doc-table"><thead><tr><th>模式</th><th>计量对象</th><th>规则</th></tr></thead><tbody><tr><td><strong>Chat</strong></td><td>高阶模型 Token</td><td>会员基础模型<strong>无限畅用</strong>；<strong>高阶模型按 Token 计量</strong></td></tr><tr><td><strong>Work</strong></td><td>积分</td><td>运行墨道工作流<strong>消耗积分</strong></td></tr><tr><td>积分计价</td><td>任务复杂度阶梯</td><td><strong>单次基础工作流约消耗 1 积分</strong>；多智能体串联、仿真解析、批量文献等复杂任务<strong>按复杂度上浮</strong></td></tr><tr><td>有效期</td><td>套餐内额度</td><td>按月发放、<strong>当月有效、月底清零不结转</strong></td></tr><tr><td>签到</td><td>所有用户</td><td>每日签到 <strong>+100 积分</strong>；签到积分与套餐积分<strong>合并使用并遵循相同有效期</strong></td></tr></tbody></table>
+<h3>2.3 积分阶梯计价模型【待实现 — 需补充设计】</h3>
+<p>策划案仅给出"基础工作流约 1 积分、复杂任务上浮"的定性描述。<strong>需补充可实施的定量模型</strong>：</p>
+<p><strong>建议：按"任务复杂度因子"计量</strong></p>
+<pre><code>单次任务积分消耗 = 基础分 × 复杂度系数
+  基础分 = 1
+  复杂度系数 = f(智能体数量, 工具调用次数, 迭代轮次, 沙箱执行时长, 仿真解析)</code></pre>
+<table class="doc-table"><thead><tr><th>复杂度因子</th><th>系数贡献</th><th>说明</th></tr></thead><tbody><tr><td>基础对话/单工具调用</td><td>1.0</td><td>基础工作流 = 1 积分</td></tr><tr><td>每增加 1 个智能体</td><td>+0.5</td><td>多智能体串联</td></tr><tr><td>每 10 次工具调用</td><td>+0.3</td><td>工具密集任务</td></tr><tr><td>每轮审辨迭代</td><td>+1.0</td><td>迭代循环（待实现后启用）</td></tr><tr><td>沙箱执行</td><td>按时长分档：&lt;30s +0.2 / 30—120s +0.5 / &gt;120s +1.0</td><td>计算密集</td></tr><tr><td>仿真解析</td><td>+2.0 起</td><td>复杂度最高的任务类型</td></tr><tr><td>批量文献</td><td>按篇数：每 10 篇 +1.0</td><td>批量任务</td></tr></tbody></table>
+<p><strong>计量实现要点【待实现】</strong>：</p>
+<ul><li>工作量核算的<strong>唯一权威源在后端</strong>（前端不可信）</li><li>计量在任务<strong>结束时结算</strong>（非开始时预扣），但<strong>开始时校验余额</strong>（余额不足直接拒绝，不启动任务）</li><li>中途中断按<strong>已完成步骤</strong>计量（避免用户为中断任务全额付费）</li><li>每次消耗落审计日志（任务 ID、智能体、工具调用数、时长、积分、时间）</li></ul>
+<h3>2.4 Token 计量实现方案【待实现 — 关键技术缺口】</h3>
+<p><strong>这是当前最大的技术缺口</strong>：Chat 链路<strong>完全不读取上游 <code>usage</code> 字段</strong>。</p>
+<p><strong>改造方案</strong>：</p>
+<table class="doc-table"><thead><tr><th>步</th><th>动作</th><th>位置</th></tr></thead><tbody><tr><td>1</td><td>定义上游 usage 接口（<code>prompt_tokens</code> / <code>completion_tokens</code> / <code>total_tokens</code>）</td><td><code>shared/domain.ts</code></td></tr><tr><td>2</td><td><code>chatStream()</code> 解析上游 SSE 的 <code>usage</code> 帧（OpenAI 兼容协议在最后一个 chunk 或独立 usage chunk 中返回）</td><td><code>server/ai.ts</code></td></tr><tr><td>3</td><td>若上游不返回 usage，用 <strong>本地估算</strong>兜底（字符数 / 1.5 ≈ token 数，中文按字符数 × 1.0、英文按字符数 / 4）</td><td><code>server/ai.ts</code></td></tr><tr><td>4</td><td>在完成帧中返回 usage（前端可展示本次消耗）</td><td><code>/api/chat</code> 完成帧扩展</td></tr><tr><td>5</td><td>累计写入用户用量账户（按日分桶，参考 <code>usage-daily.json</code> 形态）</td><td>新增 usage store 分区</td></tr><tr><td>6</td><td>计价：按模型的 <code>input_cost_per_mtok</code> / <code>output_cost_per_mtok</code> 换算（<strong>计价表内置</strong>，可配置更新）</td><td>新增 pricing 配置</td></tr></tbody></table>
+<p><strong>模型计价表示例</strong>（结构参考 AgentsView，金额单位建议用"积分"或"Token 数"而非美元，避免汇率与合规问题）：</p>
+<table class="doc-table"><thead><tr><th>模型档</th><th>输入（每百万 token）</th><th>输出（每百万 token）</th></tr></thead><tbody><tr><td>基础模型</td><td>0（会员无限）</td><td>0（会员无限）</td></tr><tr><td>高阶模型 A</td><td>计价表配置</td><td>计价表配置</td></tr><tr><td>高阶模型 B</td><td>计价表配置</td><td>计价表配置</td></tr></tbody></table>
+<p><strong>免费用户 Chat 限额【待实现】</strong>：策划案要求"Chat 模式下基础模型按每日限额使用、不享无限、不赠送高阶 Token，对话仅本地保存"。需新增<strong>每日限额计数</strong>（按天重置），限额值配置化。</p>
+<div data-component="divider"></div>
+<h2 id="section-3">三、个人会员四档【策划确认】</h2>
+<h3>3.1 四档权益表</h3>
+<p>策划案第 8.2 条的个人四档设计，经审阅<strong>逻辑自洽、梯度合理，建议原样采用</strong>：</p>
+<table class="doc-table"><thead><tr><th>档位</th><th>Chat 高阶 Token</th><th>Work 积分</th><th>核心功能权限</th><th>个人知识库/数据库</th></tr></thead><tbody><tr><td><strong>49 元/月</strong></td><td>200 万/月</td><td>2000/月</td><td>独立选模型、基础 Skill/MCP、<strong>迭代上限 5 次</strong>、模板 10 套、快照 5 个；高级仿真与批量文献<strong>关闭</strong></td><td>单项目 500MB，基础检索</td></tr><tr><td><strong>139 元/月</strong></td><td>600 万/月</td><td>6000/月</td><td>绝大多数 Skill/MCP、<strong>迭代不限</strong>、模板 50 套、快照不限、仿真基础 MCP、Chat 导入 Work</td><td>单项目 2GB，多文档分片检索</td></tr><tr><td><strong>299 元/月</strong></td><td>1500 万/月</td><td>13000/月</td><td>全部科研 Skill/MCP、模板不限、<strong>fork 与检查点全开</strong>、归档智能体完整能力</td><td>单项目 10GB，多表与自定义索引</td></tr><tr><td><strong>699 元/月（旗舰）</strong></td><td>3000 万/月</td><td>30000/月</td><td>全部能力并开放<strong>集群仿真、批量运行与批量导出、项目分享、最高调度优先级、自定义 API 接入、商用基础授权</strong></td><td>单项目 20GB，完整自定义字段与复杂查询</td></tr></tbody></table>
+<p><strong>四档均享</strong>：<strong>Chat 基础模型无限畅用</strong>。</p>
+<h3>3.2 通用权益递进</h3>
+<table class="doc-table"><thead><tr><th>档位</th><th>通用权益</th></tr></thead><tbody><tr><td>49 元</td><td>全部主题、无广告、邮件客服</td></tr><tr><td>139 元</td><td>+ 优先工单、新插件内测、云端备份</td></tr><tr><td>299 元</td><td>+ 专属客服、跨设备同步、月度积分赠送</td></tr><tr><td>699 元（旗舰）</td><td>+ 一对一科研技术支持、新功能抢先体验、需求优先处理、专属模板包、商用授权</td></tr></tbody></table>
+<h3>3.3 与实现状态的依赖核对【重要】</h3>
+<p>四档权益中的多项依赖<strong>尚未实现</strong>的能力。<strong>分批上线策略</strong>如下：</p>
+<table class="doc-table"><thead><tr><th>权益项</th><th>依赖能力</th><th>实现状态</th><th>上线批次</th></tr></thead><tbody><tr><td>Chat 基础模型无限 / 高阶 Token 计量</td><td>Token 计量（见 2.4）</td><td><strong>待实现</strong></td><td>批次一（计费地基）</td></tr><tr><td>Work 积分计量</td><td>积分体系（见 2.3）</td><td><strong>待实现</strong></td><td>批次一</td></tr><tr><td><strong>全部主题</strong></td><td>六套主题</td><td><strong>待实现</strong>（当前双主题）</td><td>批次二（UI 板块阶段二）</td></tr><tr><td>基础 / 多数 / 全部科研 Skill</td><td>12 技能已实现</td><td><strong>已实现</strong>（可立即作为权益）</td><td><strong>批次一可用</strong></td></tr><tr><td>基础 / 多数 / 全部科研 MCP</td><td>6 工具已实现 + 4 组 MCP 待扩展</td><td><strong>部分实现</strong></td><td>批次一可用（以现有 6 工具 + 外部 MCP 接入划分档位）</td></tr><tr><td>独立选模型</td><td>5 档模型档位已实现</td><td><strong>已实现</strong>（以档位可调范围划分权益）</td><td><strong>批次一可用</strong></td></tr><tr><td><strong>迭代上限 / 迭代不限</strong></td><td>审辨迭代循环</td><td><strong>待实现</strong></td><td>批次三（Agent 板块阶段三）</td></tr><tr><td>模板 N 套</td><td>工作流模板</td><td><strong>待实现</strong></td><td>批次二（前端板块 10.3）</td></tr><tr><td>快照 N 个</td><td>检查点/快照</td><td><strong>待实现</strong></td><td>批次三</td></tr><tr><td><strong>fork 与检查点</strong></td><td>fork / checkpoint</td><td><strong>待实现</strong></td><td>批次三</td></tr><tr><td>归档智能体完整能力</td><td>资料归档智能体</td><td><strong>待实现</strong></td><td>批次三</td></tr><tr><td>高级仿真 MCP / 仿真基础 MCP</td><td>实验仿真类 MCP</td><td><strong>待实现</strong></td><td>批次三</td></tr><tr><td>集群仿真</td><td>远程集群任务提交</td><td><strong>待实现</strong></td><td>批次四</td></tr><tr><td>批量运行 / 批量导出</td><td>—</td><td><strong>待实现</strong></td><td>批次四</td></tr><tr><td>Chat 导入 Work</td><td>单向导入</td><td><strong>待实现</strong>（策划案 2.1 有规划）</td><td>批次二</td></tr><tr><td>项目分享</td><td>—</td><td><strong>待实现</strong></td><td>批次四</td></tr><tr><td>知识库容量（500MB—20GB）</td><td>知识库 + 容量配额</td><td><strong>部分实现</strong>（知识库已有，配额与向量检索待实现）</td><td>批次二</td></tr><tr><td>多表与自定义索引 / 完整自定义字段</td><td>数据库服务</td><td><strong>待实现</strong></td><td>批次三</td></tr><tr><td>无广告 / 邮件客服 / 优先工单 / 专属客服</td><td><strong>本产品当前无广告、无客服系统</strong></td><td>不适用</td><td>需先建设客服体系</td></tr><tr><td>云端备份 / 跨设备同步</td><td>云同步</td><td><strong>待实现</strong></td><td>批次四</td></tr><tr><td>月度积分赠送</td><td>—</td><td>待实现</td><td>批次一</td></tr><tr><td>自定义 API 接入</td><td>模型配置已支持多厂商</td><td><strong>已实现</strong>（可立即作为权益）</td><td><strong>批次一可用</strong></td></tr><tr><td>商用基础授权</td><td>法律文本</td><td>待实现</td><td>批次四</td></tr><tr><td>一对一科研技术支持</td><td>人力服务</td><td>—</td><td>批次四（运营侧）</td></tr></tbody></table>
+<p><strong>建议的分批上线策略</strong>：</p>
+<table class="doc-table"><thead><tr><th>批次</th><th>上线内容</th><th>说明</th></tr></thead><tbody><tr><td><strong>批次一 · 计费地基</strong></td><td>Chat 高阶 Token 计量、Work 积分计量、签到、充值包、基础/多数/全部 Skill 与 MCP 档位划分、独立选模型档位范围、自定义 API 接入</td><td>用<strong>已实现能力</strong>撑起有说服力的四档差异，立即具备商业化能力</td></tr><tr><td><strong>批次二</strong></td><td>全部主题、工作流模板、Chat 导入 Work、知识库容量配额、多文档分片检索</td><td>补齐体验型权益</td></tr><tr><td><strong>批次三</strong></td><td>迭代上限、快照、fork/检查点、归档智能体、仿真 MCP、数据库服务</td><td>依赖 Agent 演进</td></tr><tr><td><strong>批次四</strong></td><td>集群仿真、批量运行导出、项目分享、云备份同步、商用授权</td><td>高阶与企业向</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-4">四、团队会员三档【策划确认】</h2>
+<h3>4.1 三档权益表</h3>
+<table class="doc-table"><thead><tr><th>档位</th><th>Chat 高阶 Token</th><th>Work 积分</th><th>功能与团队能力</th><th>团队知识库/数据库</th></tr></thead><tbody><tr><td><strong>89 元/月</strong></td><td>合计 300 万/月</td><td>3000/月</td><td>独立选模型、基础 Skill/MCP、迭代上限 5 次、共享模板 15 套、快照 8 个；<strong>成员管理与审计</strong></td><td>团队库 2GB，基础检索</td></tr><tr><td><strong>199 元/月</strong></td><td>合计 800 万/月</td><td>8000/月</td><td>多数 Skill/MCP、迭代不限、模板与快照不限、仿真基础 MCP、<strong>角色权限与云端备份</strong></td><td>团队库 10GB，分片检索</td></tr><tr><td><strong>369 元/月</strong></td><td>合计 2000 万/月</td><td>16000/月</td><td>全部科研 Skill/MCP、fork 与检查点全开、完整归档、<strong>自定义角色、团队模板库与用量看板</strong></td><td>团队库 30GB，多表与自定义索引</td></tr></tbody></table>
+<p><strong>对标关系</strong>：分别对标个人 49 / 139 / 299 档，<strong>额度略高于对应个人档</strong>。 <strong>计量方式</strong>：积分与 Token 为<strong>团队总额、成员共用</strong>。</p>
+<h3>4.2 前置依赖【待实现 — 关键】</h3>
+<p><strong>团队侧能力完全为零实现</strong>。上线团队版前必须建设：</p>
+<table class="doc-table"><thead><tr><th>前置能力</th><th>说明</th><th>优先级</th></tr></thead><tbody><tr><td>账号体系</td><td>当前无登录/账号系统（纯本地）</td><td><strong>P0</strong>（团队的一切基础）</td></tr><tr><td>团队空间</td><td>团队实体、成员关系、邀请机制</td><td>P0</td></tr><tr><td>成员与角色权限</td><td>管理员/成员/只读等角色，权限矩阵</td><td>P0</td></tr><tr><td>团队总额度与成员分配</td><td>团队共用额度池 + 可选的成员限额</td><td>P0</td></tr><tr><td>团队知识库</td><td>共享知识库 + 空间隔离</td><td>P1</td></tr><tr><td>团队模板库</td><td>共享模板</td><td>P1</td></tr><tr><td>操作审计</td><td>成员操作记录</td><td>P1</td></tr><tr><td>用量看板</td><td>团队用量统计与可视化</td><td>P1</td></tr><tr><td>团队统一主题</td><td>管理员下发团队主题（可选）</td><td>P2</td></tr><tr><td>云端备份 / 跨设备同步</td><td>云服务</td><td>P1</td></tr></tbody></table>
+<p><strong>重要提示</strong>：团队版的<strong>账号体系</strong>与<strong>云服务</strong>是架构级的缺失（当前产品是纯本地单机应用）。这不是"加一个页面"能解决的，需评估是否引入云端账号服务（可参考 WorkBuddy 的云服务能力或自建）。</p>
+<div data-component="divider"></div>
+<h2 id="section-5">五、免费用户与每日签到【策划确认】</h2>
+<h3>5.1 免费用户能力边界</h3>
+<p>策划案设计（原样保留）：</p>
+<table class="doc-table"><thead><tr><th>维度</th><th>免费用户规则</th></tr></thead><tbody><tr><td><strong>Chat 模式</strong></td><td>基础模型<strong>按每日限额</strong>使用（<strong>不享无限</strong>）；<strong>不赠送高阶 Token</strong>；对话<strong>仅本地保存</strong></td></tr><tr><td><strong>Work 模式</strong></td><td>注册即赠送 <strong>200 初始积分</strong>；<strong>只要积分余额 &gt; 0 即可运行</strong>墨道工作流</td></tr><tr><td><strong>功能权限（锁定项）</strong></td><td>① 不能单独设置子智能体模型，<strong>强制跟随主模型</strong>&lt;br&gt;② 仅开放<strong>少量基础 Skill</strong>&lt;br&gt;③ <strong>不支持</strong>手动编排&lt;br&gt;④ <strong>不支持</strong>快照与 fork&lt;br&gt;⑤ 高级 MCP <strong>全部关闭</strong>&lt;br&gt;⑥ 模板最多保存 <strong>2 套</strong>&lt;br&gt;⑦ 知识库仅支持<strong>本地极简文档上传</strong>，<strong>不提供向量库与数据库</strong></td></tr><tr><td><strong>签到</strong></td><td>所有用户（含免费、个人会员、团队成员）每日签到可领取 <strong>100 积分</strong></td></tr><tr><td><strong>积分用完后</strong></td><td>可<strong>单独购买积分</strong>继续运行 Work 基础任务；但<strong>高级功能仍需会员</strong>才解锁</td></tr></tbody></table>
+<h3>5.2 签到机制设计【待实现 — 需补充防刷设计】</h3>
+<table class="doc-table"><thead><tr><th>项</th><th>设计</th></tr></thead><tbody><tr><td>奖励</td><td>100 积分/日</td></tr><tr><td>有效期</td><td>与套餐积分合并使用，遵循相同有效期（当月有效，月底清零）</td></tr><tr><td><strong>防刷机制【待补充】</strong></td><td>① 服务端时间判定（不可信客户端时间）&lt;br&gt;② 按"自然日"边界判定（本地时区）&lt;br&gt;③ 账号绑定（团队版需账号体系）&lt;br&gt;④ 本地单机场景：可用设备指纹 + 本地记录双重校验，但需明确<strong>本地场景防刷能力有限</strong>（诚实声明）</td></tr><tr><td>补签</td><td>策划案未提及；建议<strong>不支持补签</strong>（简化逻辑，避免额度滥用）</td></tr><tr><td>签到入口</td><td>设置页 + 首启动引导 + 额度不足时的提示入口</td></tr></tbody></table>
+<h3>5.3 免费用户的"200 初始积分"设计要点【待实现】</h3>
+<p>这是获客的关键设计——<strong>200 积分足以让用户跑通相当数量的基础工作流</strong>（按 1 积分/次基础工作流计，约可跑 200 次；即使按复杂任务 5 积分/次，也可跑 40 次）。<strong>确保用户能完整体验 Work 的核心价值后</strong>才遇到额度墙。</p>
+<div data-component="divider"></div>
+<h2 id="section-6">六、增值充值包与到期规则【策划确认】</h2>
+<h3>6.1 两类增值包</h3>
+<table class="doc-table"><thead><tr><th>包类型</th><th>作用</th><th>特点</th></tr></thead><tbody><tr><td><strong>Work 积分充值包</strong></td><td>单独补充积分</td><td><strong>只补充算力，不附带任何会员功能权益</strong></td></tr><tr><td><strong>Chat 高阶 Token 充值包</strong></td><td>单独补充 Token</td><td>同上</td></tr></tbody></table>
+<p><strong>设计精髓</strong>：算力与会员权益<strong>严格分离</strong>——买积分不会解锁功能，买会员不会多给算力。这维护了清晰的心智模型。</p>
+<h3>6.2 会员到期规则</h3>
+<table class="doc-table"><thead><tr><th>到期后行为</th><th>规则</th></tr></thead><tbody><tr><td>高级功能权限</td><td><strong>收回</strong></td></tr><tr><td>知识库超额容量</td><td><strong>收回</strong>（超额部分只读或限制新增）</td></tr><tr><td>Chat 基础模型无限权益</td><td><strong>同步失效</strong></td></tr><tr><td><strong>账户内剩余积分</strong></td><td><strong>仍然保留，可继续消耗</strong></td></tr><tr><td><strong>剩余高阶 Token</strong></td><td><strong>仍然保留，可继续消耗</strong></td></tr><tr><td>身份降级</td><td>以<strong>免费用户身份</strong>运行 Work 基础能力</td></tr></tbody></table>
+<p><strong>设计理由（策划案原文）</strong>：既保证用户已购算力不会因到期作废，又清晰维护了"<strong>算力归算力、会员归会员</strong>"的计费心智。</p>
+<p><strong>实现注意【待实现】</strong>：到期后"可继续消耗"意味着余额与权益是<strong>两个独立生命周期</strong>——数据结构上必须把余额账户与会员订阅<strong>分开存储</strong>，各自的过期逻辑独立。</p>
+<div data-component="divider"></div>
+<h2 id="section-7">七、核心功能权益对照</h2>
+<h3>7.1 逐级对照表</h3>
+<table class="doc-table"><thead><tr><th>功能/能力</th><th>免费</th><th>49/89 档</th><th>139/199 档</th><th>299/369 档</th><th>699 旗舰</th></tr></thead><tbody><tr><td>Chat 基础模型</td><td>每日限额</td><td>无限</td><td>无限</td><td>无限</td><td>无限</td></tr><tr><td>Work 运行（有积分即可）</td><td>基础</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td></tr><tr><td>子智能体独立选模型</td><td>不支持</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td></tr><tr><td>自定义工作流配置</td><td>不支持</td><td>支持</td><td>支持</td><td>支持</td><td>支持</td></tr><tr><td>科研 MCP 等级</td><td>极少基础</td><td>基础</td><td>多数</td><td>全部</td><td>全部 + 集群</td></tr><tr><td>迭代次数</td><td>受限</td><td>上限 5 次</td><td>不限</td><td>不限</td><td>不限</td></tr><tr><td>fork 分支 / 检查点</td><td>不支持</td><td>不支持</td><td>部分</td><td>全开</td><td>全开</td></tr><tr><td>批量运行 / 导出</td><td>不支持</td><td>不支持</td><td>不支持</td><td>不支持</td><td>支持</td></tr><tr><td>知识库容量</td><td>极简本地上传</td><td>500MB / 2GB</td><td>2GB / 10GB</td><td>10GB / 30GB</td><td>20GB</td></tr><tr><td>团队管理与审计</td><td>不支持</td><td>团队档支持</td><td>团队档支持</td><td>团队档支持</td><td>可定制</td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;注：知识库容量列为"个人档/团队档"双值。</p>
+<h3>7.2 功能门禁（Feature Flag）实现方案【待实现】</h3>
+<p>策划案要求"以功能门禁（Feature Flag）方式实现算力与权限解耦"。</p>
+<p><strong>建议实现</strong>：</p>
+<pre><code>// 权益定义（声明式，集中管理）
+type Tier = 'free' | 'p49' | 'p139' | 'p299' | 'p699' | 't89' | 't199' | 't369';
+
+interface Entitlements {
+  // 算力（余额类，独立生命周期）
+  chatTokenQuotaMonthly: number;       // 0 = 不赠送；-1 = 无限
+  chatBasicDailyLimit: number;         // -1 = 无限
+  workCreditsMonthly: number;
+  // 容量
+  kbQuotaMb: number;
+  templateQuota: number;               // -1 = 不限
+  snapshotQuota: number;
+  // 功能门禁
+  independentModelSelect: boolean;
+  customWorkflow: boolean;
+  iterationLimit: number;              // -1 = 不限
+  forkCheckpoint: 'none' | 'partial' | 'full';
+  batchRunExport: boolean;
+  mcpTier: 'minimal' | 'basic' | 'most' | 'all' | 'all_cluster';
+  templateSharing: boolean;            // 团队模板库
+  teamManagement: boolean;
+  auditLog: boolean;
+  usageDashboard: boolean;
+  customRoles: boolean;
+}
+
+const TIER_ENTITLEMENTS: Record&lt;Tier, Entitlements&gt; = { /* 8 档配置 */ };</code></pre>
+<p><strong>门禁执行点【待实现】</strong>：</p>
+<ol><li><strong>服务端强制</strong>——所有门禁判定必须在后端（前端仅做展示）</li><li><strong>统一入口</strong>——所有需门禁的操作经同一个 <code>checkEntitlement(tier, feature)</code> 函数</li><li><strong>失败响应</strong>——返回结构化错误（含 feature 名、当前档位、所需档位、升级提示文案），前端据此弹升级引导</li><li><strong>审计</strong>——每次门禁拒绝记日志（便于分析升级转化漏斗）</li></ol>
+<p><strong>前后端一致性【待实现】</strong>：门禁配置需单一来源（后端配置），前端启动时拉取，避免硬编码两处不一致。</p>
+<div data-component="divider"></div>
+<h2 id="section-8">八、技术落地方案【待实现】</h2>
+<p>本章是本板块的核心——把策划案设计落到已实现的架构上。</p>
+<h3>8.1 数据模型设计</h3>
+<p><strong>新增 store 分区</strong>（扩展 <code>store.ts</code> 的 <code>defaults()</code>）：</p>
+<pre><code>store 新增分区：
+├── account      # 账号与会员状态
+│   ├── tier: Tier
+│   ├── subscribedAt / expiresAt
+│   └── autoRenew: boolean
+├── credits      # 积分账户（独立生命周期）
+│   ├── balance: number
+│   ├── monthlyGranted / monthlyUsed / monthlyResetAt
+│   ├── checkinGranted / checkinUsed
+│   ├── purchased: number          # 充值包购买（不随月度清零）
+│   └── ledger: LedgerEntry[]      # 流水（append-only）
+├── tokenAccount # Chat 高阶 Token 账户
+│   ├── balance / monthlyGranted / monthlyUsed / monthlyResetAt
+│   ├── purchased
+│   └── ledger: LedgerEntry[]
+├── usageDaily   # 按日用量（结构参考 agentsview usage-daily.json）
+│   └── [{ date, chatInputTokens, chatOutputTokens, chatCost, workCredits, taskCount }]
+├── checkin      # 签到记录
+│   └── { lastCheckinDate, streak, totalDays }
+└── pricing      # 计价表（可配置更新）
+    └── { modelId: { inputPerMtok, outputPerMtok } }
+
+流水条目 LedgerEntry：
+  { id, type: 'grant'|'consume'|'purchase'|'checkin'|'expire'|'refund',
+    amount, balanceAfter, reason, refId (任务ID/订单ID), at }</code></pre>
+<p><strong>关键设计约束</strong>：</p>
+<ol><li><strong>余额与权益分离存储</strong>（满足"到期后余额保留"的要求）</li><li><strong>流水 append-only</strong>（可审计、可对账；永不修改历史条目）</li><li><strong>按日分桶用量</strong>（便于看板与限额判定，复用 AgentsView 的数据形态）</li><li><strong>计价表可配置</strong>（模型价格变动无需改代码）</li></ol>
+<h3>8.2 API 设计</h3>
+<p>新增端点组：</p>
+<table class="doc-table"><thead><tr><th>方法</th><th>路径</th><th>用途</th></tr></thead><tbody><tr><td>GET</td><td><code>/api/billing/account</code></td><td>账号与会员状态（tier、到期时间、各额度余额）</td></tr><tr><td>GET</td><td><code>/api/billing/entitlements</code></td><td>当前档位权益（前端门禁展示用）</td></tr><tr><td>GET</td><td><code>/api/billing/ledger</code></td><td>流水查询（分页）</td></tr><tr><td>POST</td><td><code>/api/billing/checkin</code></td><td>每日签到</td></tr><tr><td>GET</td><td><code>/api/billing/checkin/status</code></td><td>签到状态（今日是否已签、连续天数）</td></tr><tr><td>POST</td><td><code>/api/billing/credits/purchase</code></td><td>购买积分充值包</td></tr><tr><td>POST</td><td><code>/api/billing/token/purchase</code></td><td>购买 Token 充值包</td></tr><tr><td>POST</td><td><code>/api/billing/subscribe</code></td><td>订阅/续费会员</td></tr><tr><td>POST</td><td><code>/api/billing/cancel</code></td><td>取消自动续费</td></tr><tr><td>GET</td><td><code>/api/usage/daily</code></td><td>按日用量（看板）</td></tr><tr><td>GET</td><td><code>/api/usage/summary</code></td><td>汇总用量与成本</td></tr><tr><td>GET</td><td><code>/api/pricing</code></td><td>计价表</td></tr></tbody></table>
+<p><strong>门禁中间件【待实现】</strong>：为需门禁的路由统一挂载：</p>
+<pre><code>middleware: requireEntitlement('feature_name')
+  → 从 account 取 tier
+  → 查 TIER_ENTITLEMENTS
+  → 不满足：返回 402/403 + 结构化升级提示
+  → 满足：放行</code></pre>
+<p><strong>余额校验【待实现】</strong>：任务启动前校验：</p>
+<pre><code>middleware: requireCredits(estimatedCost)
+  → 余额 &lt; 预估消耗 → 拒绝启动，返回"积分不足"（含当前余额、预估消耗、购买入口）
+  → 余额充足 → 放行，记录预估消耗</code></pre>
+<h3>8.3 前端设计</h3>
+<table class="doc-table"><thead><tr><th>页面/组件</th><th>内容</th></tr></thead><tbody><tr><td><strong>额度指示器</strong>（常驻）</td><td>输入区或侧栏显示当前积分/Token 余额与本月用量；余额低时变色提示</td></tr><tr><td><strong>签到入口</strong></td><td>设置页 + 启动引导 + 额度不足提示处的入口</td></tr><tr><td><strong>用量看板</strong></td><td>按日/按模型/按任务的用量图表（复用图表能力，注意：<strong>中国习惯涨红跌绿不适用此处，图表用于用量展示</strong>）</td></tr><tr><td><strong>会员中心</strong></td><td>四档/三档权益对照表、当前档位、升级按钮、到期时间、自动续费开关</td></tr><tr><td><strong>充值页</strong></td><td>两类充值包（积分/Token）独立展示，明确标注"仅补充算力，不含功能权益"</td></tr><tr><td><strong>升级引导弹窗</strong></td><td>门禁拒绝时弹出：说明受限功能、当前档位、所需档位、权益对照、升级按钮</td></tr><tr><td><strong>流水明细</strong></td><td>积分/Token 收支记录（类型、金额、余额、原因、时间）</td></tr></tbody></table>
+<p><strong>UI 规范对齐【待实现】</strong>：以上界面必须严格遵循 UI 板块的设计令牌与组件规范（中性色 + 墨色主按钮 + 克制蓝链接；复用已实现的 Modal / Toast / 分段控件 / 表格样式）。<strong>特别注意</strong>：会员/充值页容易出现"彩色渐变 + 大色块"的商业化设计惯性，<strong>必须避免</strong>——本产品的视觉基调是克制的墨色。</p>
+<p><strong>已实现可直接复用</strong>：</p>
+<ul><li>Modal（480px / 圆角 16px / 两段式显隐）</li><li>分段控件（<code>.seg</code>）用于档位切换</li><li>表格/<code>.info-row</code> 用于权益对照</li><li>Toast 用于签到成功等反馈</li><li>卡片 <code>.card</code> 用于充值包</li></ul>
+<h3>8.4 与已实现的接入点</h3>
+<table class="doc-table"><thead><tr><th>接入点</th><th>具体改造</th><th>位置</th></tr></thead><tbody><tr><td><strong>Token 计量</strong></td><td><code>chatStream()</code> 解析上游 <code>usage</code>；无则本地估算；完成帧返回 usage</td><td><code>server/ai.ts</code>、<code>server/index.ts</code> <code>/api/chat</code></td></tr><tr><td><strong>积分结算</strong></td><td><code>runWorkTurn</code> 结束时按复杂度因子结算积分；开始时校验余额</td><td><code>server/qoder.ts</code></td></tr><tr><td><strong>工具调用计数</strong></td><td>积分计量依赖工具调用次数（已有 <code>tool_start</code> / <code>tool_end</code> 事件可计数）</td><td><code>server/qoder.ts</code></td></tr><tr><td><strong>沙箱时长</strong></td><td>积分计量依赖沙箱执行时长（<code>sandbox.ts</code> 已有超时与耗时统计）</td><td><code>server/sandbox.ts</code></td></tr><tr><td><strong>门禁挂载</strong></td><td>为技能/MCP/迭代/fork/检查点/批量/容量等路由挂门禁中间件</td><td><code>server/routes.ts</code></td></tr><tr><td><strong>技能档位划分</strong></td><td><code>skills</code> 白名单按 tier 过滤（已实现白名单机制，天然适配）</td><td><code>server/qoder.ts</code></td></tr><tr><td><strong>MCP 档位划分</strong></td><td>工具可见集 + 外部 MCP 服务器按 tier 过滤</td><td><code>server/qoder.ts</code>、<code>/mcp/servers</code></td></tr><tr><td><strong>知识库配额</strong></td><td><code>/kb/index</code> 入队前校验容量</td><td><code>server/kb.ts</code></td></tr><tr><td><strong>模型档位范围</strong></td><td>免费用户"不能单独设置子智能体模型，强制跟随主模型"→ 档位下拉限制</td><td>前端 + <code>server/qoder.ts</code></td></tr><tr><td><strong>状态快照</strong></td><td>账号/额度状态纳入前端快照（供额度指示器渲染）</td><td><code>main.ts</code> 状态落盘</td></tr><tr><td><strong>i18n</strong></td><td>新增词条（中英各一份，保持 178 + N 一对一对齐）</td><td><code>80-i18n.ts</code></td></tr><tr><td><strong>流水持久化</strong></td><td>账本必须可靠落盘（建议同步写 + 校验，不依赖 180ms 防抖）</td><td>新增 billing store</td></tr></tbody></table>
+<h3>8.5 关键风险与应对</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>风险</th><th>说明</th><th>应对</th></tr></thead><tbody><tr><td>1</td><td><strong>Token 计数准确性</strong></td><td>上游可能不返回 usage；不同厂商行为不一</td><td>上游 usage 优先，本地估算兜底；两路都记录，便于对账；计价以"平台侧为准"并在协议中说明</td></tr><tr><td>2</td><td><strong>本地单机的计费可信度</strong></td><td>纯本地应用，用户可改本地文件篡改余额</td><td><strong>诚实定位</strong>：本地版计费为"自律性计量"，非安全计费；如做真实商业化，<strong>必须引入云端账号与账本</strong>（同时解决团队版的账号缺失）</td></tr><tr><td>3</td><td><strong>账本一致性</strong></td><td>余额与流水必须一致</td><td>append-only 流水 + 余额由流水推导校验（启动时对账，不一致告警）</td></tr><tr><td>4</td><td><strong>额度与权益分离的生命周期</strong></td><td>到期后余额保留但权益收回</td><td>数据结构分离（见 8.1）；到期处理只回收权益字段</td></tr><tr><td>5</td><td><strong>月度清零的时区与边界</strong></td><td>月底清零易出边界 bug</td><td>服务端统一按本地自然月边界计算；清零操作写 expire 流水（可追溯）</td></tr><tr><td>6</td><td><strong>签到防刷</strong></td><td>本地场景无法强防</td><td>见 5.2；诚实声明局限</td></tr><tr><td>7</td><td><strong>支付集成</strong></td><td>需要支付渠道（微信支付/支付宝）</td><td>需评估；可选：</td></tr></tbody></table>
+<p>· 桌面端跳转网页支付 · 集成微信支付能力（项目内已有微信支付相关技能套件） | | 8 | <strong>合规</strong> | 虚拟额度/预付卡类业务的合规要求 | ⚠️ <strong>必须法务评估</strong>：预付费、虚拟货币、退款政策、发票、用户协议 | | 9 | <strong>权益体系与实现不同步</strong> | 策划案多项权益依赖待实现能力 | 严格执行 3.3 的分批上线策略 | | 10 | <strong>过度复杂的阶梯计价</strong> | 复杂度因子过多会导致用户不理解、易被质疑 | 阶梯计价<strong>对用户透明</strong>：任务启动前显示预估消耗，结束后显示实际消耗与计算依据 |</p>
+<h3>8.6 支付渠道方案【待实现】</h3>
+<table class="doc-table"><thead><tr><th>方案</th><th>说明</th><th>评估</th></tr></thead><tbody><tr><td><strong>A. 网页支付跳转</strong></td><td>桌面端打开浏览器完成支付，回调桌面端</td><td>实现简单；需后端回调服务（<strong>与"纯本地"架构冲突</strong>，需引入轻量云端）</td></tr><tr><td><strong>B. 集成微信支付能力</strong></td><td>项目环境已有微信支付相关技能套件（AI 支付/AI 专属卡）</td><td>需评估适用性；桌面端集成路径需验证</td></tr><tr><td><strong>C. 阶段一：兑换码</strong></td><td>先做"兑换码激活"（用户在其他渠道购买后输入码）</td><td><strong>推荐的冷启动方案</strong>——零支付集成、零云端、可先验证付费意愿；适合内测期</td></tr></tbody></table>
+<p><strong>建议路径</strong>：<strong>C（兑换码）→ A（网页支付）</strong>。兑换码方案可在不引入云端的前提下，快速验证商业化闭环。</p>
+<div data-component="divider"></div>
+<h2 id="section-9">九、实施优先级与任务拆解</h2>
+<h3>批次零（前置决策，P0）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td><strong>法务评估</strong></td><td>预付费、虚拟额度、退款政策、发票、用户协议、隐私政策</td></tr><tr><td>2</td><td>计费定位决策</td><td>本地自律性计量 vs 引入云端可信账本（影响架构走向）</td></tr><tr><td>3</td><td>账号体系决策</td><td>是否引入云端账号（<strong>团队版的前置条件</strong>）</td></tr><tr><td>4</td><td>支付方案决策</td><td>兑换码 / 网页支付 / 集成支付能力</td></tr><tr><td>5</td><td>阶梯计价模型确认</td><td>复杂度因子与系数需产品确认（见 2.3）</td></tr></tbody></table>
+<h3>批次一（计费地基，P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>6</td><td>数据模型落地（见 8.1）</td><td>store 新增 6 个分区</td></tr><tr><td>7</td><td><strong>Token 计量实现</strong>（见 2.4）</td><td>最大技术缺口</td></tr><tr><td>8</td><td><strong>积分阶梯计量实现</strong>（见 2.3）</td><td>依赖工具调用数与沙箱时长</td></tr><tr><td>9</td><td>账本与流水（append-only + 启动对账）</td><td>见 8.5 风险 3</td></tr><tr><td>10</td><td>权益配置表（8 档，声明式）</td><td>见 7.2</td></tr><tr><td>11</td><td>门禁中间件 + 余额校验中间件</td><td>见 8.2</td></tr><tr><td>12</td><td>技能/MCP 档位划分（按 tier 过滤白名单）</td><td>复用已实现白名单机制</td></tr><tr><td>13</td><td>知识库容量配额</td><td>见 8.4</td></tr><tr><td>14</td><td>免费用户 200 初始积分 + 每日限额</td><td>见 5.1</td></tr><tr><td>15</td><td>每日签到（含防刷基础设计）</td><td>见 5.2</td></tr><tr><td>16</td><td>充值包（积分 / Token 两类）</td><td>见 6.1</td></tr><tr><td>17</td><td>兑换码激活（冷启动方案）</td><td>见 8.6 方案 C</td></tr><tr><td>18</td><td>会员到期处理（权益收回 + 余额保留）</td><td>见 6.2</td></tr><tr><td>19</td><td>前端：额度指示器、签到入口、会员中心、充值页、升级引导弹窗、流水明细</td><td>见 8.3</td></tr><tr><td>20</td><td>用量看板（按日/模型/任务）</td><td>复用 AgentsView 数据形态</td></tr><tr><td>21</td><td>i18n 词条补齐（中英对齐）</td><td>见 8.4</td></tr></tbody></table>
+<h3>批次二（体验型权益，P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>前置</th></tr></thead><tbody><tr><td>22</td><td>"全部主题"权益启用</td><td>UI 板块阶段二（六套主题）</td></tr><tr><td>23</td><td>工作流模板权益（模板 N 套）</td><td>前端板块 10.3</td></tr><tr><td>24</td><td>Chat 导入 Work</td><td>策划案 2.1 单向导入</td></tr><tr><td>25</td><td>知识库容量档位 + 多文档分片检索</td><td>后端板块 6.3</td></tr><tr><td>26</td><td>独立选模型的档位范围控制（免费强制跟随主模型）</td><td>见 8.4</td></tr></tbody></table>
+<h3>批次三（依赖 Agent 演进，P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>前置</th></tr></thead><tbody><tr><td>27</td><td>迭代次数上限（档位控制）</td><td>Agent 板块阶段三（审辨迭代）</td></tr><tr><td>28</td><td>快照配额 + fork/检查点档位</td><td>Agent 板块 7.4</td></tr><tr><td>29</td><td>归档智能体完整能力</td><td>Agent 板块 4.4</td></tr><tr><td>30</td><td>仿真 MCP 档位（基础/高级）</td><td>Agent 板块 6.5</td></tr><tr><td>31</td><td>数据库服务档位（多表 / 自定义字段）</td><td>后端板块 6.4</td></tr></tbody></table>
+<h3>批次四（团队与企业，P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>前置</th></tr></thead><tbody><tr><td>32</td><td><strong>账号体系 + 云端账本</strong></td><td>批次零决策 3</td></tr><tr><td>33</td><td>团队空间 + 成员与角色权限</td><td>账号体系</td></tr><tr><td>34</td><td>团队总额度池 + 成员分配</td><td>账号体系</td></tr><tr><td>35</td><td>团队知识库 / 模板库</td><td>团队空间</td></tr><tr><td>36</td><td>操作审计 + 用量看板（团队版）</td><td>团队空间</td></tr><tr><td>37</td><td>团队统一主题下发</td><td>UI 主题系统</td></tr><tr><td>38</td><td>云端备份 + 跨设备同步</td><td>云服务</td></tr><tr><td>39</td><td>集群仿真 / 批量运行导出 / 项目分享</td><td>Agent 板块阶段三</td></tr><tr><td>40</td><td>客服体系（邮件/工单/专属客服）</td><td>运营侧</td></tr><tr><td>41</td><td>商用授权法律文本</td><td>法务</td></tr><tr><td>42</td><td>网页支付集成</td><td>批次零决策 4</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-10">十、关键设计要点总结</h2>
+<p>供实现时反复对照，避免偏离策划案的核心意图：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>要点</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td><strong>算力与权限彻底解耦</strong></td><td>两条独立的判断链：余额决定"能不能跑"，档位决定"能用什么"。任何"买积分送功能"或"买会员送算力"的设计都违背此原则</td></tr><tr><td>2</td><td><strong>余额与权益分离生命周期</strong></td><td>到期后权益收回、<strong>余额保留可继续消耗</strong>。数据结构上必须分离</td></tr><tr><td>3</td><td><strong>免费用户必须有完整 Work 体验</strong></td><td>200 初始积分 + 1 积分/次的基础工作流 = 用户能完整体验价值后才遇到墙。这是获客设计的核心</td></tr><tr><td>4</td><td><strong>签到积分与套餐积分合并使用、同有效期</strong></td><td>不做两套有效期（避免用户困惑）</td></tr><tr><td>5</td><td><strong>充值包只补算力、不带权益</strong></td><td>维护"算力归算力、会员归会员"的心智</td></tr><tr><td>6</td><td><strong>阶梯计价对用户透明</strong></td><td>任务前给预估、任务后给实际与计算依据。黑箱计价会伤害信任</td></tr><tr><td>7</td><td><strong>门禁统一入口 + 服务端强制</strong></td><td>前端只展示，后端做判定；失败返回结构化升级引导</td></tr><tr><td>8</td><td><strong>权益分批上线</strong></td><td>严格执行 3.3 的批次划分，<strong>不得为凑齐权益表而宣称待实现能力</strong></td></tr><tr><td>9</td><td><strong>账本 append-only + 启动对账</strong></td><td>可审计、可追溯、可对账</td></tr><tr><td>10</td><td><strong>视觉克制</strong></td><td>会员/充值界面必须遵循中性墨色基调，<strong>避免商业化页面常见的彩色渐变与大色块</strong></td></tr><tr><td>11</td><td><strong>诚实定位本地计费</strong></td><td>本地单机计费是"自律性计量"，非安全计费；真实商业化需云端账本</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-11">十一、已实现 / 待实现速查总表</h2>
+<table class="doc-table"><thead><tr><th>模块</th><th>现状</th><th>备注</th></tr></thead><tbody><tr><td>双计量模型设计</td><td>策划案完整，逻辑自洽</td><td>可直接采用</td></tr><tr><td><strong>Token 计量</strong></td><td><strong>零实现</strong></td><td>最大技术缺口：Chat 链路完全不读上游 <code>usage</code></td></tr><tr><td><strong>积分体系</strong></td><td><strong>零实现</strong></td><td>需补充阶梯计价定量模型（本策划案已给出）</td></tr><tr><td>阶梯计价模型</td><td>策划案仅定性</td><td>本策划案补充了复杂度因子与系数</td></tr><tr><td><strong>个人四档</strong></td><td><strong>零实现</strong></td><td>权益表可直接采用；多项依赖待实现能力，需分批上线</td></tr><tr><td><strong>团队三档</strong></td><td><strong>零实现</strong></td><td>前置：账号体系 + 云服务（架构级缺失）</td></tr><tr><td><strong>免费用户规则</strong></td><td><strong>零实现</strong></td><td>200 初始积分 + 功能锁定清单，设计完整</td></tr><tr><td><strong>每日签到</strong></td><td><strong>零实现</strong></td><td>需补防刷设计；本地场景防刷能力有限，需诚实声明</td></tr><tr><td><strong>充值包</strong></td><td><strong>零实现</strong></td><td>两类（积分/Token），只补算力不带权益</td></tr><tr><td><strong>到期规则</strong></td><td><strong>零实现</strong></td><td>权益收回 + 余额保留（数据结构必须分离）</td></tr><tr><td><strong>功能门禁</strong></td><td><strong>零实现</strong></td><td>8 档声明式权益表 + 统一门禁中间件</td></tr><tr><td><strong>用量看板</strong></td><td><strong>零实现</strong></td><td><strong>可参考 <code>agentsview-report/usage-daily.json</code> 的数据形态</strong>（第三方工具产物，非本项目代码）</td></tr><tr><td>计费 API</td><td><strong>零实现</strong></td><td>约 40 个现有端点中无任何计费端点</td></tr><tr><td>计费数据字段</td><td><strong>零实现</strong></td><td><code>config.json</code> 仅 6 字段，无配额/tier/额度</td></tr><tr><td>唯一残留</td><td><code>01/webapp.js:182,276</code> 的 i18n 键 <code>upgrade: '升级 Pro'</code></td><td>仅定义，<strong>无任何调用点</strong>，按钮从未渲染</td></tr><tr><td>账号体系</td><td><strong>零实现</strong></td><td>纯本地单机应用；团队版与云端账本的前置条件</td></tr><tr><td>支付渠道</td><td><strong>零实现</strong></td><td>建议路径：兑换码（冷启动）→ 网页支付</td></tr><tr><td>法务合规</td><td><strong>未评估</strong></td><td>预付费/虚拟额度/退款/发票/用户协议——<strong>P0 前置</strong></td></tr><tr><td>前端界面</td><td><strong>零实现</strong></td><td>6 类组件需新建；<strong>必须遵循已实现的墨色设计令牌</strong></td></tr><tr><td>可复用基础</td><td>技能白名单、MCP 工具可见集、沙箱耗时统计、工具调用事件、Modal/Toast/分段控件、i18n 机制</td><td>计费体系的接入点清晰</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-12">十二、修改方向与补充内容（落地清单）</h2>
+<p>本章把前文的「待实现」项收拢为可施工清单。<strong>本板块实质性零实现，工作量为六个板块中最大</strong>，且存在三个必须在产品层面先行决策的前置项（法务评估、计费定位、账号体系）——<strong>不做完前置决策就动手写代码，返工风险极高</strong>。</p>
+<h3>12.1 修改方向总览</h3>
+<table class="doc-table"><thead><tr><th>组</th><th>主题</th><th>性质</th><th>优先级</th></tr></thead><tbody><tr><td>A</td><td>前置决策（非代码）</td><td><strong>产品/法务决策</strong></td><td><strong>P0（阻塞全部）</strong></td></tr><tr><td>B</td><td>计量底座（Token + 积分）</td><td><strong>最大技术缺口</strong></td><td>P0</td></tr><tr><td>C</td><td>权益与门禁</td><td>声明式实现</td><td>P1</td></tr><tr><td>D</td><td>个人四档权益</td><td>分批上线</td><td>P1</td></tr><tr><td>E</td><td>免费用户与签到</td><td>含防刷</td><td>P1</td></tr><tr><td>F</td><td>积分商城与充值包</td><td>含到期规则</td><td>P1</td></tr><tr><td>G</td><td>支付渠道</td><td>建议兑换码冷启动</td><td>P2</td></tr><tr><td>H</td><td>团队三档</td><td><strong>架构级缺失</strong></td><td>P2（依赖账号体系）</td></tr><tr><td>I</td><td>前端界面</td><td>6 类组件</td><td>P1（与 B/C 同步）</td></tr></tbody></table>
+<h3>12.2 A 组：前置决策（P0 — 非代码，阻塞项）</h3>
+<p><strong>这三项不做完，代码写了也要改。</strong></p>
+<table class="doc-table"><thead><tr><th>#</th><th>决策项</th><th>为什么阻塞</th><th>需要谁决策</th></tr></thead><tbody><tr><td>A1</td><td><strong>法务合规评估</strong></td><td>预付费、虚拟额度、退款、发票、用户协议——涉及资金与合规，未评估即上线存在法律风险</td><td>法务 + 产品</td></tr><tr><td>A2</td><td><strong>计费定位</strong></td><td>算力与权限解耦的力度决定积分与权益的边界；定位不清则权益表反复改</td><td>产品</td></tr><tr><td>A3</td><td><strong>账号体系方案</strong></td><td>团队版与云端账本的前置条件；纯本地单机应用需先决定是否引入账号</td><td>产品 + 技术</td></tr></tbody></table>
+<p><strong>交付物</strong>：A1 出具法务合规意见（明确可做/不可做及条件）；A2 明确计费定位一句话表述；A3 明确账号体系的技术选型与上线时点。</p>
+<h3>12.3 B 组：计量底座（P0 — 最大技术缺口）</h3>
+<p><strong>核心问题</strong>：Chat 链路<strong>完全不读上游 <code>usage</code></strong>，因此当前无任何 Token 计量能力。这是整个计费体系的地基。</p>
+<p><strong>Token 计量改造 6 步</strong>：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>步骤</th><th>说明</th></tr></thead><tbody><tr><td>B1</td><td>上游 <code>usage</code> 解析</td><td>在 AI 代理层解析各厂商返回的 <code>usage</code> 字段（prompt/completion tokens），<strong>注意厂商字段命名差异</strong>，需归一化</td></tr><tr><td>B2</td><td>流式场景计量</td><td>流式响应中 <code>usage</code> 通常在最后一个 chunk 才给出，需在流结束事件中捕获并回传</td></tr><tr><td>B3</td><td>计量落盘</td><td>每次调用记录：时间、模型、输入/输出 Token、耗时、会话与智能体归属</td></tr><tr><td>B4</td><td>积分换算</td><td>建立 Token → 积分的换算系数（按模型档位差异化）</td></tr><tr><td>B5</td><td>按日分桶汇总</td><td><strong>复用 <code>agentsview-report/usage-daily.json</code> 的数据形态</strong>（schema v6：按日分桶、按模型计价、双字段 input/output、累计汇总）——注意该文件是第三方工具产物，仅作数据形态参考，不采用其代码</td></tr><tr><td>B6</td><td>扣减与校验</td><td>调用前校验余额、调用后扣减；扣减失败需补偿（先扣后调 vs 先调后扣的取舍需明确）</td></tr></tbody></table>
+<p><strong>积分阶梯计价定量模型</strong>（本策划案补充设计）：</p>
+<table class="doc-table"><thead><tr><th>要素</th><th>说明</th></tr></thead><tbody><tr><td>基础积分</td><td>每次调用的基础消耗</td></tr><tr><td>复杂度因子</td><td>按任务复杂度（上下文长度、工具调用次数、迭代轮次）加权</td></tr><tr><td>模型系数</td><td>高档模型系数高，低档低</td></tr><tr><td>阶梯折减</td><td>用量越高单价越低（鼓励持续使用）</td></tr></tbody></table>
+<p><strong>验收方法</strong>：B1–B3 用真实调用核对计量值与厂商账单一致；B6 构造余额不足场景验证拦截与补偿。</p>
+<h3>12.4 C 组：权益与门禁（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>动作</th><th>说明</th></tr></thead><tbody><tr><td>C1</td><td><strong>8 档声明式权益表</strong></td><td>把权益抽为声明式配置（功能键 → 各档可用性），<strong>不在业务代码里散落 if 判断</strong></td></tr><tr><td>C2</td><td>统一门禁中间件</td><td>所有受控功能经统一中间件校验权益，前端与后端<strong>双向校验</strong>（前端做展示控制，后端做真实拦截）</td></tr><tr><td>C3</td><td>可复用接入点</td><td>直接复用已实现基础：技能白名单、MCP 工具可见集、沙箱耗时统计、工具调用事件</td></tr><tr><td>C4</td><td>门禁降级</td><td>权益校验服务不可用时，按最小权限降级（拒绝访问受控功能），<strong>不得放行</strong></td></tr><tr><td>C5</td><td>数据模型</td><td>新增 <strong>6 个 store 分区</strong>（账户、积分账本、权益、订单、签到、用量）</td></tr></tbody></table>
+<h3>12.5 D 组：个人四档权益（P1 — 分批上线）</h3>
+<p>权益表可直接采用策划案，但<strong>多项权益依赖尚未实现的能力</strong>，因此必须分批。<strong>不得宣传未上线的权益档位</strong>。</p>
+<table class="doc-table"><thead><tr><th>批次</th><th>内容</th><th>前置</th></tr></thead><tbody><tr><td>第 1 批</td><td>免费档 + 基础档（仅计量与限额）</td><td>B 组完成</td></tr><tr><td>第 2 批</td><td>专业档（含部分待实现能力对应权益，待能力上线后开启）</td><td>对应能力落地</td></tr><tr><td>第 3 批</td><td>高级档</td><td>同上</td></tr><tr><td>第 4 批</td><td>团队档相关权益的接口预留</td><td>H 组</td></tr></tbody></table>
+<h3>12.6 E 组：免费用户与每日签到（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>说明</th></tr></thead><tbody><tr><td>E1</td><td>200 初始积分</td><td>新用户一次性发放</td></tr><tr><td>E2</td><td>功能锁定清单</td><td>免费档不可用功能的明确清单（与 C1 权益表联动）</td></tr><tr><td>E3</td><td>签到奖励</td><td>每日签到发放积分，含连续签到加成</td></tr><tr><td>E4</td><td><strong>防刷设计</strong></td><td><strong>本机场景防刷能力有限，必须诚实声明</strong>——本地存储可被篡改，需在文档与用户协议中明确"本地版签到仅作体验激励，不作为核心权益来源"</td></tr><tr><td>E5</td><td>补签与中断规则</td><td>连续签到中断后的处理规则</td></tr></tbody></table>
+<h3>12.7 F 组：积分商城与充值包（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>说明</th></tr></thead><tbody><tr><td>F1</td><td>充值包两类</td><td>积分包 / Token 包；<strong>只补算力不带权益</strong>（与订阅权益解耦）</td></tr><tr><td>F2</td><td><strong>到期规则</strong></td><td><strong>权益收回 + 余额保留</strong>——因此<strong>数据结构必须分离</strong>：会员权益有独立生命周期，积分余额独立生命周期，不可共用一个有效期字段</td></tr><tr><td>F3</td><td>消费优先级</td><td>优先消耗即将到期的额度（若存在多来源积分）</td></tr><tr><td>F4</td><td>明细可查</td><td>每一笔积分收支可查（来源、时间、余额快照）</td></tr><tr><td>F5</td><td>兑换与退款策略</td><td>需与 A1 法务结论对齐</td></tr></tbody></table>
+<h3>12.8 G 组：支付渠道（P2）</h3>
+<p><strong>推荐路径</strong>：<strong>兑换码（冷启动）→ 网页支付</strong>。</p>
+<table class="doc-table"><thead><tr><th>阶段</th><th>方式</th><th>理由</th></tr></thead><tbody><tr><td>冷启动</td><td>兑换码</td><td>无需支付资质、无退款流程、可快速验证付费意愿；缺点是渠道受限、需人工发码</td></tr><tr><td>成长期</td><td>网页支付</td><td>需支付资质与法务配套（A1）</td></tr></tbody></table>
+<p><strong>注意</strong>：兑换码方案将订单与支付解耦，因此 C5 的数据模型需预留"订单来源"字段（兑换码/支付）。</p>
+<h3>12.9 H 组：团队三档（P2 — 架构级缺失）</h3>
+<p><strong>前置依赖</strong>：账号体系（A3）+ 云服务。<strong>当前为纯本地单机应用，团队能力属架构级缺失，不可通过局部改造补齐。</strong></p>
+<table class="doc-table"><thead><tr><th>#</th><th>待建能力</th><th>说明</th></tr></thead><tbody><tr><td>H1</td><td>账号体系</td><td>注册、登录、身份（与 A3 决策一致）</td></tr><tr><td>H2</td><td>团队组织模型</td><td>团队成员、角色、权限</td></tr><tr><td>H3</td><td>团队账本</td><td>团队级积分池与用量汇总</td></tr><tr><td>H4</td><td>共享工作区</td><td>团队成员共享工作区与知识库</td></tr><tr><td>H5</td><td>统一下发配置</td><td>主题、技能、MCP 配置由管理员统一下发（成员可选可拒绝，不强制覆盖个人偏好）</td></tr><tr><td>H6</td><td>席位与续费</td><td>席位管理、团队订阅续费</td></tr></tbody></table>
+<p><strong>纪律</strong>：H 组<strong>一律不得宣传</strong>（与 05 板块 E2 禁止清单一致）。</p>
+<h3>12.10 I 组：前端界面（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待建组件</th><th>说明</th></tr></thead><tbody><tr><td>I1</td><td>积分余额展示</td><td>常驻可见，含即将到期提示</td></tr><tr><td>I2</td><td>用量看板</td><td>按日/按模型/按会话，<strong>复用 usage-daily 形态</strong></td></tr><tr><td>I3</td><td>权益对比表</td><td>四档横向对比，明确标注"即将上线"</td></tr><tr><td>I4</td><td>升级入口</td><td>复用现有 Modal/Toast/分段控件</td></tr><tr><td>I5</td><td>充值面板</td><td>积分包与 Token 包</td></tr><tr><td>I6</td><td>签到入口</td><td>含连续签到展示</td></tr></tbody></table>
+<p><strong>硬约束</strong>：<strong>必须遵循已实现的墨色设计令牌</strong>（中性色 + 墨色主按钮 + 克制蓝链接），不得引入彩色营销风配色；零 emoji。</p>
+<p><strong>唯一残留清理</strong>：<code>01/webapp.js:182,276</code> 的 i18n 键 <code>upgrade: '升级 Pro'</code>（无调用点）——在 I4 实现时正式接入或删除。</p>
+<h3>12.11 其余补充说明</h3>
+<table class="doc-table"><thead><tr><th>补充项</th><th>说明</th></tr></thead><tbody><tr><td>计费 API</td><td>约 40 个现有端点中无任何计费端点，需新增（见 03 板块 E 组已列 6 个计费端点 + 4 个用量端点）</td></tr><tr><td>配置字段扩展</td><td><code>config.json</code> 仅 6 字段，需扩展 tier / quota / 额度等字段</td></tr><tr><td>超额行为</td><td>余额耗尽时的行为：阻断、降级到免费档、还是允许透支——<strong>需产品明确</strong></td></tr><tr><td>用量与成本的关系</td><td>用户看到的是积分，系统内部记的是 Token 与成本，两者的换算关系需在后台可调</td></tr></tbody></table>
+<h3>12.12 施工顺序建议</h3>
+<pre><code>A 组（前置决策，阻塞）→ B 组（计量底座）→ C 组（权益门禁）→ D/E/F 组（个人能力分批）→ I 组（前端）→ G 组（支付）
+                                                                                        ↘ H 组（团队，依赖账号体系）</code></pre>
+<p><strong>关键纪律</strong>：</p>
+<ol><li><strong>A 组不做完不开工</strong> —— 尤其是法务评估，涉及资金合规不可侥幸。</li><li><strong>B 组是整个体系的地基</strong> —— Token 计量不落地，积分、权益、看板、门禁全部无数据可依。</li><li><strong>权益表声明式，不散落 if</strong> —— 8 档权益若写进业务代码，后续调整档位将牵动全库。</li><li><strong>数据结构分离</strong> —— 权益生命周期与余额生命周期必须独立，这是到期规则能正确工作的前提。</li><li><strong>不得宣传未上线档位</strong> —— 与 05 板块保持一致。</li></ol>
+<div data-component="divider"></div>
+<p><em>本策划案基于对 <code>D:\ChatScience</code> 全代码库的计费相关检索（结论：<strong>实质性零实现</strong>，仅 1 处无调用点的 i18n 残留）、<code>agentsview-report/usage-daily.json</code> 的计量形态参考、以及《墨台产品整体策划案（完整版）》第 8 章编制。<strong>本板块工作量为六个板块中最大</strong>，且存在三个前置决策（法务评估、计费定位、账号体系）需在产品层面先行确定。编制日期：2026 年 9 月。</em></p>
+</div>
+</section>
+</body>
+</html>

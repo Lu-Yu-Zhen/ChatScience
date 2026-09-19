@@ -14,7 +14,8 @@
     "@types/node": "^20.19.43",
     "electron": "^33.0.0",
     "electron-packager": "^17.1.2",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "ws": "^8.21.3"
   },
   "dependencies": {
     "@qodercn-ai/qodercn-agent-sdk": "^1.0.34",

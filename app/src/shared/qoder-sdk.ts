@@ -36,7 +36,37 @@ export type {
 export type {
   AgentDefinition,
   AgentInfo,
+  AgentMemoryScope,
+  AgentMcpServerSpec,
 } from '@qodercn-ai/qodercn-agent-sdk';
+
+/* Hooks 生命周期（A4 审计 / E 组调度可观测性的官方通道；1.0.34 实测存在） */
+export type {
+  HookEvent,
+  HookCallback,
+  HookCallbackMatcher,
+  HookInput,
+  HookJSONOutput,
+  PreToolUseHookInput,
+  PostToolUseHookInput,
+  PostToolUseFailureHookInput,
+  SubagentStartHookInput,
+  SubagentStopHookInput,
+  PermissionDeniedHookInput,
+} from '@qodercn-ai/qodercn-agent-sdk';
+
+/* 模型策略（A7/B1：resolveModel 拉模式动态路由；1.0.34 实测存在，
+   注意本版本 QoderModelPurpose 实际值为 main/plan/task/compact/utility，
+   与国际版官方文档的 main/subagent/compact 不一致——以本 d.ts 为准） */
+export type {
+  ModelPolicyContext,
+  ModelPolicyResult,
+  ModelPolicyProvider,
+  QoderModelPurpose,
+} from '@qodercn-ai/qodercn-agent-sdk';
+
+/* Agent 工具输入输出（主智能体委派子智能体的线路协议形状） */
+export type { AgentInput, AgentOutput } from '@qodercn-ai/qodercn-agent-sdk';
 
 export type {
   McpStdioServerConfig,

@@ -1,0 +1,15 @@
+{
+  "description": "机器人插件配置：工具默认值（可在插件目录放 config.json 覆盖）",
+  "properties": {
+    "default_dynamic_factor": {
+      "type": "number",
+      "default": 1.5,
+      "description": "torque_estimate 默认动态放大系数（加减速/冲击）"
+    },
+    "safety_margin": {
+      "type": "number",
+      "default": 2.0,
+      "description": "推荐额定力矩的安全系数（裕度判定阈值）"
+    }
+  }
+}

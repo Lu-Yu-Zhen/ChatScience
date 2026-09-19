@@ -83,7 +83,9 @@ export function startServer(
   workCtx.qoder = qoderMod.createQoder(appRoot, workCtx);
   routesMod.mountRoutes(app, workCtx);
 
-  /* 播种内建智能体：每次启动增量补齐（按 id 查漏 + 内置改名跟随），不覆盖用户其余修改 */
+  /* 播种内建智能体：启动时查漏补齐（新内建自动加入）；不覆盖既有定义——
+     用户经管理页对墨道/墨析的编辑是最终事实。迁移：已废弃的内建智能体
+     （BUILTIN_AGENTS 清单之外，功能已迁入墨道子智能体体系）从 work.json 移除。 */
   (function () {
     store.update('agents', function (list) {
       const arr = Array.isArray(list) ? list : [];
@@ -91,8 +93,10 @@ export function startServer(
       qoderMod.BUILTIN_AGENTS.forEach(function (b) {
         const hit = arr.find(function (a) { return a.id === b.id; });
         if (!hit) { arr.push(JSON.parse(JSON.stringify(b))); changed = true; }
-        else if (hit.builtin && hit.name !== b.name) { hit.name = b.name; changed = true; }
       });
+      const builtinIds = qoderMod.BUILTIN_AGENTS.map(function (b) { return b.id; });
+      const kept = arr.filter(function (a) { return !(a.builtin && builtinIds.indexOf(a.id) === -1); });
+      if (kept.length !== arr.length) { changed = true; arr.length = 0; kept.forEach(function (a) { arr.push(a); }); }
       return changed ? arr : undefined;   /* 无变化不落盘 */
     }).then(function () {
       if (!store.section('seeded')) return store.setSection('seeded', true);

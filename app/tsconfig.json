@@ -27,5 +27,5 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist", "src/webapp", "src/verify", "src/_cdp_eval.ts", "src/server/skills-plugin"]
+  "exclude": ["node_modules", "dist", "src/webapp", "src/verify", "src/server/skills-plugin"]
 }

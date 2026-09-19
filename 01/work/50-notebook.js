@@ -164,43 +164,53 @@ const NoteUI = {
         } }));
         gutter.appendChild(NoteUI.miniIcon('×', tt('del'), function () { NoteUI.cells.splice(i, 1); NoteUI.renderStack(stack); }));
         row.appendChild(gutter);
-        /* 主体：In [n] 提示 + 编辑器 + MD 预览切换 */
+        /* 主体：In [n] 提示 + 编辑区
+           Markdown 单元格（2026-09-16 裁定 #6）：默认**渲染展示**、不显示源码；
+           点「编辑」才切源码视图，点「完成」回到渲染视图（_editing 为会话内瞬态，不落盘）。 */
         const main = Work.el('div', 'flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 0;');
         if (isCode)
             main.appendChild(Work.el('div', 'font-size: 10.5px; color: var(--text-3); font-weight: 700; padding: 2px 2px 4px 2px;', 'In [' + (i + 1) + ']:'));
-        const ta = document.createElement('textarea');
-        ta.value = cell.source;
-        ta.rows = Math.min(18, Math.max(3, cell.source.split('\n').length + 1));
-        ta.style.cssText = 'width: 100%; box-sizing: border-box; border: 1px solid var(--border-soft); border-radius: 10px;'
-            + ' outline: none; background: ' + (isCode ? 'var(--surface-2)' : 'var(--surface)') + '; resize: vertical;'
-            + ' color: var(--text-1); font-size: 12.5px; line-height: 20px; padding: 9px 11px;'
-            + ' font-family: ' + (isCode ? '"Consolas", "JetBrains Mono", monospace' : 'inherit') + ';';
-        ta.addEventListener('input', function () { cell.source = ta.value; ta.rows = Math.min(18, Math.max(3, ta.value.split('\n').length + 1)); });
-        main.appendChild(ta);
-        if (!isCode) {
-            const prevBtn = Work.smallBtn(tt('wNotePreview'), function () {
-                let pv = main.querySelector('.nb-preview');
-                if (pv) {
-                    pv.remove();
-                    prevBtn.textContent = tt('wNotePreview');
-                    return;
-                }
-                prevBtn.textContent = tt('saved2');
-                pv = Work.el('div', 'nb-preview; border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px 12px; background: var(--surface); max-height: 40vh; overflow-y: auto; margin-top: 6px;');
-                if (typeof window.marked !== 'undefined' && typeof window.DOMPurify !== 'undefined') {
-                    const rendered = Work.el('div');
-                    rendered.className = 'ai-text md-body';
-                    rendered.innerHTML = window.DOMPurify.sanitize(window.marked.parse(cell.source || ''));
-                    pv.appendChild(rendered);
-                }
-                else {
-                    pv.appendChild(Work.hint(tt('wOfflineMd'), 'warn'));
-                    pv.appendChild(Work.preBlock(cell.source, { dark: false, maxHeight: '36vh' }));
-                }
-                main.appendChild(pv);
-            });
-            prevBtn.style.cssText += 'align-self: flex-start; margin-top: 6px;';
-            main.appendChild(prevBtn);
+        const mkEditor = function () {
+            const ta = document.createElement('textarea');
+            ta.value = cell.source;
+            ta.rows = Math.min(18, Math.max(3, cell.source.split('\n').length + 1));
+            ta.style.cssText = 'width: 100%; box-sizing: border-box; border: 1px solid var(--border-soft); border-radius: 10px;'
+                + ' outline: none; background: ' + (isCode ? 'var(--surface-2)' : 'var(--surface)') + '; resize: vertical;'
+                + ' color: var(--text-1); font-size: 12.5px; line-height: 20px; padding: 9px 11px;'
+                + ' font-family: ' + (isCode ? '"Consolas", "JetBrains Mono", monospace' : 'inherit') + ';';
+            ta.addEventListener('input', function () { cell.source = ta.value; ta.rows = Math.min(18, Math.max(3, ta.value.split('\n').length + 1)); });
+            return ta;
+        };
+        if (isCode) {
+            main.appendChild(mkEditor());
+        }
+        else if (cell._editing) {
+            main.appendChild(mkEditor());
+            const doneBtn = Work.smallBtn(tt('nbEditDone'), function () { cell._editing = false; NoteUI.renderStack(stack); }, { primary: true });
+            doneBtn.style.cssText += 'align-self: flex-start; margin-top: 6px;';
+            main.appendChild(doneBtn);
+        }
+        else {
+            const box = Work.el('div', 'border: 1px solid var(--border-soft); border-radius: 10px; padding: 10px 12px;'
+                + ' background: var(--surface); min-height: 36px; max-height: 46vh; overflow-y: auto;');
+            const src = String(cell.source || '').trim();
+            if (!src) {
+                box.appendChild(Work.hint(tt('nbCellEmpty'), 'warn'));
+            }
+            else if (typeof window.marked !== 'undefined' && typeof window.DOMPurify !== 'undefined') {
+                const rendered = Work.el('div');
+                rendered.className = 'ai-text md-body';
+                rendered.innerHTML = window.DOMPurify.sanitize(window.marked.parse(cell.source || ''));
+                box.appendChild(rendered);
+            }
+            else {
+                box.appendChild(Work.hint(tt('wOfflineMd'), 'warn'));
+                box.appendChild(Work.preBlock(cell.source, { dark: false, maxHeight: '36vh' }));
+            }
+            main.appendChild(box);
+            const editBtn = Work.smallBtn(tt('wEdit'), function () { cell._editing = true; NoteUI.renderStack(stack); });
+            editBtn.style.cssText += 'align-self: flex-start; margin-top: 6px;';
+            main.appendChild(editBtn);
         }
         row.appendChild(main);
         return row;

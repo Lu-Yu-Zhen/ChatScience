@@ -1,0 +1,4 @@
+{
+  "server": "research-ai-tools",
+  "tools": ["gpu_mem_estimate", "token_budget", "data_profile"]
+}

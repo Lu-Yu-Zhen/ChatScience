@@ -1,0 +1,20 @@
+{
+  "description": "AI 插件配置：工具默认值（可在插件目录放 config.json 覆盖）",
+  "properties": {
+    "default_hidden": {
+      "type": "number",
+      "default": 4096,
+      "description": "gpu_mem_estimate 默认隐藏维度"
+    },
+    "default_seq_len": {
+      "type": "number",
+      "default": 2048,
+      "description": "默认序列长度（gpu_mem_estimate / token_budget 共用）"
+    },
+    "default_throughput_tps": {
+      "type": "number",
+      "default": 30000,
+      "description": "token_budget 默认训练吞吐（tokens/s，A100 级 bf16 经验值）"
+    }
+  }
+}

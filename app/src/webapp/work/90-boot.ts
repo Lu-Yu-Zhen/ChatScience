@@ -22,14 +22,13 @@ Object.keys(Work.pages).forEach(function (key) {
   WORK_HOOKS.pages['work-' + key] = Work.pages[key];
 });
 
-/* 3. Work 侧栏入口（基础三项——新建任务/创建项目/知识和数据库——由主脚本提供） */
+/* 3. Work 侧栏入口（基础三项——新建任务/创建项目/知识和数据库——由主脚本提供）。
+   智能体/沙箱/笔记本/运行 已迁入独立设置页（07-设置页改造.md §4），侧栏仅留
+   技能与插件 / 连接器两项（与设置页双入口，共用同一构建器）；迁移项的旧深链
+   由主脚本 openWorkPage 的兼容路由转发到 openSettings(section)。 */
 const _SIDEBAR = [
-  { id: 'agentsBtn', page: 'agents', iconPath: Work.ICONS.agent, key: 'wAgents' },
   { id: 'skillsBtn', page: 'skills', iconPath: Work.ICONS.layers, key: 'wSkills' },
-  { id: 'mcpBtn', page: 'mcp', iconPath: Work.ICONS.plug, key: 'wMcp' },
-  { id: 'sandboxBtn', page: 'sandbox', iconPath: Work.ICONS.box, key: 'wSandbox' },
-  { id: 'notebookBtn', page: 'notebook', iconPath: Work.ICONS.book, key: 'wNotebook' },
-  { id: 'runBtn', page: 'run', iconPath: Work.ICONS.terminal, key: 'wRun' }
+  { id: 'mcpBtn', page: 'mcp', iconPath: Work.ICONS.plug, key: 'wMcp' }
 ];
 
 WORK_HOOKS.sidebarItems = function () {
@@ -43,10 +42,13 @@ WORK_HOOKS.sidebarItems = function () {
   });
 };
 
-/* 4. Work 欢迎页 pills：动态展示智能体（P6 完成后）+ 沙箱 / 技能入口 */
+/* 4. Work 欢迎页 pills：动态展示智能体（与选择器口径一致：墨道/墨析）+ 沙箱 / 技能入口 */
 WORK_HOOKS.emptyStatePills = function (mode) {
   const pills = [];
-  const agents = (WorkState.agents || []).slice(0, 2);
+  const agents = (WorkState.agents || [])
+    .filter(function (a) { return a.id === 'agent-orchestrator' || a.id === 'agent-discuss'; })
+    .sort(function (x, y) { return (x.id === 'agent-orchestrator' ? 0 : 1) - (y.id === 'agent-orchestrator' ? 0 : 1); })
+    .slice(0, 2);
   agents.forEach(function (a) {
     pills.push({
       label: a.name || 'Agent',
@@ -61,13 +63,13 @@ WORK_HOOKS.emptyStatePills = function (mode) {
   pills.push({
     key: 'wSandbox', bg: 'rgba(22, 163, 74, 0.10)', color: '#16A34A',
     icon: Work.ICONS.box,
-    action: function () { openWorkPage('work-sandbox'); }
+    action: function () { openSettings('sandbox'); }
   });
   if (agents.length < 2) {
     pills.push({
       key: 'wAgents', bg: 'rgba(37, 99, 235, 0.10)', color: '#2563EB',
       icon: Work.ICONS.plus,
-      action: function () { openWorkPage('work-agents'); }
+      action: function () { openSettings('agents'); }
     });
   }
   return pills;

@@ -1,0 +1,4 @@
+{
+  "server": "research-robotics-tools",
+  "tools": ["torque_estimate", "urdf_check", "dh_transform"]
+}

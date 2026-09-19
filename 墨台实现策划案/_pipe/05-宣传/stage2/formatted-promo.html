@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="docx-page-size" content="A4">
+<title>墨台 · 宣传板块实现策划案</title>
+<style>
+@page { @bottom-center { content: counter(page); } }
+@page cover { @bottom-center { content: none; } }
+section[role="cover"] { page: cover; }
+
+:root {
+  --fs-h1: 20pt;
+  --fs-h2: 11pt;
+  --fs-h3: 10pt;
+  --fs-h4: 9pt;
+  --fs-body: 9pt;
+  --fs-small: 8pt;
+  --fs-tiny: 7pt;
+  --ff-heading: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-body: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-mono: Consolas, Source Code Pro, monospace;
+  --lh-body: 1.6;
+  --lh-title: 1.3;
+  --fw-bold: 700;
+  --fw-em: 500;
+  --fw-normal: 400;
+
+  --color-primary: #1565C0;
+  --color-secondary: #0288D1;
+  --color-accent: #00897B;
+  --color-text: #212121;
+  --color-heading: #1A237E;
+  --color-muted: #616161;
+  --color-border: #E0E0E0;
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F7FA;
+  --color-divider: #E0E0E0;
+  --color-danger: #C62828;
+  --color-emphasis: #C62828;
+  --color-success: #2E7D32;
+  --color-warn: #B26A00;
+  --color-code-bg: #F5F7FA;
+
+  --spacing-paragraph: 0.75em;
+  --spacing-section: 2.5em;
+  --spacing-block: 1.5em;
+  --spacing-card: 1.5em;
+  --margin-page: 2.5cm;
+  --page-content-width: 15.6cm;
+  --radius-card: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------- cover ---------------- */
+section[role="cover"] { padding: 0; }
+.cover-inner { padding: 4.2cm 0 0 0; }
+.cover-category {
+  font-family: var(--ff-heading); font-size: var(--fs-small);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  letter-spacing: 0.18em; text-align: left; margin-bottom: 1.1em;
+}
+.cover-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); text-align: left; margin-bottom: 0.55em;
+}
+.cover-subtitle {
+  font-size: var(--fs-h3); color: var(--color-muted);
+  text-align: left; line-height: 1.5; margin-bottom: 2.6em;
+}
+.cover-info { width: 100%; border-collapse: collapse; margin-top: 2.4cm; }
+.cover-info td {
+  padding: 0.42em 0; font-size: var(--fs-small);
+  color: var(--color-muted); border-bottom: 1px solid var(--color-divider);
+  text-align: left;
+}
+.cover-info td:first-child {
+  width: 6.2em; color: var(--color-text); font-weight: var(--fw-em);
+}
+.cover-foot {
+  margin-top: 1.6cm; font-size: var(--fs-tiny); color: var(--color-muted);
+  text-align: left;
+}
+
+/* ---------------- body ---------------- */
+.body-wrap { padding: 0; }
+h1 {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-bottom: 0.8em;
+}
+h2 {
+  font-family: var(--ff-heading); font-size: var(--fs-h2);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-top: 1.9em; margin-bottom: 0.62em;
+  padding-bottom: 0.22em; border-bottom: 1px solid var(--color-divider);
+}
+h3 {
+  font-family: var(--ff-heading); font-size: var(--fs-h3);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  margin-top: 1.35em; margin-bottom: 0.5em;
+}
+h4 {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-text);
+  margin-top: 1.05em; margin-bottom: 0.4em;
+}
+p { margin-bottom: var(--spacing-paragraph); text-align: left; }
+ul, ol { margin: 0 0 var(--spacing-paragraph) 1.5em; }
+li { margin-bottom: 0.32em; line-height: var(--lh-body); }
+strong { font-weight: var(--fw-bold); color: var(--color-heading); }
+code {
+  font-family: var(--ff-mono); font-size: 0.92em;
+  background: var(--color-code-bg); padding: 1px 4px;
+  border-radius: 3px; color: var(--color-heading);
+}
+pre {
+  background: var(--color-code-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card); padding: 0.72em 0.9em;
+  margin-bottom: var(--spacing-paragraph); overflow-x: auto;
+}
+pre code { background: none; padding: 0; font-size: 0.86em; }
+
+/* ---------------- toc ---------------- */
+.doc-toc {
+  margin-bottom: 1.8em; padding: 1.05em 1.2em;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.toc-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  margin-bottom: 0.6em;
+}
+.toc-list, .toc-list ol, .toc-list ul { list-style: none; list-style-type: none;
+  padding-left: 0; margin: 0; }
+.toc-list li { margin-bottom: 0.3em; text-indent: 0; font-size: var(--fs-small); }
+.toc-list a { color: var(--color-primary); text-decoration: none; }
+
+/* ---------------- table ---------------- */
+.doc-table {
+  width: 100%; border-collapse: collapse; margin-bottom: var(--spacing-block);
+  table-layout: fixed; font-size: var(--fs-small);
+}
+.doc-table th {
+  background: var(--color-primary); color: #FFFFFF;
+  font-family: var(--ff-heading); font-weight: var(--fw-bold);
+  padding: 0.5em 0.62em; border: 1px solid var(--color-primary);
+  text-align: left; font-size: var(--fs-tiny);
+}
+.doc-table td {
+  padding: 0.46em 0.62em; border: 1px solid var(--color-border);
+  vertical-align: top; text-align: left; word-wrap: break-word;
+}
+.doc-table tbody tr:nth-child(even) td { background: var(--color-surface); }
+
+/* ---------------- callout ---------------- */
+.callout {
+  margin-bottom: var(--spacing-paragraph);
+  padding: 0.62em 0.85em 0.62em 0.9em;
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface);
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+}
+.callout--warning {
+  border-left-color: var(--color-warn); background: #FFFBEB;
+}
+.callout--danger {
+  border-left-color: var(--color-danger); background: #FEF2F2;
+}
+
+/* ---------------- misc ---------------- */
+section[role="body"] { padding: 0; }
+h2 + p, h3 + p, h4 + p { text-align: left; }
+</style>
+</head>
+<body>
+<section role="cover">
+  <div class="cover-inner">
+    <p class="cover-category">PRODUCT IMPLEMENTATION PLAN · 05</p>
+    <h1 class="cover-title">墨台 · 宣传板块实现策划案</h1>
+    <p class="cover-subtitle">品牌统一、Slogan 体系、渠道矩阵、内容选题与合规红线</p>
+    <table class="cover-info"><tr><td>文档主题</td><td>品牌与宣传推广</td></tr><tr><td>产品名称</td><td>墨台（ChatScience）</td></tr><tr><td>基准原则</td><td>已实现内容优先于策划案原文</td></tr><tr><td>编制依据</td><td>D:\ChatScience 项目源码实测</td></tr><tr><td>编制时间</td><td>2026 年 9 月</td></tr><tr><td>文档版本</td><td>v1.0</td></tr></table>
+    <p class="cover-foot">本策划案全部「已实现」结论均以项目源码行号为证据，冲突项一律以已实现内容为准。</p>
+  </div>
+</section>
+<section role="body" data-page-restart="1">
+<div class="body-wrap">
+<nav class="doc-toc" aria-label="文档目录"><p class="toc-title">目录</p><ol class="toc-list"><li><a href="#section-1">一、板块定位与现状说明</a></li><li><a href="#section-2">二、品牌体系统一方案【待实现】</a></li><li><a href="#section-3">三、品牌主张与 Slogan</a></li><li><a href="#section-4">四、目标人群与核心卖点</a></li><li><a href="#section-5">五、渠道矩阵与内容选题</a></li><li><a href="#section-6">六、上线节奏与转化路径</a></li><li><a href="#section-7">七、宣传合规与风险规避</a></li><li><a href="#section-8">八、物料产出清单【待实现】</a></li><li><a href="#section-9">九、实施优先级与任务拆解</a></li><li><a href="#section-10">十、已实现 / 待实现速查总表</a></li><li><a href="#section-11">十一、修改方向与补充内容（落地清单）</a></li></ol></nav><h1>墨台 · 宣传板块实现策划案</h1>
+<h2 id="section-1">一、板块定位与现状说明</h2>
+<h3>1.1 板块范围</h3>
+<p>本板块覆盖墨台的<strong>品牌体系与宣传推广</strong>：品牌命名统一、视觉资产现状与整改、品牌主张与 Slogan、目标人群与卖点、渠道矩阵与内容选题、上线节奏与转化路径、宣传合规与风险规避。</p>
+<h3>1.2 现状：宣传资产盘点【已实现】</h3>
+<p>与其余五个板块不同，本板块的<strong>物料基础相当扎实</strong>——项目内已存在三类可用的品牌与宣传资产，但也存在<strong>严重的品牌不一致问题</strong>，必须先解决。</p>
+<h4>资产一：InkForge（墨砺）完整品牌提案 — 11 张</h4>
+<p>位于 <code>inkforge-brand_assets/</code>，由 AI 图像生成工具产出，是<strong>一套完整度很高的品牌视觉提案</strong>，分为六个概念稿 + 定稿 + VI 手册 + 三张场景图：</p>
+<table class="doc-table"><thead><tr><th>编号</th><th>名称</th><th>视觉描述</th></tr></thead><tbody><tr><td>c1</td><td><strong>墨砾之痕</strong></td><td>米白宣纸底；深墨绿双圈同心环 + 中心浅青几何节点网络（分子/神经网络隐喻）+ 一点朱红圆心；下方宋体「墨砺」+ 英文 InkForge。冷色调、学术感</td></tr><tr><td>c2</td><td><strong>新墨</strong></td><td>米白底；朱红包浆<strong>方形印章</strong>内含白色「墨」字，印章底缘有电路节点横线；下方黑体「墨砺」+ 朱红 InkForge。传统 × 科技</td></tr><tr><td>c3</td><td><strong>岩钛星形</strong></td><td>深蓝黑底；<strong>金色六边形/立方体</strong>主体，内含青色双瓣叶形（似瞳孔/墨滴），右侧伸出金线连接两个青点；金色「墨砺」+ InkForge。高端暗金风</td></tr><tr><td>c4</td><td><strong>粒子成墨</strong></td><td>米白底；大字母 <strong>M</strong> 由深蓝到灰蓝<strong>粒子/点云渐散</strong>构成，左密右疏化作网络连线，右下一点朱红；下方黑体「墨砺」+ InkForge。数据流动性</td></tr><tr><td>c5</td><td><strong>历史同心</strong></td><td>米白底；<strong>毛笔笔刷弧形</strong>三圈（内圈虚线化墨点），中心一枚黑色墨滴，右上笔锋收尾带朱红；黑色「墨砺」+ InkForge。书法笔意</td></tr><tr><td>c6</td><td><strong>飞弓盾</strong></td><td>白底；<strong>盾牌</strong>轮廓内为深蓝几何网格节点图，中心青蓝星芒 + 右上朱红点；黑体「墨砺」+ InkForge。安全/防护隐喻</td></tr><tr><td>—</td><td><strong>logo-final（定稿）</strong></td><td>c1 图形但配色升级为<strong>深墨黑 + 宝蓝双圈</strong> + 中心青色节点环 + 朱红圆心；下方墨黑宋体「墨砺」+ 宝蓝 InkForge。竖版 Logo</td></tr><tr><td>—</td><td><strong>vi-manual（VI 手册）</strong></td><td>整版 VI：主 Logo、墨底反白/朱红反白变体、制图网格、<strong>四色色卡</strong>、字体规范（中英文 Aa Bb Cc 0123）、四个辅助图形、三张应用场景。信息量最大</td></tr><tr><td>—</td><td><strong>show-paper</strong></td><td>Logo 实物 Mockup：米色<strong>手工纸</strong>浮雕印刷效果，呈凹凸压印，右下角朱红小方印</td></tr><tr><td>—</td><td><strong>show-dome</strong></td><td>Logo 场景图：球形<strong>玻璃穹顶</strong>/水晶体，青蓝冷光，背景粒子网络，Logo 悬浮其上</td></tr><tr><td>—</td><td><strong>show-fluid</strong></td><td>Logo 场景图：<strong>黑色流体/墨浪</strong>水面激荡，蓝白 Logo 泛冷光悬浮，四散青色粒子。最具科技感</td></tr></tbody></table>
+<p><strong>VI 手册提取的关键规范</strong>：</p>
+<table class="doc-table"><thead><tr><th>项</th><th>内容</th></tr></thead><tbody><tr><td>品牌名</td><td><strong>墨砺 / InkForge</strong></td></tr><tr><td>四色色卡</td><td><strong>玄黑 <code>#16161D</code></strong>、<strong>石青 <code>#2E6E8E</code></strong>、<strong>丹朱 <code>#CE4928</code></strong>、宣白（米白系）</td></tr><tr><td>主张语</td><td><strong>「格物砺知」</strong></td></tr><tr><td>辅助图形</td><td>同心墨痕、分子网络、粒子散点、方形朱印</td></tr></tbody></table>
+<p><strong>工程文件说明</strong>：<code>inkforge-brand.miora</code> 是 WorkBuddy miora 工具的画布工程文件，仅记录 11 张图与候选 ID / 中文候选名的映射（<code>c1-molizhihen</code> → <code>c2-xinmo</code> → … → <code>logo-final</code> / <code>vi-manual</code> / <code>show-fluid</code> / <code>show-paper</code> / <code>show-dome</code>），<strong>不含配色数值或提示词</strong>（色值仅以像素形式存在于 VI 手册图中）。</p>
+<h4>资产二：ChatScience 宣传海报 — 1 张【已实现】</h4>
+<p><code>科研Agent宣传海报.png</code>（竖版，约 720×1080），是目前<strong>唯一既有的宣传成品</strong>：</p>
+<table class="doc-table"><thead><tr><th>区块</th><th>内容</th></tr></thead><tbody><tr><td>版式</td><td>顶部左侧品牌区 + 右上点阵装饰；中部大标题；下部分左右（文案 + 3D 科学元素）；底部白色信息条</td></tr><tr><td>品牌行</td><td><code>CHATSCIENCE</code> + 分隔线 + <code>科研智能体 · AI for Science</code></td></tr><tr><td>主标题</td><td><strong>「让 AI 成为 / 你的科研伙伴」</strong>（超大粗体，深蓝）</td></tr><tr><td>副标题</td><td><code>文献调研 · 实验设计 · 数据分析 · 论文写作</code></td></tr><tr><td>三条卖点（圆点列表）</td><td>① 自主检索并精读海量文献 ② 沙箱内执行代码 · 分析实验数据 ③ 全流程轨迹可追溯、可复现</td></tr><tr><td>主张语</td><td><strong>「把重复劳动交给 AI / 把思考留给研究者」</strong></td></tr><tr><td>底部双卡片</td><td><code>覆盖范围 → 从文献到论文</code>、<code>核心特性 → 可追溯 · 可复现</code></td></tr><tr><td>配色</td><td>白色/浅灰渐变底 + <strong>宝蓝主色</strong>（标题与图标）+ 浅蓝紫色流光弧线</td></tr><tr><td>视觉元素</td><td>右侧 3D 渲染<strong>分子/球体网络模型</strong>（玻璃质感球体 + 蓝色小球 + 连线），背景飘散几何碎片</td></tr></tbody></table>
+<p><strong>评价</strong>：文案完整、风格成熟、版式专业，<strong>可直接作为宣传章节的基线与素材复用基础</strong>。</p>
+<h4>资产三：应用图标 — 3 个文件【已实现，但严重不匹配】</h4>
+<table class="doc-table"><thead><tr><th>文件</th><th>内容</th></tr></thead><tbody><tr><td><code>app/logo.jpeg</code></td><td><strong>粉蓝双气泡</strong>圆角方形对话气泡（左蓝右粉）+ 白色椭圆轨道，米白底。<strong>粉色渐变 SaaS 风</strong></td></tr><tr><td><code>app/tray.png</code></td><td>同图形的模糊小尺寸版（32×32 托盘）</td></tr><tr><td><code>app/icons/app.ico</code></td><td>七尺寸 ICO（256/128/64/48/32/24/16），沿用同套气泡视觉</td></tr></tbody></table>
+<h3>1.3 【关键风险】四套品牌名称并存</h3>
+<p>项目内<strong>同时存在四个互不一致的品牌标识</strong>：</p>
+<table class="doc-table"><thead><tr><th>来源</th><th>品牌名</th><th>视觉风格</th><th>接入状态</th></tr></thead><tbody><tr><td>产品策划案</td><td><strong>墨台</strong>（Work 模式智能体系统：<strong>墨道</strong>）</td><td>东方水墨美学</td><td>文本规划</td></tr><tr><td>已接入应用图标</td><td>ChatScience（粉蓝气泡）</td><td>粉色渐变 SaaS</td><td><strong>已接入产品</strong>（窗口/托盘/exe 图标）</td></tr><tr><td>InkForge 品牌提案</td><td><strong>墨砺 / InkForge</strong></td><td>玄黑 + 石青 + 丹朱（水墨 × 科技）</td><td>未接入</td></tr><tr><td>既有宣传海报</td><td><strong>CHATSCIENCE</strong></td><td>宝蓝科学风</td><td>宣传物料</td></tr></tbody></table>
+<p><strong>这是宣传板块的最高优先级问题</strong>——在品牌名与视觉未统一前，任何投放都会造成认知混乱与资产浪费。</p>
+<p><strong>裁定建议</strong>：</p>
+<table class="doc-table"><thead><tr><th>项</th><th>建议</th><th>理由</th></tr></thead><tbody><tr><td>品牌名</td><td><strong>以「墨台 / 墨道」为唯一产品名</strong></td><td>策划案为最新且最完整的产品规划；"墨台/墨道"与已实现的墨色 UI 基调、与"墨"的产品基因完全自洽</td></tr><tr><td>英文名</td><td><strong>保留 ChatScience 作为英文名/工程代号</strong></td><td>代码、包名（<code>chatscience-desktop</code>）、目录、技能命名（<code>chatscience-skills</code>）已全面使用，改名成本高且无必要；可对外表述为"墨台 ChatScience"</td></tr><tr><td><strong>InkForge 提案的处置</strong></td><td><strong>作为视觉基因库（配色/辅助图形）采纳，但放弃其命名</strong></td><td>其色卡（玄黑/石青/丹朱）与已实现 UI 的中性墨色体系<strong>天然契合</strong>；但"墨砺"作为产品名与"墨台"直接冲突</td></tr><tr><td>应用图标</td><td><strong>重做</strong></td><td>粉蓝气泡与墨色 UI、水墨品牌完全脱节</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-2">二、品牌体系统一方案【待实现】</h2>
+<h3>2.1 品牌架构建议</h3>
+<pre><code>主品牌：墨台（MoTai）
+  ├─ 英文名/工程代号：ChatScience
+  ├─ 核心智能体系统：墨道（对应 Work 模式）
+  └─ 轻量模式：Chat（无独立命名）
+
+品牌定位：桌面端科研 AI 工作台（Chat 轻对话 + Work 墨道多智能体双模式）
+视觉基因：水墨美学 × 现代效率工具（中性墨色 + 克制强调色）</code></pre>
+<h3>2.2 视觉识别体系（VI）</h3>
+<p>基于已实现 UI 令牌与 InkForge 色卡融合，形成统一 VI：</p>
+<table class="doc-table"><thead><tr><th>角色</th><th>色值</th><th>来源</th><th>应用</th></tr></thead><tbody><tr><td><strong>主色（墨）</strong></td><td><code>#0F172A</code></td><td>已实现 <code>--primary-bg</code></td><td>主按钮、品牌主图形</td></tr><tr><td>主色深阶</td><td><code>#16161D</code>（玄黑）</td><td>InkForge VI</td><td>品牌重色场合、印刷品</td></tr><tr><td><strong>辅色（石青）</strong></td><td><code>#2E6E8E</code></td><td>InkForge VI</td><td>品牌强调、图形辅助色、图表主色</td></tr><tr><td><strong>点缀色（丹朱）</strong></td><td><code>#CE4928</code></td><td>InkForge VI</td><td>印章感点缀、关键标识（<strong>极少量使用</strong>）</td></tr><tr><td><strong>底色（宣白）</strong></td><td><code>#F6F7F9</code> / 米白 <code>#F7F5EE</code></td><td>已实现 <code>--bg</code></td><td>品牌物料底色</td></tr><tr><td>链接蓝</td><td><code>#2563EB</code></td><td>已实现 <code>--link</code></td><td>界面内链接（不用于品牌物料）</td></tr></tbody></table>
+<p><strong>字体规范</strong>：</p>
+<ul><li>中文：<strong>宋体</strong>（InkForge VI 已规范，体现水墨学术气质）；界面内保持无衬线（Instrument Sans + 中文无衬线）</li><li>英文：与界面一致的无衬线体（InkForge VI 的英文标注为无衬线）</li><li>印记字：品牌名可用宋体加粗，营造印章感</li></ul>
+<p><strong>辅助图形</strong>（4 个，来自 InkForge VI）：</p>
+<ol><li><strong>同心墨痕</strong> — 同心双圈，用于分隔与装饰</li><li><strong>分子网络</strong> — 节点连线，用于科研主题视觉</li><li><strong>粒子散点</strong> — 由密到疏的点云，用于"数据流动"意象</li><li><strong>方形朱印</strong> — 朱红小方印，用于品类标注与签章</li></ol>
+<p><strong>Logo 方案建议</strong>：</p>
+<ul><li>采纳 InkForge <code>logo-final</code> 的<strong>构图</strong>（双圈同心 + 中心节点环 + 圆心点睛），将中心指向色调整为已实现 UI 的墨色主色，形成"墨台"版 Logo</li><li>备选：<code>c4 粒子成墨</code> 的字母 M 构图（若需英文名主导的版本）</li><li>输出 7 尺寸 ICO（256/128/64/48/32/24/16）+ 托盘 2 尺寸（16/32）+ 各主题下的变体（浅底/深底/单色）</li></ul>
+<p><strong>主题一致性【重要】</strong>：Logo 需在已实现的 light / dark 双主题及待实现的六套主题下<strong>均清晰可辨</strong>，因此必须提供：</p>
+<ul><li>深色版（用于浅底）</li><li>浅色版（用于深底）</li><li>单色版（用于单色印刷与 favicon 场景）</li></ul>
+<h3>2.3 品牌整改任务清单【待实现】</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>涉及文件</th><th>优先级</th></tr></thead><tbody><tr><td>1</td><td>品牌名决策：确立"墨台/ChatScience"为唯一产品名</td><td>全产品文案</td><td><strong>P0</strong></td></tr><tr><td>2</td><td>重绘应用图标（墨台版 Logo）</td><td><code>app/logo.jpeg</code>、<code>icons/app.ico</code>、<code>tray.png</code>、<code>tray@2x.png</code></td><td><strong>P0</strong></td></tr><tr><td>3</td><td>生成 7 尺寸 ICO + 2 尺寸托盘图</td><td><code>make-icons.ts</code> 重跑</td><td>P0</td></tr><tr><td>4</td><td>rcedit 重写 exe 图标 + 补充版本信息</td><td><code>pack.ts</code></td><td>P1</td></tr><tr><td>5</td><td>统一品牌物料的配色（换成 VI 色卡）</td><td>海报、落地页</td><td>P1</td></tr><tr><td>6</td><td>输出品牌资产包（VI 手册定稿 + Logo 多版本 + 辅助图形 SVG + 色卡）</td><td>新建 <code>brand/</code> 目录</td><td>P1</td></tr><tr><td>7</td><td>应用内品牌呈现核查（左栏 logo、设置页、关于页）</td><td>前端</td><td>P1</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-3">三、品牌主张与 Slogan</h2>
+<h3>3.1 三套现有表述对比【已实现】</h3>
+<table class="doc-table"><thead><tr><th>来源</th><th>表述</th></tr></thead><tbody><tr><td>策划案（理念层）</td><td><strong>「让科研从重复劳动中解放，把精力还给思考」</strong></td></tr><tr><td>宣传海报（传播层）</td><td><strong>「把重复劳动交给 AI，把思考留给研究者」</strong></td></tr><tr><td>InkForge VI（品性层）</td><td><strong>「格物砺知」</strong>（四字，文言，凝练）</td></tr></tbody></table>
+<h3>3.2 Slogan 体系建议【待实现】</h3>
+<p>策划案规划了三组场景化 Slogan，本身<strong>质量较高，建议保留</strong>，仅在措辞上与已实现能力对齐：</p>
+<table class="doc-table"><thead><tr><th>场景</th><th>Slogan</th><th>备注</th></tr></thead><tbody><tr><td><strong>主传播语（推荐）</strong></td><td><strong>「轻对话用 Chat，深科研交给墨道」</strong></td><td>差异对比型，与已实现的"双模式分离"核心架构完全对应，最好记、最能表达独特价值</td></tr><tr><td>主品牌主张（长句）</td><td>「让科研从重复劳动中解放，把精力还给思考」</td><td>适合落地页首屏、品牌片旁白</td></tr><tr><td>传播短句</td><td>「把重复劳动交给 AI，把思考留给研究者」</td><td>海报主视觉（已在用，沿用）</td></tr><tr><td>价值主张型</td><td>「墨台：Chat 无限畅聊，墨道多智能体跑通科研全流程」</td><td>详细介绍场景</td></tr><tr><td>团队协作型</td><td>「个人知识库加团队协作，一站式科研 AI 工作台」</td><td>团队版推广（<strong>注意：团队能力尚未实现，需在团队版上线后启用</strong>）</td></tr><tr><td>品牌品性（四字）</td><td>「格物砺知」</td><td>可与"墨台"组合使用（如"墨台 · 格物砺知"），用于品牌调性表达</td></tr></tbody></table>
+<p><strong>主 Slogan 选择建议</strong>：<strong>「轻对话用 Chat，深科研交给墨道」</strong>。理由：</p>
+<ol><li>直接命中双模式分离这一<strong>唯一性架构差异</strong>；</li><li>已实现（Chat 链路与 Work 链路均已完整可用）；</li><li>对仗工整，适合做视觉主标。</li></ol>
+<h3>3.3 品牌主张的合规约束【重要】</h3>
+<p>策划案明确要求"坚持科研辅助工具定位，不承诺自动产出论文或保证实验结论，避免'替代科研人员'等夸大表述"。</p>
+<p><strong>基于项目实测的表述纪律</strong>（结合 Agent 板块的能力边界）：</p>
+<table class="doc-table"><thead><tr><th>禁止表述</th><th>原因</th><th>建议表述</th></tr></thead><tbody><tr><td>"自动写论文" / "一键出论文"</td><td>能力边界：Agent 单次运行至 <code>maxTurns</code> 结束，无迭代循环</td><td>"辅助论文撰写与审校"</td></tr><tr><td>"完全隔离的沙箱"</td><td>能力边界：<code>canUseTool</code> 拦截可被绕过</td><td>"沙箱内执行代码，危险操作静态拦截 + 独立进程隔离"</td></tr><tr><td>"保证结论正确"</td><td>能力边界：无评审智能体校验</td><td>"全流程轨迹可追溯，结果可复现"</td></tr><tr><td>"断网运行绝对安全"</td><td>能力边界：声明式断网不可强制</td><td>"可声明断网运行"</td></tr><tr><td>"全部无限"</td><td>计费口径：Chat 基础模型无限、高阶耗 Token、Work 耗积分</td><td>明确区分三类额度（见订阅板块）</td></tr><tr><td>"替代科研人员"</td><td>定位错误</td><td>"把重复劳动交给 AI，把思考留给研究者"</td></tr><tr><td>"智能体自主调度七类子智能体"</td><td><strong>七类子智能体为待实现</strong></td><td>"内置科研技能与工具，覆盖文献到论文全流程"</td></tr></tbody></table>
+<p><strong>核心纪律</strong>：<strong>宣传口径必须与《Agent 系统设计》板块第九章的能力边界表严格一致</strong>，不得宣称待实现能力。</p>
+<div data-component="divider"></div>
+<h2 id="section-4">四、目标人群与核心卖点</h2>
+<h3>4.1 目标人群映射【已实现】</h3>
+<p>策划案给出的用户与需求映射（原样保留，与已实现能力核对）：</p>
+<table class="doc-table"><thead><tr><th>用户类型</th><th>典型角色</th><th>核心痛点</th><th>墨台对应能力（<strong>已实现部分</strong>）</th></tr></thead><tbody><tr><td><strong>个人用户</strong></td><td>硕博生、青年教师、独立研究者</td><td>文献读不完、仿真与数据分析繁琐、写作耗时长、资料散落</td><td><strong>已实现</strong>：Chat 即时问答、Work 多智能体工作台、个人知识库、沙箱代码执行、研究笔记、运行轨迹&lt;br&gt;<strong>待实现</strong>：独立模型选择（部分）、个人数据库（仅索引）</td></tr><tr><td><strong>团队用户</strong></td><td>课题组、实验室、项目组</td><td>资料不共享、进度难同步、成员算力难分配、过程难审计</td><td><strong>待实现</strong>（团队服务零实现）：团队知识库、成员与权限管理、项目共享、操作审计、用量看板</td></tr></tbody></table>
+<p><strong>重要提示</strong>：团队侧能力<strong>完全为零实现</strong>。团队版卖点与 Slogan<strong>不得在任何投放中启用</strong>，直至团队服务上线。</p>
+<h3>4.2 典型场景（已实现的可验证版本）</h3>
+<p>策划案列出的典型场景，按已实现能力重新校准表述：</p>
+<table class="doc-table"><thead><tr><th>场景</th><th>策划案表述</th><th>已实现可支撑的表述</th></tr></thead><tbody><tr><td>文献调研</td><td>围绕课题快速完成文献调研与研究空白挖掘</td><td>✅ 已实现（arXiv 检索 + 精读技能 + 知识库检索）</td></tr><tr><td>实验设计</td><td>设计对照实验并提交仿真计算</td><td>⚠️ 部分（消融实验设计技能已实现；仿真提交待实现）</td></tr><tr><td>数据处理</td><td>对实验或仿真数据做清洗、统计与可视化</td><td>✅ 已实现（data-analysis + figure-plot + loss-curve + 沙箱执行）</td></tr><tr><td>论文写作</td><td>在评审智能体的多轮审辨下迭代出论文初稿</td><td>⚠️ 部分（撰写与审校技能已实现；<strong>审辨迭代循环待实现</strong>）</td></tr><tr><td>汇报 PPT</td><td>把科研结果交给主智能体快速生成汇报 PPT</td><td>❌ 待实现</td></tr><tr><td>团队协作</td><td>课题组共享模板、知识库并追溯操作记录</td><td>❌ 待实现</td></tr></tbody></table>
+<h3>4.3 差异化卖点（五点的实现状态核对）</h3>
+<p>策划案提出五点差异化卖点，逐项核对实现状态：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>卖点</th><th>实现状态</th><th>可否用于宣传</th></tr></thead><tbody><tr><td>1</td><td><strong>Chat 与 Work 双引擎分离</strong></td><td>✅ <strong>已实现</strong></td><td><strong>可</strong>（核心卖点）</td></tr><tr><td>2</td><td><strong>可视化工作台编排多智能体</strong></td><td>⚠️ 部分（工作台 + 智能体选择 + 轨迹可视化已实现；"编排"需迭代循环与模板）</td><td>调整表述为"可视化智能体工作台，运行轨迹逐步可追溯"</td></tr><tr><td>3</td><td><strong>每个智能体可独立选模型且上下文隔离</strong></td><td>⚠️ 部分（5 档模型档位已实现；"独立选模型"非指定具体模型；"隔离"指与宿主环境隔离）</td><td>调整表述为"智能体可独立设定模型档位，运行环境严格隔离"</td></tr><tr><td>4</td><td><strong>可插拔的科研 MCP 生态</strong></td><td>✅ 已实现（6 工具 + 12 技能 + 外部 MCP 接入）</td><td><strong>可</strong></td></tr><tr><td>5</td><td><strong>算力与功能解耦，免费用户有积分即可体验 Work</strong></td><td>❌ 待实现（计费体系零实现）</td><td><strong>待订阅体系上线后启用</strong></td></tr></tbody></table>
+<p><strong>可用于首轮投放的卖点（严格筛选）</strong>：</p>
+<ol><li><strong>Chat 与 Work 双引擎分离</strong>（唯一性最强）</li><li><strong>科研全流程技能覆盖</strong>：12 个科研技能（文献精读、消融设计、数据分析、学术绘图、论文审校、MindSpore 复现等）</li><li><strong>沙箱内真实执行代码</strong>：真实 python/numpy/matplotlib 执行，超时强杀，产物回传</li><li><strong>全流程轨迹可追溯</strong>：逐步工具调用轨迹 + 耗时 + 展开查看输入响应</li><li><strong>本地优先</strong>：数据默认留在本机，Key 仅存后端</li></ol>
+<div data-component="divider"></div>
+<h2 id="section-5">五、渠道矩阵与内容选题</h2>
+<h3>5.1 渠道矩阵【待实现】</h3>
+<p>策划案的渠道矩阵设计合理，建议保留，并按"内容可产出的证据量"排序优先级：</p>
+<table class="doc-table"><thead><tr><th>渠道</th><th>目标人群</th><th>内容选题方向</th><th>优先级</th><th>内容素材来源（项目内可复用）</th></tr></thead><tbody><tr><td><strong>B 站</strong></td><td>学生、技术向用户</td><td>深度测评、Work 工作台实操、MCP 配置演示、仿真与代码全流程录屏</td><td><strong>P0</strong></td><td>已有真实运行轨迹（时间线、工具调用、产物），录屏证据最充分</td></tr><tr><td><strong>小红书</strong></td><td>硕博生、年轻科研人</td><td>科研神器种草、多智能体跑文献与数据、档位怎么选、上手教程</td><td><strong>P0</strong></td><td>界面截图（中性墨色 UI 视觉质感好，符合小红书审美）、单点场景</td></tr><tr><td><strong>知乎</strong></td><td>青年教师、研究者</td><td>多智能体科研落地架构、个人知识库与项目管理、方法论长文</td><td><strong>P1</strong></td><td>可复用本套实现策划案的方法论与架构章节（合规脱敏后）</td></tr><tr><td><strong>学术公众号</strong></td><td>高校与研究机构</td><td>工具深度解读、个人版与团队版权益对比、课题组协作方案</td><td><strong>P2</strong></td><td><strong>需等团队版上线</strong>（团队能力未实现）</td></tr><tr><td><strong>学术社区/高校</strong></td><td>实验室、课题组</td><td>线上讲座、实验室试用、团队版共创与案例沉淀</td><td><strong>P2</strong></td><td>需等团队版；可先做个人版试用</td></tr></tbody></table>
+<h3>5.2 内容选题库【待实现】</h3>
+<p>基于已实现能力，可立即产出的高可信度选题：</p>
+<h4>B 站（深度实操向）</h4>
+<table class="doc-table"><thead><tr><th>选题</th><th>可展示的真实证据</th></tr></thead><tbody><tr><td>《我用 AI 跑通了注意力机制的实验：从读论文到出结果》</td><td>run_code 真实执行（scaled dot-product attention，seed=0，2×4×8，均值 -0.1572）+ 笔记落盘 + 第二回合 resume 精确回忆</td></tr><tr><td>《AI 科研工作台的运行轨迹长什么样？》</td><td>时间线轨迹（1px 导轨 + 节点状态 + 等宽工具名 + 耗时 + 展开面板）+ 步骤汇总条</td></tr><tr><td>《从零配置一个科研技能：SKILL.md 怎么写》</td><td>12 个内建技能的 SKILL.md 结构 + scripts/references/assets 组织 + 自定义技能 CRUD + 启用白名单</td></tr><tr><td>《我给 AI 配了一个沙箱：超时强杀、路径守卫、危险拦截》</td><td>沙箱验证 18/18：真实 python、超时 3s 强杀无残留、路径守卫、声明式断网、并发信号量</td></tr><tr><td>《17 万字的论文塞进上下文会怎样？》</td><td>Chat 链路实测：DeepSeek-V4 全文（58 页 / 172,746 字符）注入，TTFT 16.2s，10/10 关键词校验通过</td></tr><tr><td>《AI 阅读模式：左栏藏起来，论文和对话各占 70:30》</td><td>阅读模式 70:30 布局、PDF 47 页渲染、划词提问、上下文芯片</td></tr><tr><td>《Jupyter 式研究笔记：让 AI 帮你写实验记录》</td><td>笔记本单元格模型 + Agent note_write 双向联动（Agent 写的笔记立即可见可编辑）</td></tr></tbody></table>
+<h4>小红书（种草向，图文）</h4>
+<table class="doc-table"><thead><tr><th>选题</th><th>视觉素材</th></tr></thead><tbody><tr><td>「科研人的桌面 AI 工作台，界面竟然这么干净」</td><td>中性墨色 UI 三栏截图（暗/亮双主题对比）</td></tr><tr><td>「读文献不用来回切软件了」</td><td>阅读模式截图 + 知识库导入流程 + 层级化文件选择弹窗（含拖拽框选）</td></tr><tr><td>「AI 帮我做数据分析，代码在沙箱里跑」</td><td>沙箱执行结果 + matplotlib 产物回传 + 数据分析技能</td></tr><tr><td>「我的研究笔记自动生成」</td><td>Jupyter 化笔记本 + Agent 写入的笔记</td></tr><tr><td>「AI 的执行过程我全程看得见」</td><td>时间线轨迹截图（步骤 N · M 次工具调用 · T）</td></tr></tbody></table>
+<h4>知乎（方法论向）</h4>
+<table class="doc-table"><thead><tr><th>选题</th><th>可复用内容</th></tr></thead><tbody><tr><td>《如何用 Agent SDK 搭一个科研领域智能体：架构与取舍》</td><td>隔离三件套、不自研 Agent 循环的决策、动态 import 踩坑（<code>ERR_REQUIRE_ESM</code> + Function 间接层）</td></tr><tr><td>《科研 Agent 的沙箱边界该怎么画：防误操作 vs 真隔离》</td><td>纵深防御体系 + <strong>诚实的能力边界声明</strong>（这本身就是最好的专业背书）</td></tr><tr><td>《为什么我给 Markdown 渲染做了 6px 滚动条和 hover 才显示》</td><td>去 AI 味设计理念（中性色 + 墨色主按钮 + 克制蓝链接）+ 性能红线（Blob URL、签名守卫）</td></tr><tr><td>《Agent 工具权限的三层设计：白名单、静态扫描与人工确认》</td><td><code>canUseTool</code> + 16 类危险模式 + 权限五档 + 覆盖链</td></tr><tr><td>《本地优先的桌面 AI 应用架构：为什么我不用 SQLite》</td><td>双文件分区持久化 + 原子写 + 180ms 差量检测 + 串行化 store；以及何时该上 SQLite</td></tr></tbody></table>
+<h3>5.3 内容纪律【重要】</h3>
+<table class="doc-table"><thead><tr><th>纪律</th><th>说明</th></tr></thead><tbody><tr><td><strong>证据可复现</strong></td><td>所有效果展示标注真实任务与耗时；不使用无法复现的对比（策划案明确要求）</td></tr><tr><td><strong>不宣称待实现能力</strong></td><td>团队版、审辨迭代、七类子智能体、计费体系上线前不得宣传</td></tr><tr><td><strong>能力边界透明</strong></td><td>沙箱的"防误操作"定位、BM25 词法检索、断网声明式——主动说明反而是专业背书</td></tr><tr><td><strong>真实截图优先</strong></td><td>使用真实界面截图而非概念图（本项目拥有大量可截图的真实功能）</td></tr><tr><td><strong>Key 与隐私脱敏</strong></td><td>截图前清理 <code>server/qoder.json</code> 路径、API Key、PAT、真实文献标题等敏感信息</td></tr><tr><td><strong>不夸大对比</strong></td><td>不与具体竞品做无法验证的量化对比</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-6">六、上线节奏与转化路径</h2>
+<h3>6.1 四阶段节奏【待实现】</h3>
+<p>策划案的阶段划分合理，建议保留并按依赖关系调整（<strong>关键约束：计费体系与团队能力未实现</strong>）：</p>
+<table class="doc-table"><thead><tr><th>阶段</th><th>策划案目标</th><th>实际可执行性</th><th>调整建议</th></tr></thead><tbody><tr><td><strong>预热期</strong></td><td>释放产品理念与架构解读，建立预约名单并招募种子用户</td><td>✅ 可执行（架构与方法论内容已具备，见 5.2 知乎选题）</td><td>立即启动。<strong>以"技术方法论"切入而非产品推销</strong>，用架构深度建立专业信任</td></tr><tr><td><strong>内测期</strong></td><td>面向个人与课题组开放限量试用，收集真实科研场景反馈，打磨 MCP 稳定性</td><td>⚠️ 部分（个人侧可执行；课题组需团队能力）</td><td><strong>只开放个人版内测</strong>；以"真实科研场景试用 + 反馈换免费额度"招募种子用户</td></tr><tr><td><strong>公测期</strong></td><td>以"注册送积分、每日签到领积分"降低体验门槛，通过教程内容引导从 Chat 到 Work</td><td>❌ <strong>依赖计费体系</strong></td><td><strong>必须等订阅体系上线</strong>；当前可用"内测名额"替代积分机制</td></tr><tr><td><strong>正式期</strong></td><td>上线完整付费体系与团队版，以落地页承接转化</td><td>❌ 依赖计费 + 团队</td><td>分两步：先个人版付费，后团队版</td></tr></tbody></table>
+<h3>6.2 调整后的执行节奏建议</h3>
+<table class="doc-table"><thead><tr><th>阶段</th><th>前置条件</th><th>动作</th></tr></thead><tbody><tr><td><strong>P1 · 品牌统一</strong></td><td>品牌名决策 + Logo 重绘</td><td>完成 2.3 整改清单；输出品牌资产包</td></tr><tr><td><strong>P2 · 内容预热</strong></td><td>品牌资产就绪</td><td>知乎方法论长文 + B 站实操视频；招募"真实科研场景试用者"</td></tr><tr><td><strong>P3 · 个人版内测</strong></td><td>品牌 + 内容</td><td>限量试用（以真实场景换反馈）；建立种子用户社群</td></tr><tr><td><strong>P4 · 个人版公测</strong></td><td><strong>订阅体系上线</strong>（积分 + 签到）</td><td>注册送积分、每日签到；教程内容引导 Chat → Work</td></tr><tr><td><strong>P5 · 个人版正式</strong></td><td>付费体系 + 落地页</td><td>四档个人会员上线；落地页承接转化</td></tr><tr><td><strong>P6 · 团队版</strong></td><td>团队服务实现</td><td>团队三档 + 渠道扩展到学术公众号 / 高校</td></tr></tbody></table>
+<h3>6.3 转化路径</h3>
+<p>策划案设计的路径（原样保留，逻辑清晰）：</p>
+<pre><code>内容触达
+  → 下载客户端
+  → Chat 即时获得价值          ← 已实现，零门槛，是天然的"第一好感"
+  → 引导在 Work 跑通第一个工作流  ← 已实现，是价值的"分水岭"
+  → 积分与功能墙提示升级         ← 待实现
+  → 个人订阅或团队开通           ← 待实现</code></pre>
+<p><strong>关键设计洞察</strong>：Chat 模式的即时价值（零配置、直接可用）是<strong>最优的获客入口</strong>；Work 模式跑通第一个工作流（如"检索并精读一篇 arXiv 论文"，这是已实现的黄金路径）是<strong>转化的关键拐点</strong>。因此内容投放应重点演示"从 Chat 一句话到 Work 全流程"的平滑过渡。</p>
+<h3>6.4 落地页核心话术【待实现】</h3>
+<p>策划案要求"首屏同时讲清双模式、墨道多智能体与'有积分就能跑、会员解锁高级能力'的计费逻辑"。</p>
+<p><strong>待计费体系上线后的落地页首屏结构建议</strong>：</p>
+<table class="doc-table"><thead><tr><th>区块</th><th>内容</th></tr></thead><tbody><tr><td>主标题</td><td>轻对话用 Chat，深科研交给墨道</td></tr><tr><td>副标题</td><td>桌面端科研 AI 工作台 · 一个软件覆盖即时问答与体系化科研</td></tr><tr><td>双引擎对照</td><td>Chart 式两列对照：Chat（轻量问答/报告/PPT/通用编程）｜ Work 墨道（文献/实验/数据/写作/评审/归档）</td></tr><tr><td>能力证据条</td><td>12 个科研技能 · 6 个科研工具 · 沙箱真实执行 · 全流程轨迹可追溯</td></tr><tr><td>计费说明</td><td>三段清晰对照：Chat 基础模型无限 / Chat 高阶模型耗 Token / Work 运行耗积分 + "有积分就能跑，会员解锁高级能力"</td></tr><tr><td>安全说明</td><td>本地优先 · 数据留在本机 · 敏感操作需授权 · 运行轨迹可审计</td></tr><tr><td>CTA</td><td>下载客户端（免费可用）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-7">七、宣传合规与风险规避</h2>
+<h3>7.1 合规红线【已实现，来自策划案 + 项目实测】</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>红线</th><th>具体要求</th></tr></thead><tbody><tr><td>1</td><td><strong>科研辅助工具定位</strong></td><td>不承诺自动产出论文，不保证实验结论，避免"替代科研人员"等夸大表述</td></tr><tr><td>2</td><td><strong>额度表述精确</strong></td><td>明确区分：Chat 基础模型会员无限 / Chat 高阶模型耗 Token / Work 运行耗积分。<strong>避免用户误解为"全部无限"</strong></td></tr><tr><td>3</td><td><strong>数据安全如实说明</strong></td><td>说明数据本地优先、敏感操作需授权；同时<strong>不得宣称"绝对隔离"</strong>（沙箱拦截可被绕过是已声明的边界）</td></tr><tr><td>4</td><td><strong>效果标注真实</strong></td><td>所有效果展示标注真实任务与耗时，<strong>不使用无法复现的对比</strong></td></tr><tr><td>5</td><td><strong>待实现能力不宣传</strong></td><td>团队版、审辨迭代循环、七类子智能体、自动生成 PPT、计费体系——上线前不得出现在任何宣传物料中</td></tr><tr><td>6</td><td><strong>密钥与隐私</strong></td><td>物料中不得出现 API Key、PAT、真实用户文献/数据；截图需清理敏感信息</td></tr><tr><td>7</td><td><strong>学术诚信</strong></td><td>不得暗示可用于代写论文、规避查重等学术不端用途；宣传中应明确"辅助"与"需研究者把关"的边界</td></tr></tbody></table>
+<h3>7.2 品牌风险与应对</h3>
+<table class="doc-table"><thead><tr><th>风险</th><th>影响</th><th>应对</th></tr></thead><tbody><tr><td><strong>四套品牌名并存</strong></td><td>认知混乱、资产浪费、用户困惑</td><td>立即执行 2.3 整改清单，<strong>品牌统一是所有投放的前置条件</strong></td></tr><tr><td>应用图标与品牌脱节</td><td>第一印象不专业（粉蓝气泡 vs 水墨 UI）</td><td>重绘图标（P0）</td></tr><tr><td>InkForge 提案可能引发版权/归属疑问</td><td>若为外部产出需确认可用性</td><td>确认素材来源与可用范围；如为自家 AI 生成则无虞，但仍建议<strong>重绘而非直接沿用</strong>（避免与"墨砺"命名混淆）</td></tr><tr><td>待实现能力被"顺手"宣传</td><td>用户预期落空、口碑反噬</td><td>建立<strong>宣传物料的能力核对清单</strong>（以本套策划案的能力边界表为准）</td></tr></tbody></table>
+<h3>7.3 竞品对比纪律</h3>
+<table class="doc-table"><thead><tr><th>纪律</th><th>说明</th></tr></thead><tbody><tr><td>只做能力维度对比，不做效果量化对比</td><td>避免"比 X 快 N 倍"这类无法验证且易被质疑的表述</td></tr><tr><td>对比结论须可复现</td><td>若做对比实验，公开方法、模型、任务与数据</td></tr><tr><td>不贬损竞品</td><td>聚焦自身架构差异（双模式分离、本地优先、可追溯）</td></tr><tr><td><strong>不宣称"超越通用大模型"</strong></td><td>通用大模型是基础设施（本产品自身即调用大模型 API），定位是"工作流层"而非"模型层"的差异化</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-8">八、物料产出清单【待实现】</h2>
+<h3>8.1 品牌资产包（P0）</h3>
+<table class="doc-table"><thead><tr><th>物料</th><th>规格</th><th>用途</th></tr></thead><tbody><tr><td>Logo 主版（深色/浅色/单色）</td><td>SVG + PNG（透明底）</td><td>全场景</td></tr><tr><td>应用图标</td><td><code>.ico</code> 七尺寸 + PNG 多尺寸</td><td>窗口/exe/托盘</td></tr><tr><td>托盘图</td><td>16px / 32px PNG</td><td>系统托盘</td></tr><tr><td>色卡</td><td>色值表 + 令牌映射</td><td>设计与开发</td></tr><tr><td>辅助图形</td><td>4 个（同心墨痕/分子网络/粒子散点/方形朱印）SVG</td><td>物料与空状态插画</td></tr><tr><td>字体规范</td><td>中文宋体 + 英文无衬线 + 字号层级</td><td>印刷物料</td></tr><tr><td>VI 手册</td><td>PDF（在 InkForge 手册基础上改名为"墨台"、对齐已实现令牌）</td><td>内部与外包使用</td></tr></tbody></table>
+<h3>8.2 宣传物料（P1）</h3>
+<table class="doc-table"><thead><tr><th>物料</th><th>规格</th><th>参考基线</th></tr></thead><tbody><tr><td>主视觉海报（竖版）</td><td>1080×1440 或 720×1080</td><td><strong>改造现有 <code>科研Agent宣传海报.png</code></strong>：换品牌名、换 VI 配色（宝蓝 → 石青/墨）</td></tr><tr><td>主视觉海报（横版）</td><td>1920×1080</td><td>用于 B 站封面、落地页横幅</td></tr><tr><td>功能界面长图</td><td>竖版长图</td><td>小红书（真实 UI 截图 + 标注）</td></tr><tr><td>功能拆解图</td><td>分模块 6—8 张</td><td>小红书 / 公众号</td></tr><tr><td>架构讲解图</td><td>双模式架构图 / 四层分层图</td><td>知乎长文（可直接基于本套策划案架构章节绘制）</td></tr><tr><td>演示视频（3—5 分钟）</td><td>MP4</td><td>B 站（Chat → Work 全流程）</td></tr><tr><td>落地页</td><td>HTML</td><td>正式期转化承接</td></tr><tr><td>使用说明 / 快速上手</td><td>图文</td><td>客户端内 + 官网</td></tr></tbody></table>
+<h3>8.3 内容资产（P1）</h3>
+<table class="doc-table"><thead><tr><th>资产</th><th>用途</th></tr></thead><tbody><tr><td>选题库（见 5.2）</td><td>内容排期基础</td></tr><tr><td>真实案例集</td><td>每个案例含：任务、耗时、轨迹截图、产物（可复现）</td></tr><tr><td>能力边界说明页</td><td>对外透明说明（专业背书 + 合规保障）</td></tr><tr><td>常见问题（FAQ）</td><td>双模式区别、模型体系、沙箱安全性、数据存储位置</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-9">九、实施优先级与任务拆解</h2>
+<h3>阶段一（品牌统一，P0 — 一切投放的前置条件）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td><strong>品牌名决策</strong></td><td>确立"墨台 / ChatScience"为唯一产品名；确认 InkForge 提案的可用范围</td></tr><tr><td>2</td><td>重绘应用图标（含三版本：深/浅/单色）</td><td>见 2.2</td></tr><tr><td>3</td><td>生成 ICO 七尺寸 + 托盘 2 尺寸 + 接入</td><td>见 2.3</td></tr><tr><td>4</td><td>输出品牌资产包</td><td>见 8.1</td></tr><tr><td>5</td><td>改造既有海报（换名 + 换 VI 配色）</td><td>见 8.2</td></tr><tr><td>6</td><td>建立宣传物料能力核对清单</td><td>见 7.2，防止误宣待实现能力</td></tr><tr><td>7</td><td>清理物料敏感信息（Key/PAT/真实数据）</td><td>见 7.1</td></tr></tbody></table>
+<h3>阶段二（内容预热，P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>8</td><td>知乎方法论长文 2—3 篇</td><td>见 5.2（架构与取舍、沙箱边界、Agent 权限设计）</td></tr><tr><td>9</td><td>B 站实操视频 2—3 支</td><td>见 5.2（读论文到出结果、运行轨迹、沙箱安全）</td></tr><tr><td>10</td><td>小红书图文 5—8 篇</td><td>见 5.2（界面质感、阅读模式、笔记、轨迹）</td></tr><tr><td>11</td><td>真实案例集整理</td><td>基于已验证的黄金路径（arxiv 检索、attention 实验、笔记联动、17 万字上下文）</td></tr><tr><td>12</td><td>能力边界说明页</td><td>见 7.1</td></tr><tr><td>13</td><td>落地页（不含计费区块）</td><td>见 6.4</td></tr><tr><td>14</td><td>种子用户招募（以真实场景换反馈）</td><td>见 6.2 P2</td></tr></tbody></table>
+<h3>阶段三（公测与正式，依赖订阅体系）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>前置</th></tr></thead><tbody><tr><td>15</td><td>落地页补计费区块</td><td>订阅体系上线</td></tr><tr><td>16</td><td>公测：注册送积分 + 每日签到</td><td>订阅体系上线</td></tr><tr><td>17</td><td>个人四档会员推广内容</td><td>订阅体系上线</td></tr><tr><td>18</td><td>团队版内容与渠道扩展</td><td>团队服务实现</td></tr><tr><td>19</td><td>学术公众号 / 高校渠道</td><td>团队服务实现</td></tr><tr><td>20</td><td>转化漏斗监测与优化</td><td>落地页上线</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-10">十、已实现 / 待实现速查总表</h2>
+<table class="doc-table"><thead><tr><th>模块</th><th>已实现</th><th>部分实现</th><th>待实现</th></tr></thead><tbody><tr><td>品牌命名</td><td>四个名称并存（墨台 / ChatScience / 墨砺 InkForge / 海报 CHATSCIENCE）</td><td>—</td><td><strong>统一决策</strong>（P0）</td></tr><tr><td>品牌视觉资产</td><td>InkForge 完整提案（6 概念稿 + 定稿 + VI 手册 + 3 场景图）；四色色卡（玄黑 #16161D / 石青 #2E6E8E / 丹朱 #CE4928 / 宣白）；四辅助图形；主张语「格物砺知」</td><td>—</td><td>墨台版 Logo 重绘、资产包输出、VI 手册改名对齐</td></tr><tr><td>应用图标</td><td>粉蓝双气泡已接入（7 尺寸 ICO + 托盘 2 尺寸 + rcedit）</td><td>—</td><td><strong>重绘并与品牌统一</strong></td></tr><tr><td>宣传海报</td><td>1 张竖版成品（文案完整：主标题/副标题/三卖点/主张语/双卡片/宝蓝科学风 + 3D 分子模型）</td><td>—</td><td>换名换色改造、横版、功能长图、演示视频</td></tr><tr><td>品牌主张</td><td>三套表述齐备（理念层/传播层/品性层）</td><td>—</td><td>主 Slogan 确立与统一</td></tr><tr><td>目标人群</td><td>个人 + 团队映射已规划</td><td>个人侧已实现可支撑</td><td><strong>团队侧零实现</strong>（不得宣传）</td></tr><tr><td>差异化卖点</td><td>五点已规划</td><td>2 点完全可用、2 点需调整表述</td><td>1 点（算力/功能解耦）依赖计费</td></tr><tr><td>渠道矩阵</td><td>5 渠道已规划（B站/小红书/知乎/学术公众号/学术社区）</td><td>—</td><td>按优先级启动；后两者需团队版</td></tr><tr><td>内容选题</td><td>—</td><td>—</td><td>选题库（本策划案已给出 16+ 个基于真实证据的选题）</td></tr><tr><td>上线节奏</td><td>四阶段已规划（预热/内测/公测/正式）</td><td>预热与内测个人版可执行</td><td>公测与正式依赖计费；团队依赖团队服务</td></tr><tr><td>转化路径</td><td>六步路径已规划</td><td>Chat 即时价值 + Work 首个工作流已验证</td><td>积分功能墙、订阅、团队开通</td></tr><tr><td>合规纪律</td><td>七条红线已明确</td><td>—</td><td>物料能力核对清单、敏感信息清理</td></tr><tr><td>物料产出</td><td>—</td><td>—</td><td>品牌资产包、宣传物料、内容资产、落地页</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-11">十一、修改方向与补充内容（落地清单）</h2>
+<p>本章把前文的「待实现 / 部分实现」项收拢为可施工清单。<strong>本板块的第一步不是产出物料，而是做品牌决策</strong>——在四套品牌名并存的现状下，任何物料生产都可能白做。</p>
+<h3>11.1 修改方向总览</h3>
+<table class="doc-table"><thead><tr><th>组</th><th>主题</th><th>优先级</th><th>前置依赖</th></tr></thead><tbody><tr><td>A</td><td>品牌统一决策</td><td><strong>P0（阻塞全部）</strong></td><td>无</td></tr><tr><td>B</td><td>品牌资产重制</td><td>P1</td><td>A 组完成</td></tr><tr><td>C</td><td>宣传物料产出</td><td>P1</td><td>B 组完成</td></tr><tr><td>D</td><td>渠道与内容启动</td><td>P1</td><td>A 组完成（个人版可先行）</td></tr><tr><td>E</td><td>合规与物料核对</td><td>P1</td><td>与 C 组同步</td></tr><tr><td>F</td><td>上线节奏与转化</td><td>P2</td><td>依赖计费与团队服务</td></tr></tbody></table>
+<h3>11.2 A 组：品牌统一决策（P0 — 阻塞项）</h3>
+<p><strong>问题</strong>：四套品牌名并存，互不相干。</p>
+<table class="doc-table"><thead><tr><th>素材</th><th>内容</th><th>状态</th></tr></thead><tbody><tr><td>策划案</td><td><strong>墨台</strong>（Work 模式系统 <strong>墨道</strong>）</td><td>策划案文本</td></tr><tr><td><code>app/logo.jpeg</code> + <code>app.ico</code></td><td><strong>粉蓝双气泡</strong>（SaaS 风格，与中性墨色 UI 严重冲突）</td><td><strong>已接入产品，正在使用</strong></td></tr><tr><td><code>inkforge-brand_assets/</code>（11 张）</td><td><strong>墨砺 InkForge</strong> 完整提案（6 概念稿 + 定稿 + VI 手册 + 3 场景图）</td><td>未接入</td></tr><tr><td><code>科研Agent宣传海报.png</code></td><td><strong>ChatScience</strong> 宝蓝科学风</td><td>宣传物料</td></tr></tbody></table>
+<p><strong>修改方向</strong>（需产品决策，不可由执行层自定）：</p>
+<table class="doc-table"><thead><tr><th>#</th><th>决策项</th><th>建议</th></tr></thead><tbody><tr><td>A1</td><td>产品命名</td><td>以 <strong>「墨台 / 墨道」</strong> 为唯一命名（策划案为准）；InkForge 降为<strong>视觉基因库</strong>而非命名来源</td></tr><tr><td>A2</td><td>英文名/工程代号</td><td>保留 <code>ChatScience</code> 作工程代号（代码内不改），但<strong>对外物料一律用「墨台」</strong></td></tr><tr><td>A3</td><td>VI 色系采纳</td><td>采纳 InkForge 四色（玄黑 <code>#16161D</code> / 石青 <code>#2E6E8E</code> / 丹朱 <code>#CE4928</code> / 宣白），因其与"墨"的定位及已实现的中性墨色 UI 天然契合</td></tr><tr><td>A4</td><td>与已实现 UI 的对齐</td><td>玄黑对应 <code>--primary-bg</code>（<code>#0F172A</code>，同族微调即可）；石青与 <code>--link</code>（<code>#2563EB</code>）调和后保留蓝链接；丹朱仅作点缀（印章/关键标识）</td></tr><tr><td>A5</td><td>主主张语确立</td><td>三套候选：InkForge「格物砺知」/ 海报「把重复劳动交给 AI，把思考留给研究者」/ 策划案「让科研从重复劳动中解放，把精力还给思考」——<strong>择一定为唯一主主张</strong>，建议选策划案表述（最完整且与产品定位一致）</td></tr><tr><td>A6</td><td>决策留痕</td><td>决策结果写入项目文档，避免后续反复</td></tr></tbody></table>
+<p><strong>验收方法</strong>：产出一页《品牌统一决策纪要》，明确命名、色系、主主张、图标方向，并由产品负责人签署。</p>
+<h3>11.3 B 组：品牌资产重制（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>具体做法</th></tr></thead><tbody><tr><td>B1</td><td>墨台版 Logo 重绘</td><td>以 InkForge 定稿（深墨黑 + 宝蓝双圈 + 中心青色节点环 + 朱红圆心）或"粒子成墨 M"概念为基础重绘</td></tr><tr><td>B2</td><td>应用图标替换</td><td>替换现有粉蓝气泡；<strong>必须同步更新 <code>app.ico</code> 七尺寸</strong>（256/128/64/48/32/24/16）+ 托盘 2 尺寸（16/32）+ rcedit PE 资源</td></tr><tr><td>B3</td><td>VI 手册改名对齐</td><td>把 InkForge VI 手册中的名称统一替换为墨台，色卡与辅助图形保留</td></tr><tr><td>B4</td><td>辅助图形落地</td><td>同心墨痕、分子网络、粒子散点、方形朱印——作为品牌物料与<strong>空状态插画</strong>的图形语言（与 01 板块 9.4 联动）</td></tr><tr><td>B5</td><td>品牌资产包输出</td><td>整理为标准资产包（Logo 多格式/多尺寸、色卡、字体、辅助图形、使用规范），供后续物料复用</td></tr></tbody></table>
+<p><strong>验收方法</strong>：从打包后 exe 提取图标渲染核对（沿用已实现图标的验证方法）；资产包可被第三方直接取用无需索要源文件。</p>
+<h3>11.4 C 组：宣传物料产出（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待产出</th><th>说明</th></tr></thead><tbody><tr><td>C1</td><td>既有海报换名换色改造</td><td>现有竖版海报文案完整（主标题/副标题/三卖点/主张语/双卡片），仅需换名 + 由宝蓝改墨台色系</td></tr><tr><td>C2</td><td>横版海报</td><td>适配公众号头图、B 站封面等横版场景</td></tr><tr><td>C3</td><td>功能长图</td><td>以真实截图为主，<strong>严禁出现未实现能力</strong>（见 E 组）</td></tr><tr><td>C4</td><td>演示视频</td><td>用真实操作录制，优先展示已验证的黄金路径（Chat 即时价值 + Work 首个工作流）</td></tr><tr><td>C5</td><td>落地页</td><td>承载六步转化路径；CTA 明确指向可用功能（个人版先行，计费后接订阅）</td></tr><tr><td>C6</td><td>产品截图规范</td><td>统一截图尺寸、主题（建议浅色主题）、脱敏（清理路径与个人信息）</td></tr></tbody></table>
+<h3>11.5 D 组：渠道与内容启动（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>渠道</th><th>启动建议</th></tr></thead><tbody><tr><td>D1</td><td>B 站</td><td>优先启动。适合演示视频与操作实录，与技术受众匹配</td></tr><tr><td>D2</td><td>小红书</td><td>优先启动。适合功能长图与场景化内容</td></tr><tr><td>D3</td><td>知乎</td><td>适合方法论与技术深度内容（"科研工作流"类）</td></tr><tr><td>D4</td><td>学术公众号</td><td><strong>需团队版</strong>——在团队能力落地前不启动</td></tr><tr><td>D5</td><td>学术社区</td><td><strong>需团队版</strong>——同上</td></tr></tbody></table>
+<p><strong>内容选题</strong>：本策划案已给出 <strong>16+ 个基于真实证据的选题</strong>，建议按"证据强度"排序生产——先用已有验证记录支撑的选题（Chat 性能指标、Work 沙箱验证 18/18 等），避免需要未实现能力支撑的选题。</p>
+<h3>11.6 E 组：合规与物料核对（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>动作</th><th>说明</th></tr></thead><tbody><tr><td>E1</td><td>物料能力核对清单</td><td>建立"物料中每一条功能宣称 → 对应验证记录"的对照表，<strong>无验证记录则不得出现在物料中</strong></td></tr><tr><td>E2</td><td>明文禁止清单</td><td>团队版、审辨迭代循环、七类子智能体、计费体系（积分/订阅/充值）、PPT 生成——<strong>一律不得出现</strong></td></tr><tr><td>E3</td><td>敏感信息清理</td><td>截图与视频中的本机路径、文件名、个人信息须脱敏</td></tr><tr><td>E4</td><td>七条红线复核</td><td>按前文合规纪律逐条复核每份物料</td></tr><tr><td>E5</td><td>表述准确性复核</td><td>"领先/独家/最强"类绝对化表述需有依据，否则删除</td></tr></tbody></table>
+<p><strong>验收方法</strong>：每份物料发布前走一遍 E1 清单，逐条打勾；建议设"合规复核"为发布流程的强制门禁。</p>
+<h3>11.7 F 组：上线节奏与转化（P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>待补项</th><th>依赖</th></tr></thead><tbody><tr><td>F1</td><td>预热阶段执行</td><td>无依赖，个人版可先行（配合 A/B/C 组产出）</td></tr><tr><td>F2</td><td>内测阶段执行</td><td>无依赖，个人版可先行</td></tr><tr><td>F3</td><td>公测阶段</td><td><strong>依赖计费体系</strong>（见 06 板块）</td></tr><tr><td>F4</td><td>正式上线</td><td>依赖计费 + 团队服务</td></tr><tr><td>F5</td><td>积分功能墙</td><td>依赖 06 板块功能门禁实现</td></tr><tr><td>F6</td><td>团队开通链路</td><td><strong>依赖账号体系（架构级缺失）</strong></td></tr><tr><td>F7</td><td>转化漏斗埋点</td><td>与 03 板块用量统计联动，度量六步转化路径各步流失</td></tr></tbody></table>
+<p><strong>实施建议</strong>：<strong>个人版预热与内测不必等计费</strong>——这是当前唯一可立即执行的宣传动作，建议尽早启动以积累种子用户与内容资产；公测及以后等计费与团队能力就绪再推进。</p>
+<h3>11.8 施工顺序建议</h3>
+<pre><code>A 组（品牌决策，阻塞项）→ B 组（资产重制）→ C 组（物料产出）→ E 组（合规核对）→ 发布
+                                    ↘ D 组（渠道内容，个人版可并行启动）
+                                                                          ↘ F 组（公测后）</code></pre>
+<p><strong>关键纪律</strong>：</p>
+<ol><li><strong>A 组不做完不生产任何物料</strong> —— 否则可能全部返工。</li><li><strong>物料宣称必须能追溯到验证记录</strong> —— 这是本项目最需要警惕的红线，因为产品存在大量"策划案说了但代码没做"的能力。</li><li><strong>个人版预热不必等计费</strong> —— 不要因为后端能力未就绪而推迟全部宣传工作。</li></ol>
+<div data-component="divider"></div>
+<p><em>本策划案基于项目内 <code>inkforge-brand_assets/</code>（11 张品牌提案，含 VI 手册色卡与辅助图形）、<code>科研Agent宣传海报.png</code>（既有海报，文案完整）、<code>app/logo.jpeg</code> 与 <code>app/icons/app.ico</code>（已接入图标）的实测盘点，以及《墨台产品整体策划案（完整版）》第 7 章编制。<strong>四套品牌名称并存是当前最高优先级风险</strong>；全部"待实现能力"（团队版、审辨迭代、七类子智能体、计费体系、PPT 生成）不得出现在任何宣传物料中。编制日期：2026 年 9 月。</em></p>
+</div>
+</section>
+</body>
+</html>

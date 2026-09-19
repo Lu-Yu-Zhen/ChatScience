@@ -1,0 +1,15 @@
+{
+  "description": "数学插件配置：工具默认行为（可在插件目录放 config.json 覆盖默认值）",
+  "properties": {
+    "decimal_digits": {
+      "type": "number",
+      "default": 12,
+      "description": "frac_eval 小数展开位数上限（超过标注省略号）"
+    },
+    "matrix_max_n": {
+      "type": "number",
+      "default": 8,
+      "description": "matrix_det 允许的最大方阵阶数"
+    }
+  }
+}

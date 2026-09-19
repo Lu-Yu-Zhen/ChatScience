@@ -25,5 +25,6 @@ contextBridge.exposeInMainWorld('csDesktop', {
   winMinimize: () => ipcRenderer.send('win:minimize'),
   winMaximizeToggle: () => ipcRenderer.send('win:maximize-toggle'),
   winClose: () => ipcRenderer.send('win:close'),
-  selectDirectory: () => ipcRenderer.invoke('cs:select-directory')
+  selectDirectory: () => ipcRenderer.invoke('cs:select-directory'),
+  openPath: (p: string) => ipcRenderer.invoke('cs:open-path', p)
 });

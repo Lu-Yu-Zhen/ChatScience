@@ -89,7 +89,11 @@ const ICONS = {
   chat: '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
   wrench: '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
   clock: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
-  save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>'
+  save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  upload: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/>',
+  grid: '<rect width="7" height="7" x="3" y="3" rx="1.5"/><rect width="7" height="7" x="14" y="3" rx="1.5"/><rect width="7" height="7" x="3" y="14" rx="1.5"/><rect width="7" height="7" x="14" y="14" rx="1.5"/>',
+  listIcon: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
+  folderUp: '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/><path d="M12 10v6"/><path d="m9 13 3-3 3 3"/>'
 };
 Work.ICONS = ICONS;
 
@@ -99,16 +103,31 @@ Work.ICONS = ICONS;
    页面内不再重复一遍（避免 buildNewProjectForm 那种双标题问题）。 */
 function pageShell(opts) {
   const o = opts || {};
-  const root = el('div', 'width: 100%; max-width: ' + (o.wide ? '100%' : '760px') + '; margin: 0 auto;'
+  /* 内容宽度（设置页「外观」）真实生效：narrow=640 / standard=760 / wide=920；
+     CS_PREFS 由主脚本经 GET /api/work/prefs 注水（后端持久化），未就绪时取标准宽 */
+  let maxW = '760px';
+  if (!o.wide) {
+    try {
+      const w = CS_PREFS && CS_PREFS.appearance ? CS_PREFS.appearance.width : 'standard';
+      maxW = (w === 'narrow') ? '640px' : (w === 'wide' ? '920px' : '760px');
+    } catch (e) { /* CS_PREFS 未定义（纯浏览器旧产物）时保持标准宽 */ }
+  } else {
+    maxW = '100%';
+  }
+  const root = el('div', 'width: 100%; max-width: ' + maxW + '; margin: 0 auto;'
     + ' display: flex; flex-direction: column; gap: 16px; padding: 4px 0 28px 0;');
   const bar = el('div', 'display: flex; align-items: center; gap: 10px;');
-  const back = pillBtn(tt('back'), ICONS.back, function () {
-    view = 'chat';
-    renderConversations();
-    renderMessages();
-    playSwap();
-  });
-  bar.appendChild(back);
+  /* 设置页内挂载：页内返回键为历史遗留的冗余元素，不再渲染（返回由设置页顶部返回键承担）；
+     Work 主视图（左侧栏入口）保持原样——样式/位置/行为不变。 */
+  if (!(typeof settingsOpen !== 'undefined' && settingsOpen)) {
+    const back = pillBtn(tt('back'), ICONS.back, function () {
+      view = 'chat';
+      renderConversations();
+      renderMessages();
+      playSwap();
+    });
+    bar.appendChild(back);
+  }
   if (o.actions) o.actions.forEach(function (n) { bar.appendChild(n); });
   root.appendChild(bar);
   const body = el('div', 'display: flex; flex-direction: column; gap: 14px;');
@@ -133,7 +152,7 @@ function dashedCard(label, iconPath, onClick) {
     + ' cursor: pointer; transition: border-color 0.18s ease, background-color 0.18s ease;');
   c.appendChild(icon(iconPath, 20, 'var(--text-3)'));
   c.appendChild(el('div', 'color: var(--text-2); font-size: 12.5px; font-weight: 600;', label));
-  c.addEventListener('mouseenter', function () { c.style.borderColor = '#94A3B8'; c.style.background = 'var(--hover-overlay)'; });
+  c.addEventListener('mouseenter', function () { c.style.borderColor = 'var(--focus-border)'; c.style.background = 'var(--hover-overlay)'; });
   c.addEventListener('mouseleave', function () { c.style.borderColor = 'var(--border)'; c.style.background = 'transparent'; });
   c.addEventListener('click', onClick);
   return c;
@@ -216,8 +235,8 @@ function pillBtn(label, iconPath, onClick, opts) {
   const b = el('div', 'height: 34px; padding: 0 14px; display: flex; align-items: center; gap: 7px; cursor: pointer;'
     + ' border-radius: 999px; font-size: 12.5px; font-weight: 600;'
     + (o.primary
-      ? ' background: var(--primary-bg); color: var(--primary-text); border: none;'
-      : ' background: var(--surface); color: var(--text-2); border: 1px solid var(--border);')
+    ? ' background: var(--btn-primary-bg); color: #FFFFFF; border: none;'
+    : ' background: var(--surface); color: var(--text-2); border: 1px solid var(--border);')
     + (o.style || ''));
   b.className = o.primary ? 'btn btn-primary' : 'btn';
   if (iconPath) b.appendChild(icon(iconPath, 13));
@@ -235,8 +254,8 @@ function smallBtn(label, onClick, opts) {
     + (o.danger
       ? ' background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger-border);'
       : o.primary
-        ? ' background: var(--primary-bg); color: var(--primary-text); border: none;'
-        : ' background: var(--surface); color: var(--text-2); border: 1px solid var(--border);')
+      ? ' background: var(--btn-primary-bg); color: #FFFFFF; border: none;'
+      : ' background: var(--surface); color: var(--text-2); border: 1px solid var(--border);')
     + (o.style || ''));
   b.className = 'btn';
   b.textContent = label;
@@ -316,8 +335,12 @@ function preBlock(text, opts) {
 }
 Work.preBlock = preBlock;
 
-/* 网格：与知识库卡片同风格 */
+/* 网格：与知识库卡片同风格。
+   grid(320) → 自适应最小列宽；grid({ cols: 3 }) → 固定列数（技能与插件默认一行三个） */
 function grid(minCol) {
+  if (minCol && typeof minCol === 'object') {
+    return el('div', 'display: grid; grid-template-columns: repeat(' + (minCol.cols || 3) + ', minmax(0, 1fr)); gap: 12px;');
+  }
   return el('div', 'display: grid; grid-template-columns: repeat(auto-fill, minmax(' + (minCol || 280) + 'px, 1fr)); gap: 12px;');
 }
 Work.grid = grid;
@@ -419,8 +442,17 @@ function uid(prefix) {
 }
 Work.uid = uid;
 
-/* 刷新当前 Work 页面（保持 view 不变，重建节点） */
+/* 刷新当前 Work 页面（保持 view 不变，重建节点）。
+   设置页内挂载时改重挂当前 section：renderMessages 只会重绘被设置页遮住的底层视图，
+   表现为"点了没反应"（切换/开关/保存后不刷新）。 */
 function rerender() {
+  if (typeof settingsOpen !== 'undefined' && settingsOpen
+      && typeof settingsSection !== 'undefined' && settingsSection
+      && typeof showSettingsSection === 'function') {
+    /* 显式刷新必须 force：设置页导航的「同项点击不重渲染」幂等守卫会拦下无 force 调用 */
+    showSettingsSection(settingsSection, true);
+    return;
+  }
   if (typeof renderMessages === 'function') renderMessages();
 }
 Work.rerender = rerender;

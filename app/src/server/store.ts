@@ -16,12 +16,20 @@ export function defaults(): WorkState {
   return {
     version: VERSION,
     agents: [],              /* 智能体定义 */
+    subagents: [],           /* 墨道子智能体（经 options.agents 委派；可编辑可添加不可删） */
     skills: {},              /* slug -> { enabled, order } */
     mcpServers: [],          /* MCP 服务器配置 */
     sandboxPolicy: {},       /* 覆盖 policy.DEFAULT_POLICY */
     modelToolSupport: {},    /* 'providerId/modelId' -> 'fc' | 'react' */
     runHistory: [],          /* 运行页历史（最多 100 条） */
-    seeded: false            /* 内建智能体是否已播种 */
+    seeded: false,           /* 内建智能体是否已播种 */
+    domainPlugins: {},       /* 领域插件启用开关：未记录=启用，显式 false=停用 */
+    prefs: {                 /* 设置页偏好（记忆开关/Git/Worktrees/外观宽度） */
+      memory: { globalOn: true, projectOn: true },
+      git: { prefix: 'qoder/', force: false, instr: '' },
+      worktrees: { fetchBeforeCreate: false, autoDelete: true, limit: 15 },
+      appearance: { width: 'standard' }
+    }
   };
 }
 

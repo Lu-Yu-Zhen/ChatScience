@@ -125,41 +125,87 @@ Work.renderTrace = function (m, idx) {
         .replace('{t}', Work.fmtMs(total))));
   }
 
-  /* 思考过程（折叠，弱灰） */
-  if (hasReasoning) {
-    const rHead = Work.el('div', 'display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 0;');
+  /* 思考按步骤分段（工具后再次思考 = 新步骤）；无分段数据时回落到全量 */
+  const reasonings = (m._reasonings && m._reasonings.length) ? m._reasonings : (m._reasoning ? [m._reasoning] : []);
+
+  /* 组内思考折叠块（默认展开，独立收起） */
+  function buildReasoningBlock(step) {
+    const rText = reasonings[step - 1] || '';
+    if (!rText) return [];
+    if (!m._stepReasonOpen) m._stepReasonOpen = {};
+    if (m._stepReasonOpen[step] === undefined) m._stepReasonOpen[step] = true;
+    const rHead = Work.el('div', 'display: flex; align-items: center; gap: 6px; cursor: pointer; padding: 2px 0 2px 16px;');
     rHead.setAttribute('tabindex', '0');
-    const rChev = Work.el('div', 'width: 11px; height: 11px; color: var(--text-3); transition: transform 0.2s ease;'
-      + (m._reasoningOpen ? ' transform: rotate(90deg);' : ''));
-    rChev.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;"><path d="m9 18 6-6-6-6"/></svg>';
+    const rChev = Work.el('div', 'width: 10px; height: 10px; color: var(--text-3); transition: transform 0.2s ease;'
+      + (m._stepReasonOpen[step] ? ' transform: rotate(90deg);' : ''));
+    rChev.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:10px;height:10px;"><path d="m9 18 6-6-6-6"/></svg>';
     rHead.appendChild(rChev);
-    rHead.appendChild(Work.el('div', 'color: var(--text-3); font-size: 11px; font-weight: 600;', tt('wTraceThinking')));
-    const rBody = Work.el('div', 'display: ' + (m._reasoningOpen ? 'block' : 'none') + '; color: var(--text-3);'
-      + ' font-size: 11px; line-height: 17px; white-space: pre-wrap; margin: 4px 0 6px 17px;'
-      + ' max-height: 140px; overflow-y: auto;', Work.truncate(m._reasoning, 4000));
+    rHead.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10.5px; font-weight: 600;', tt('wTraceThinking')));
+    const rBody = Work.el('div', 'display: ' + (m._stepReasonOpen[step] ? 'block' : 'none') + '; color: var(--text-3);'
+      + ' font-size: 11px; line-height: 17px; white-space: pre-wrap; margin: 2px 0 4px 26px;'
+      + ' max-height: 120px; overflow-y: auto;', Work.truncate(rText, 3000));
     function rToggle() {
-      m._reasoningOpen = !m._reasoningOpen;
-      rBody.style.display = m._reasoningOpen ? 'block' : 'none';
-      rChev.style.transform = m._reasoningOpen ? 'rotate(90deg)' : 'rotate(0deg)';
+      m._stepReasonOpen[step] = !m._stepReasonOpen[step];
+      rBody.style.display = m._stepReasonOpen[step] ? 'block' : 'none';
+      rChev.style.transform = m._stepReasonOpen[step] ? 'rotate(90deg)' : 'rotate(0deg)';
     }
     rHead.addEventListener('click', rToggle);
     rHead.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); rToggle(); } });
-    wrap.appendChild(rHead);
-    wrap.appendChild(rBody);
+    return [rHead, rBody];
   }
 
-  /* 时间线条目，按 step 分组插入分隔标签 */
-  if (!m._stepOpen) m._stepOpen = {};
-  let lastStep = null;
-  var stepRows = {};
-  calls.forEach(function (c) {
-    const step = c.step || 1;
-    if (step !== lastStep) {
-      lastStep = step;
+  /* 纯思考回合（无任何工具调用）：保持单一思考折叠块 */
+  if (!calls.length) {
+    const parts = buildReasoningBlock(1);
+    parts.forEach(function (p) { wrap.appendChild(p); });
+  } else {
+    /* 时间线：按 step 分组——每组 = 步骤头 + 该步思考折叠 + 该步工具卡片，
+       「思考阶段及其后续工具调用」视觉上归为一组 */
+    if (!m._stepOpen) m._stepOpen = {};
+    let lastStep = null;
+    var stepRows = {};
+    calls.forEach(function (c) {
+      const step = c.step || 1;
+      if (step !== lastStep) {
+        lastStep = step;
+        if (m._stepOpen[step] === undefined) m._stepOpen[step] = true;
+        var head = Work.el('div', 'display: flex; align-items: center; gap: 6px; margin: 8px 0 2px 0; cursor: pointer; width: fit-content;');
+        head.setAttribute('tabindex', '0');
+        var ch = Work.el('div', 'width: 10px; height: 10px; color: var(--text-3); transition: transform 0.2s ease;'
+          + (m._stepOpen[step] ? ' transform: rotate(90deg);' : ''));
+        ch.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:10px;height:10px;"><path d="m9 18 6-6-6-6"/></svg>';
+        head.appendChild(ch);
+        head.appendChild(Work.el('div', 'color: var(--text-3); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;',
+          tt('wTraceStep') + ' ' + step));
+        head.addEventListener('click', function () {
+          m._stepOpen[step] = !m._stepOpen[step];
+          ch.style.transform = m._stepOpen[step] ? 'rotate(90deg)' : 'rotate(0deg)';
+          (stepRows[step] || []).forEach(function (r2) { r2.style.display = m._stepOpen[step] ? '' : 'none'; });
+        });
+        head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); head.click(); } });
+        wrap.appendChild(head);
+        stepRows[step] = [];
+        /* 该步骤的思考折叠（组头之下、工具之上） */
+        buildReasoningBlock(step).forEach(function (p) {
+          wrap.appendChild(p);
+          stepRows[step].push(p);
+        });
+      }
+      var entry = traceEntry(c);
+      if (!m._stepOpen[step]) entry.style.display = 'none';
+      (stepRows[step] || (stepRows[step] = [])).push(entry);
+      wrap.appendChild(entry);
+    });
+
+    /* 末段思考（最后一轮工具之后、最终回答之前的思考）：追加为新的步骤组 */
+    const lastStepN = lastStep || 1;
+    const lastReasonIdx = reasonings.length;
+    if (lastReasonIdx > lastStepN) {
+      const step = lastReasonIdx;
       if (m._stepOpen[step] === undefined) m._stepOpen[step] = true;
-      var head = Work.el('div', 'display: flex; align-items: center; gap: 6px; margin: 6px 0 4px 0; cursor: pointer; width: fit-content;');
+      const head = Work.el('div', 'display: flex; align-items: center; gap: 6px; margin: 8px 0 2px 0; cursor: pointer; width: fit-content;');
       head.setAttribute('tabindex', '0');
-      var ch = Work.el('div', 'width: 10px; height: 10px; color: var(--text-3); transition: transform 0.2s ease;'
+      const ch = Work.el('div', 'width: 10px; height: 10px; color: var(--text-3); transition: transform 0.2s ease;'
         + (m._stepOpen[step] ? ' transform: rotate(90deg);' : ''));
       ch.innerHTML = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="width:10px;height:10px;"><path d="m9 18 6-6-6-6"/></svg>';
       head.appendChild(ch);
@@ -168,17 +214,11 @@ Work.renderTrace = function (m, idx) {
       head.addEventListener('click', function () {
         m._stepOpen[step] = !m._stepOpen[step];
         ch.style.transform = m._stepOpen[step] ? 'rotate(90deg)' : 'rotate(0deg)';
-        (stepRows[step] || []).forEach(function (r2) { r2.style.display = m._stepOpen[step] ? '' : 'none'; });
       });
-      head.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); head.click(); } });
       wrap.appendChild(head);
-      stepRows[step] = [];
+      buildReasoningBlock(step).forEach(function (p) { wrap.appendChild(p); });
     }
-    var entry = traceEntry(c);
-    if (!m._stepOpen[step]) entry.style.display = 'none';
-    (stepRows[step] || (stepRows[step] = [])).push(entry);
-    wrap.appendChild(entry);
-  });
+  }
 
   /* 运行中指示（呼吸点） */
   if (m._running) {
@@ -239,12 +279,15 @@ Work.traceRefresh = function (m) {
     } finally {
       _traceRendering = false;
     }
+    if (typeof window.csStickScroll === 'function') window.csStickScroll(document.getElementById('chatScroll'));
     return;
   }
   const fresh = Work.renderTrace(m);
   if (fresh) node.replaceChildren.apply(node, Array.prototype.slice.call(fresh.childNodes));
   else node.replaceChildren();
   m._traceNode = node;
+  /* trace 卡片增减改变消息区高度：同样走条件置底（在底部时跟随，上滑阅读时停住） */
+  if (typeof window.csStickScroll === 'function') window.csStickScroll(document.getElementById('chatScroll'));
 };
 
 /* 结束时清计时器并刷新节点（移除运行中指示）。

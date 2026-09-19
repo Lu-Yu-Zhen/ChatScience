@@ -158,12 +158,10 @@ const BRIDGE = `
     refreshModelMenu();
     renderConversations();
     renderProjects();
-    /* 恢复历史数据后进入新对话欢迎页（招呼语），历史会话保留在左侧可切换 */
-    if (conversations.length) {
-      startDraft(null);
-    } else {
-      renderMessages();
-    }
+    /* 启动一律进入新对话欢迎页：有历史时会话保留在左侧可切换；
+       空状态也必须创建 draft——restore 已清掉 init() 的演示会话，若只调
+       renderMessages() 会因 currentConv() 为 null 渲染空白（点击无响应） */
+    startDraft(null);
     renderRightPanel();
     renderCtxChips();
     applyLang();

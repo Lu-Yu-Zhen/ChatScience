@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="docx-page-size" content="A4">
+<title>墨台 · UI 板块实现策划案</title>
+<style>
+@page { @bottom-center { content: counter(page); } }
+@page cover { @bottom-center { content: none; } }
+section[role="cover"] { page: cover; }
+
+:root {
+  --fs-h1: 20pt;
+  --fs-h2: 11pt;
+  --fs-h3: 10pt;
+  --fs-h4: 9pt;
+  --fs-body: 9pt;
+  --fs-small: 8pt;
+  --fs-tiny: 7pt;
+  --ff-heading: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-body: 微软雅黑, Microsoft YaHei, PingFang SC;
+  --ff-mono: Consolas, Source Code Pro, monospace;
+  --lh-body: 1.6;
+  --lh-title: 1.3;
+  --fw-bold: 700;
+  --fw-em: 500;
+  --fw-normal: 400;
+
+  --color-primary: #1565C0;
+  --color-secondary: #0288D1;
+  --color-accent: #00897B;
+  --color-text: #212121;
+  --color-heading: #1A237E;
+  --color-muted: #616161;
+  --color-border: #E0E0E0;
+  --color-bg: #FFFFFF;
+  --color-surface: #F5F7FA;
+  --color-divider: #E0E0E0;
+  --color-danger: #C62828;
+  --color-emphasis: #C62828;
+  --color-success: #2E7D32;
+  --color-warn: #B26A00;
+  --color-code-bg: #F5F7FA;
+
+  --spacing-paragraph: 0.75em;
+  --spacing-section: 2.5em;
+  --spacing-block: 1.5em;
+  --spacing-card: 1.5em;
+  --margin-page: 2.5cm;
+  --page-content-width: 15.6cm;
+  --radius-card: 6px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--ff-body);
+  font-size: var(--fs-body);
+  line-height: var(--lh-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  max-width: var(--page-content-width);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ---------------- cover ---------------- */
+section[role="cover"] { padding: 0; }
+.cover-inner { padding: 4.2cm 0 0 0; }
+.cover-category {
+  font-family: var(--ff-heading); font-size: var(--fs-small);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  letter-spacing: 0.18em; text-align: left; margin-bottom: 1.1em;
+}
+.cover-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); text-align: left; margin-bottom: 0.55em;
+}
+.cover-subtitle {
+  font-size: var(--fs-h3); color: var(--color-muted);
+  text-align: left; line-height: 1.5; margin-bottom: 2.6em;
+}
+.cover-info { width: 100%; border-collapse: collapse; margin-top: 2.4cm; }
+.cover-info td {
+  padding: 0.42em 0; font-size: var(--fs-small);
+  color: var(--color-muted); border-bottom: 1px solid var(--color-divider);
+  text-align: left;
+}
+.cover-info td:first-child {
+  width: 6.2em; color: var(--color-text); font-weight: var(--fw-em);
+}
+.cover-foot {
+  margin-top: 1.6cm; font-size: var(--fs-tiny); color: var(--color-muted);
+  text-align: left;
+}
+
+/* ---------------- body ---------------- */
+.body-wrap { padding: 0; }
+h1 {
+  font-family: var(--ff-heading); font-size: var(--fs-h1);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-bottom: 0.8em;
+}
+h2 {
+  font-family: var(--ff-heading); font-size: var(--fs-h2);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  line-height: var(--lh-title); margin-top: 1.9em; margin-bottom: 0.62em;
+  padding-bottom: 0.22em; border-bottom: 1px solid var(--color-divider);
+}
+h3 {
+  font-family: var(--ff-heading); font-size: var(--fs-h3);
+  font-weight: var(--fw-bold); color: var(--color-primary);
+  margin-top: 1.35em; margin-bottom: 0.5em;
+}
+h4 {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-text);
+  margin-top: 1.05em; margin-bottom: 0.4em;
+}
+p { margin-bottom: var(--spacing-paragraph); text-align: left; }
+ul, ol { margin: 0 0 var(--spacing-paragraph) 1.5em; }
+li { margin-bottom: 0.32em; line-height: var(--lh-body); }
+strong { font-weight: var(--fw-bold); color: var(--color-heading); }
+code {
+  font-family: var(--ff-mono); font-size: 0.92em;
+  background: var(--color-code-bg); padding: 1px 4px;
+  border-radius: 3px; color: var(--color-heading);
+}
+pre {
+  background: var(--color-code-bg); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card); padding: 0.72em 0.9em;
+  margin-bottom: var(--spacing-paragraph); overflow-x: auto;
+}
+pre code { background: none; padding: 0; font-size: 0.86em; }
+
+/* ---------------- toc ---------------- */
+.doc-toc {
+  margin-bottom: 1.8em; padding: 1.05em 1.2em;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+.toc-title {
+  font-family: var(--ff-heading); font-size: var(--fs-h4);
+  font-weight: var(--fw-bold); color: var(--color-heading);
+  margin-bottom: 0.6em;
+}
+.toc-list, .toc-list ol, .toc-list ul { list-style: none; list-style-type: none;
+  padding-left: 0; margin: 0; }
+.toc-list li { margin-bottom: 0.3em; text-indent: 0; font-size: var(--fs-small); }
+.toc-list a { color: var(--color-primary); text-decoration: none; }
+
+/* ---------------- table ---------------- */
+.doc-table {
+  width: 100%; border-collapse: collapse; margin-bottom: var(--spacing-block);
+  table-layout: fixed; font-size: var(--fs-small);
+}
+.doc-table th {
+  background: var(--color-primary); color: #FFFFFF;
+  font-family: var(--ff-heading); font-weight: var(--fw-bold);
+  padding: 0.5em 0.62em; border: 1px solid var(--color-primary);
+  text-align: left; font-size: var(--fs-tiny);
+}
+.doc-table td {
+  padding: 0.46em 0.62em; border: 1px solid var(--color-border);
+  vertical-align: top; text-align: left; word-wrap: break-word;
+}
+.doc-table tbody tr:nth-child(even) td { background: var(--color-surface); }
+
+/* ---------------- callout ---------------- */
+.callout {
+  margin-bottom: var(--spacing-paragraph);
+  padding: 0.62em 0.85em 0.62em 0.9em;
+  border-left: 3px solid var(--color-primary);
+  background: var(--color-surface);
+  border-radius: 0 var(--radius-card) var(--radius-card) 0;
+}
+.callout--warning {
+  border-left-color: var(--color-warn); background: #FFFBEB;
+}
+.callout--danger {
+  border-left-color: var(--color-danger); background: #FEF2F2;
+}
+
+/* ---------------- misc ---------------- */
+section[role="body"] { padding: 0; }
+h2 + p, h3 + p, h4 + p { text-align: left; }
+</style>
+</head>
+<body>
+<section role="cover">
+  <div class="cover-inner">
+    <p class="cover-category">PRODUCT IMPLEMENTATION PLAN · 01</p>
+    <h1 class="cover-title">墨台 · UI 板块实现策划案</h1>
+    <p class="cover-subtitle">设计语言、令牌体系、主题系统、组件规范与动效可访问性全案</p>
+    <table class="cover-info"><tr><td>文档主题</td><td>UI 视觉与交互设计层</td></tr><tr><td>产品名称</td><td>墨台（ChatScience）</td></tr><tr><td>基准原则</td><td>已实现内容优先于策划案原文</td></tr><tr><td>编制依据</td><td>D:\ChatScience 项目源码实测</td></tr><tr><td>编制时间</td><td>2026 年 9 月</td></tr><tr><td>文档版本</td><td>v1.0</td></tr></table>
+    <p class="cover-foot">本策划案全部「已实现」结论均以项目源码行号为证据，冲突项一律以已实现内容为准。</p>
+  </div>
+</section>
+<section role="body" data-page-restart="1">
+<div class="body-wrap">
+<nav class="doc-toc" aria-label="文档目录"><p class="toc-title">目录</p><ol class="toc-list"><li><a href="#section-1">一、板块定位与文档说明</a></li><li><a href="#section-2">二、设计语言总纲</a></li><li><a href="#section-3">三、设计令牌体系（Design Token）</a></li><li><a href="#section-4">四、主题系统</a></li><li><a href="#section-5">五、字体与排版规范</a></li><li><a href="#section-6">六、栅格、间距与圆角</a></li><li><a href="#section-7">七、布局骨架</a></li><li><a href="#section-8">八、组件规范</a></li><li><a href="#section-9">九、图标体系</a></li><li><a href="#section-10">十、动效规范</a></li><li><a href="#section-11">十一、交互与可访问性规范</a></li><li><a href="#section-12">十二、主题无关性原则（硬约束）</a></li><li><a href="#section-13">十三、实施优先级与任务拆解</a></li><li><a href="#section-14">十四、已实现 / 待实现速查总表</a></li><li><a href="#section-15">十五、修改方向与补充内容（落地清单）</a></li></ol></nav><h1>墨台 · UI 板块实现策划案</h1>
+<h2 id="section-1">一、板块定位与文档说明</h2>
+<h3>1.1 板块范围</h3>
+<p>本板块覆盖墨台（ChatScience）桌面客户端的<strong>全部视觉与交互设计层</strong>：设计语言、配色体系、主题系统、字体与排版、栅格与间距、组件规范、图标体系、动效规范、可访问性。</p>
+<h3>1.2 编制基准与冲突处理原则</h3>
+<p>本策划案以<strong>当前项目已完成内容为唯一事实基准</strong>。凡策划案（《墨台产品整体策划案（完整版）》第 3 章）与实际已实现 UI 冲突之处，<strong>一律以已实现内容为准</strong>。据此，下述三项冲突已按"项目为准"裁定：</p>
+<table class="doc-table"><thead><tr><th>冲突项</th><th>策划案原始表述</th><th>已实现实际（以此为基准）</th><th>裁定</th></tr></thead><tbody><tr><td>左侧边栏宽度</td><td>固定约 240 像素</td><td><code>#leftPanel</code> 宽 <strong>280px</strong>，收起竖条态 <strong>52px</strong></td><td>以 280px / 52px 为准</td></tr><tr><td>主题数量</td><td>内置六套主题（黑白简约、只此青绿、天空与海、朱砂国风、城南旧事、磨砂玻璃）</td><td>仅实现 <strong>light / dark 双主题 + 跟随系统</strong></td><td>双主题为已实现基座，六套主题列为待实现扩展</td></tr><tr><td>栅格基准</td><td>全局 8 像素基准栅格</td><td>实测为 4px 半栅格混排（间距 4/6/8/12/16/20/28px，字号 10/10.5/11/11.5/12/12.5/13/14/15/16/18px）</td><td>以实际 4px 半栅格为准，8px 为主节奏</td></tr><tr><td>图标风格</td><td>统一线性风格，尺寸固定 16 与 20 像素两档</td><td>内联 SVG 线性图标，<code>viewBox 0 0 24 24</code>、<code>stroke-width:2</code>，实际渲染尺寸 11/13/16/20/26px 多档</td><td>以 24 网格 + 多档渲染尺寸为准</td></tr><tr><td>界面字体</td><td>未指定具体字体族</td><td><strong>Instrument Sans</strong>（Google Fonts，400/500/600/700）</td><td>以 Instrument Sans 为准</td></tr><tr><td>字号层级</td><td>三级（标题/正文/辅助文字）</td><td>实测 10 级字号梯度（10px—18px）</td><td>以实际梯度为准，归纳为 4 个语义层级</td></tr></tbody></table>
+<h3>1.3 状态标记约定</h3>
+<p>全文以三种标记严格区分实现状态：</p>
+<ul><li><strong>【已实现】</strong> — 已在代码中落地并有验证记录，本期仅需保持与回归。</li><li><strong>【部分实现】</strong> — 骨架已有，存在缺口或已知缺陷，需补齐。</li><li><strong>【待实现】</strong> — 尚无任何代码痕迹，需按本策划案从零实现。</li></ul>
+<div data-component="divider"></div>
+<h2 id="section-2">二、设计语言总纲</h2>
+<h3>2.1 定位</h3>
+<p><strong>【已实现】</strong> 代码注释明确记载了本产品的视觉定位：<strong>"去 AI 味：中性色 + 墨色主按钮 + 克制蓝链接"</strong>（<code>01/主页面.html:19</code>）。</p>
+<p>这一定位与品牌名的"墨"字高度自洽，且已在全套令牌中系统落实，应作为长期设计纲领保留：</p>
+<ol><li><strong>中性色打底</strong> — 界面大面积使用不带色相倾向的中性灰白（<code>--bg: #F6F7F9</code>），不使用任何彩色背景铺底，避免长时间科研工作下的视觉疲劳与"AI 产品感"。</li><li><strong>墨色主按钮</strong> — 主按钮不用品牌色，而用近黑的墨色（<code>--primary-bg: #0F172A</code>），形成"墨"的视觉锚点与高级克制的质感。</li><li><strong>克制蓝链接</strong> — 链接是界面上唯一的常规彩色元素，使用克制的蓝（<code>--link: #2563EB</code>），仅用于可点击文本，不做装饰。</li><li><strong>零 emoji</strong> — 主页面文件内 emoji 数量为 <strong>0</strong>，状态与操作全部由内联 SVG 表达。</li></ol>
+<h3>2.2 设计原则（供后续扩展遵循）</h3>
+<table class="doc-table"><thead><tr><th>原则</th><th>含义</th><th>落地约束</th></tr></thead><tbody><tr><td>内容优先</td><td>界面不抢内容</td><td>无彩色背景铺底；装饰仅限细线与留白</td></tr><tr><td>克制的色彩</td><td>彩色是稀缺资源</td><td>全局彩色仅用于：链接、状态（成功/警告/危险）、图表。其余一律中性色</td></tr><tr><td>一致性优先于表现力</td><td>专业用户依赖肌肉记忆</td><td>主题切换为"换肤"不改版：布局、间距、组件位置、图标形态零变化</td></tr><tr><td>静默的动效</td><td>动效服务于状态理解</td><td>150—300ms；绝不因内容更新触发容器动画</td></tr><tr><td>可访问性为硬约束</td><td>不是可选项</td><td>正文对比度 ≥ 4.5:1；状态不得仅靠颜色区分；键盘可达</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-3">三、设计令牌体系（Design Token）</h2>
+<h3>3.1 令牌清单（已实现全量）</h3>
+<p><strong>【已实现】</strong> 设计令牌以 CSS 自定义属性集中定义于 <code>01/主页面.html:20-109</code>，通过 <code>html[data-theme]</code> 切换。以下是实际落地的<strong>全量令牌对照表</strong>——这是本产品设计系统的核心资产，后续所有主题扩展必须映射到这套令牌名，不得新增绕过令牌的硬编码颜色。</p>
+<table class="doc-table"><thead><tr><th>令牌名</th><th>用途分类</th><th>Light 值</th><th>Dark 值</th></tr></thead><tbody><tr><td><code>--bg</code></td><td>基础背景</td><td><code>#F6F7F9</code></td><td><code>#0B1120</code></td></tr><tr><td><code>--panel-bg</code></td><td>面板背景</td><td><code>#FFFFFF</code></td><td><code>#0F172A</code></td></tr><tr><td><code>--panel-border</code></td><td>面板边框</td><td><code>#E9EDF2</code></td><td><code>#1E293B</code></td></tr><tr><td><code>--main-bg</code></td><td>主区背景（半透明）</td><td><code>rgba(255,255,255,0.72)</code></td><td><code>rgba(13,20,33,0.72)</code></td></tr><tr><td><code>--surface</code></td><td>表面层</td><td><code>#FFFFFF</code></td><td><code>#1E293B</code></td></tr><tr><td><code>--surface-2</code></td><td>次级表面</td><td><code>#F8FAFC</code></td><td><code>#1E293B</code></td></tr><tr><td><code>--border</code></td><td>常规边框</td><td><code>#E9EDF2</code></td><td><code>#283548</code></td></tr><tr><td><code>--border-soft</code></td><td>弱边框/分割线</td><td><code>#EEF1F5</code></td><td><code>#223046</code></td></tr><tr><td><code>--content-bg</code></td><td>内容区背景</td><td><code>#FCFDFE</code></td><td><code>#0B1120</code></td></tr><tr><td><code>--text-1</code></td><td>主文字</td><td><code>#0F172A</code></td><td><code>#F1F5F9</code></td></tr><tr><td><code>--text-2</code></td><td>次级文字</td><td><code>#475569</code></td><td><code>#CBD5E1</code></td></tr><tr><td><code>--text-3</code></td><td>辅助文字/占位</td><td><code>#94A3B8</code></td><td><code>#94A3B8</code></td></tr><tr><td><code>--primary-bg</code></td><td>主按钮底色</td><td><code>#0F172A</code></td><td><code>#F1F5F9</code></td></tr><tr><td><code>--primary-hover</code></td><td>主按钮悬停</td><td><code>#24324A</code></td><td><code>#FFFFFF</code></td></tr><tr><td><code>--primary-text</code></td><td>主按钮文字</td><td><code>#FFFFFF</code></td><td><code>#0F172A</code></td></tr><tr><td><code>--link</code> / <code>--link-hover</code></td><td>链接</td><td><code>#2563EB</code> / <code>#1D4ED8</code></td><td><code>#8AB4F8</code> / <code>#A5C4FA</code></td></tr><tr><td><code>--accent-soft</code></td><td>强调底色</td><td><code>#F1F4F8</code></td><td><code>#1B2536</code></td></tr><tr><td><code>--accent-text</code></td><td>强调文字</td><td><code>#2563EB</code></td><td><code>#60A5FA</code></td></tr><tr><td><code>--ok</code> / <code>--ok-soft</code></td><td>成功状态</td><td><code>#16A34A</code> / <code>#F0FDF4</code></td><td><code>#4ADE80</code> / <code>rgba(74,222,128,.10)</code></td></tr><tr><td><code>--warn</code> / <code>--warn-soft</code></td><td>警告状态</td><td><code>#D97706</code> / <code>#FFFBEB</code></td><td><code>#FBBF24</code> / <code>rgba(251,191,36,.10)</code></td></tr><tr><td><code>--mono</code></td><td>等宽字体栈</td><td><code>ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, "Courier New", monospace</code></td><td>同左</td></tr><tr><td><code>--conv-active-bg</code></td><td>会话选中态</td><td><code>#EFF3F7</code></td><td><code>#1B2536</code></td></tr><tr><td><code>--hover-overlay</code></td><td>通用悬停叠层</td><td><code>rgba(15,23,42,0.05)</code></td><td><code>rgba(255,255,255,0.06)</code></td></tr><tr><td><code>--bubble-ai-bg</code> / <code>--bubble-ai-text</code></td><td>AI 消息气泡</td><td><code>#F8FAFC</code> / <code>#1E293B</code></td><td><code>#1E293B</code> / <code>#E2E8F0</code></td></tr><tr><td><code>--chip-bg</code></td><td>芯片标签底</td><td><code>#F1F4F8</code></td><td><code>#1B2536</code></td></tr><tr><td><code>--danger-bg</code> / <code>--danger-border</code> / <code>--danger-text</code></td><td>危险操作</td><td><code>#FEF2F2</code> / <code>#FECACA</code> / <code>#EF4444</code></td><td><code>rgba(239,68,68,.12)</code> / <code>rgba(239,68,68,.35)</code> / <code>#F87171</code></td></tr><tr><td><code>--input-bg</code></td><td>输入框底色</td><td><code>#FFFFFF</code></td><td><code>#131C2E</code></td></tr><tr><td><code>--menu-bg</code> / <code>--menu-border</code></td><td>弹出菜单</td><td><code>#FFFFFF</code> / <code>#EEF1F5</code></td><td><code>#1E293B</code> / <code>#283548</code></td></tr><tr><td><code>--menu-shadow</code></td><td>菜阴影</td><td><code>0 4px 8px rgba(15,23,42,.04), 0 16px 40px -8px rgba(15,23,42,.16)</code></td><td><code>0 4px 8px rgba(0,0,0,.30), 0 16px 40px -8px rgba(0,0,0,.50)</code></td></tr><tr><td><code>--card-shadow</code></td><td>卡片阴影</td><td><code>0 2px 4px rgba(15,23,42,.03), 0 12px 28px -12px rgba(15,23,42,.10)</code></td><td><code>0 2px 4px rgba(0,0,0,.20), 0 12px 28px -12px rgba(0,0,0,.50)</code></td></tr><tr><td><code>--avatar-ring</code></td><td>头像环</td><td><code>0 0 0 2px #FFFFFF, 0 2px 8px rgba(15,23,42,.14)</code></td><td><code>0 0 0 2px #0F172A, 0 2px 8px rgba(0,0,0,.50)</code></td></tr><tr><td><code>--user-frame</code></td><td>用户消息框</td><td><code>#0F172A</code></td><td><code>#CBD5E1</code></td></tr><tr><td><code>--scroll-thumb</code> / <code>--scroll-thumb-hover</code></td><td>滚动条</td><td><code>#E2E8F0</code> / <code>#CBD5E1</code></td><td><code>#334155</code> / <code>#475569</code></td></tr><tr><td><code>--focus-glow</code></td><td>焦点光晕</td><td><code>0 2px 4px rgba(15,23,42,.03), 0 12px 32px -8px rgba(15,23,42,.14)</code></td><td><code>0 2px 4px rgba(0,0,0,.20), 0 12px 32px -8px rgba(0,0,0,.40)</code></td></tr><tr><td><code>--overlay</code></td><td>遮罩</td><td><code>rgba(15,23,42,0.38)</code></td><td><code>rgba(0,0,0,0.55)</code></td></tr></tbody></table>
+<h3>3.2 令牌的语义分组（用于主题扩展）</h3>
+<p><strong>【已实现】</strong> 现令牌天然分为五组，这是六套主题扩展的映射骨架：</p>
+<ol><li><strong>基础层</strong>（<code>--bg</code> / <code>--panel-bg</code> / <code>--surface</code> / <code>--surface-2</code> / <code>--content-bg</code> / <code>--main-bg</code>）——背景与面板</li><li><strong>边界层</strong>（<code>--border</code> / <code>--border-soft</code> / <code>--panel-border</code> / <code>--menu-border</code>）——分割与描边</li><li><strong>文字层</strong>（<code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code>）——三级文字</li><li><strong>品牌与交互层</strong>（<code>--primary-*</code> / <code>--link*</code> / <code>--accent-*</code> / <code>--hover-overlay</code> / <code>--conv-active-bg</code> / <code>--chip-bg</code>）——主色、链接、强调、交互反馈</li><li><strong>语义状态层</strong>（<code>--ok*</code> / <code>--warn*</code> / <code>--danger*</code>）——成功/警告/危险</li></ol>
+<p><strong>扩展规则</strong>：新增主题只需为这五组各提供一套值，任何主题不得改变组内的<strong>语义关系</strong>（如 <code>--text-1</code> 必须比 <code>--text-2</code> 对比度更高）。</p>
+<h3>3.3 硬编码颜色清点（技术债）</h3>
+<p><strong>【部分实现】</strong> 存在少量绕过令牌的硬编码颜色，主题扩展前需先归位：</p>
+<table class="doc-table"><thead><tr><th>位置</th><th>硬编码值</th><th>建议令牌化</th></tr></thead><tbody><tr><td><code>.input-box:focus-within</code> 边框、<code>.field-input:focus</code></td><td><code>#94A3B8</code></td><td>新增 <code>--focus-border</code></td></tr><tr><td><code>#toast</code> 阴影</td><td><code>rgba(15,23,42,0.4)</code></td><td>复用 <code>--menu-shadow</code> 或新增 <code>--toast-shadow</code></td></tr><tr><td><code>::selection</code></td><td><code>#D7DEE8</code> / <code>#0F172A</code></td><td>新增 <code>--selection-bg</code> / <code>--selection-text</code></td></tr><tr><td><code>.wtbtn.wt-close:hover</code></td><td><code>#E81123</code></td><td>新增 <code>--close-hover</code>（Windows 标准红，跨平台可主题化）</td></tr><tr><td><code>.toggle</code> 关态</td><td><code>#CBD5E1</code></td><td>归入 <code>--text-3</code></td></tr><tr><td>阅读器高亮 <code>.hl-anno</code></td><td><code>rgba(250,204,21,0.42)</code></td><td>新增 <code>--hl-anno</code>（注释黄）</td></tr><tr><td>阅读器搜索高亮 <code>.textLayer span.hl</code></td><td><code>rgba(96,165,250,0.45)</code></td><td>新增 <code>--hl-search</code></td></tr><tr><td><code>.reader-page-wrap</code> 纸面</td><td><code>#fff</code></td><td>新增 <code>--paper</code>（纸张恒白，可主题化为米黄）</td></tr><tr><td>文件卡片图标底/字色</td><td><code>#FEE2E2</code> / <code>#DC2626</code></td><td>归入 <code>--danger-*</code> 体系</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-4">四、主题系统</h2>
+<h3>4.1 已实现双主题基座【已实现】</h3>
+<table class="doc-table"><thead><tr><th>能力</th><th>实现方式</th><th>状态</th></tr></thead><tbody><tr><td>Light / Dark 双主题</td><td>`html[data-theme="light</td><td>dark"]` 属性切换，全套令牌成对定义</td><td>已实现</td></tr><tr><td>跟随系统</td><td>设置项含"跟随系统"，读取系统偏好</td><td>已实现</td></tr><tr><td>主题持久化</td><td>随应用状态快照落盘，重启保持</td><td>已实现</td></tr><tr><td>切换过渡</td><td><code>transition: background-color 0.25s ease</code> 于 <code>body</code> 与 <code>.panel</code></td><td>已实现</td></tr></tbody></table>
+<h3>4.2 六套扩展主题策划【待实现】</h3>
+<p>策划案规划的六套主题为零实现状态。基于已实现的双主题令牌体系，扩展方案如下。</p>
+<h4>4.2.1 扩展架构</h4>
+<p><strong>方案：令牌层扩展（Token-Level Theming），不引入主题引擎依赖。</strong></p>
+<pre><code>:root                        → 默认主题（当前 light）
+html[data-theme="dark"]      → 暗色主题（已实现）
+html[data-theme="ink-green"] → 只此青绿（新增）
+html[data-theme="sky-sea"]   → 天空与海（新增）
+html[data-theme="cinnabar"]  → 朱砂国风（新增）
+html[data-theme="nostalgia"] → 城南旧事（新增）
+html[data-theme="glass"]     → 磨砂玻璃（新增）
+html[data-theme="mono"]      → 黑白简约（新增）</code></pre>
+<p>每套主题 = 一份完整的五组令牌赋值 + 可选的材质层（<code>data-material="glass"</code> 控制半透明与背景模糊、<code>data-texture="paper"</code> 控制底纹）。</p>
+<p><strong>新增令牌（主题扩展必需）</strong>：</p>
+<table class="doc-table"><thead><tr><th>新增令牌</th><th>用途</th><th>缺失后果</th></tr></thead><tbody><tr><td><code>--font-ui</code></td><td>界面字体族（各主题可微调）</td><td>无法实现"中文衬线可选用于长文献阅读"</td></tr><tr><td><code>--font-serif</code></td><td>衬线字体（阅读模式文档正文）</td><td>阅读模式无衬线选项</td></tr><tr><td><code>--radius-card</code> / <code>--radius-btn</code> / <code>--radius-tag</code></td><td>三级圆角令牌化</td><td>当前圆角为硬编码数值，主题无法调整圆角气质</td></tr><tr><td><code>--density</code></td><td>密度系数（舒适 1.0 / 紧凑 0.85）</td><td>无法实现"信息密度两档"</td></tr><tr><td><code>--texture-opacity</code></td><td>底纹不透明度</td><td>朱砂国风/城南旧事无法叠加极淡底纹</td></tr><tr><td><code>--panel-alpha</code> / <code>--panel-blur</code></td><td>面板透明度与模糊半径</td><td>磨砂玻璃主题无法实现</td></tr><tr><td><code>--chart-1..6</code></td><td>图表配色序列</td><td>图表无法随主题变色</td></tr></tbody></table>
+<h4>4.2.2 六套主题配色规范（含完整令牌映射）</h4>
+<p>以下按令牌分组给出每套主题的完整赋值。所有配色均已核算对比度，满足正文 ≥ 4.5:1 的硬约束。</p>
+<p><strong>主题一：黑白简约（mono）</strong> — 极简高对比，写作/代码/学术输出</p>
+<table class="doc-table"><thead><tr><th>令牌组</th><th>赋值</th></tr></thead><tbody><tr><td><code>--bg</code> / <code>--panel-bg</code></td><td><code>#F5F5F5</code> / <code>#FFFFFF</code></td></tr><tr><td><code>--surface</code> / <code>--surface-2</code> / <code>--content-bg</code></td><td><code>#FFFFFF</code> / <code>#FAFAFA</code> / <code>#FFFFFF</code></td></tr><tr><td><code>--border</code> / <code>--border-soft</code></td><td><code>#E0E0E0</code> / <code>#EBEBEB</code></td></tr><tr><td><code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code></td><td><code>#1A1A1A</code> / <code>#666666</code> / <code>#9E9E9E</code></td></tr><tr><td><code>--primary-bg</code> / <code>--primary-hover</code> / <code>--primary-text</code></td><td><code>#1A1A1A</code> / <code>#333333</code> / <code>#FFFFFF</code></td></tr><tr><td><code>--link</code> / <code>--link-hover</code></td><td><code>#1A1A1A</code>（下划线区分）/ <code>#000000</code></td></tr><tr><td><code>--accent-soft</code> / <code>--accent-text</code></td><td><code>#F0F0F0</code> / <code>#1A1A1A</code></td></tr><tr><td><code>--ok</code> / <code>--warn</code> / <code>--danger-text</code></td><td><code>#2E7D32</code> / <code>#B26A00</code> / <code>#C62828</code></td></tr><tr><td>圆角</td><td><code>--radius-card: 8px</code>（较已实现 16px 更锐利）</td></tr><tr><td>图表序列</td><td>灰度梯度：<code>#1A1A1A → #4D4D4D → #808080 → #B3B3B3 → #D9D9D9 → #F0F0F0</code></td></tr></tbody></table>
+<p class="callout callout--info">&nbsp;&nbsp;注意：本主题链接放弃彩色，改用<strong>下划线</strong>承担可点击识别，这是唯一例外——必须同时保留下划线 + hover 加粗，避免违反无障碍"不得仅靠颜色区分"。</p>
+<p><strong>主题二：只此青绿（ink-green）</strong> — 宋青绿山水，文献精读/论文撰写</p>
+<table class="doc-table"><thead><tr><th>令牌组</th><th>赋值</th></tr></thead><tbody><tr><td><code>--bg</code> / <code>--panel-bg</code></td><td><code>#F7F5EE</code> / <code>#FFFFFF</code></td></tr><tr><td><code>--surface-2</code> / <code>--content-bg</code></td><td><code>#E8EFEA</code> / <code>#FBFAF5</code></td></tr><tr><td><code>--border</code> / <code>--border-soft</code></td><td><code>#DCE3DD</code> / <code>#E8EFEA</code></td></tr><tr><td><code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code></td><td><code>#1C2B26</code> / <code>#4A5C55</code> / <code>#8C9A94</code></td></tr><tr><td><code>--primary-bg</code> / <code>--primary-hover</code></td><td><code>#1B6B5A</code> / <code>#155647</code></td></tr><tr><td><code>--link</code> / <code>--link-hover</code></td><td><code>#0F4C5C</code> / <code>#0A3A47</code></td></tr><tr><td><code>--accent-soft</code> / <code>--accent-text</code></td><td><code>#E8EFEA</code> / <code>#0F4C5C</code></td></tr><tr><td><code>--warn</code>（鎏金点缀）</td><td><code>#C9A961</code></td></tr><tr><td><code>--ok</code> / <code>--danger-text</code></td><td><code>#3D7A5F</code> / <code>#A8422F</code></td></tr><tr><td>圆角</td><td><code>--radius-card: 12px</code>（适中，典雅）</td></tr><tr><td>图表序列</td><td>青绿→石青同色系渐变：<code>#1B6B5A → #2E8B75 → #3FA98E → #6FBFA8 → #0F4C5C → #C9A961</code></td></tr><tr><td>材质</td><td>分割线细而柔和（<code>--border</code> 降对比）；鎏金仅用于主按钮描边与品牌标识</td></tr></tbody></table>
+<p><strong>主题三：天空与海（sky-sea）</strong> — 清爽通透，白天办公/Work 编排</p>
+<table class="doc-table"><thead><tr><th>令牌组</th><th>赋值</th></tr></thead><tbody><tr><td><code>--bg</code> / <code>--panel-bg</code></td><td><code>#F0F6FB</code> / <code>#FFFFFF</code></td></tr><tr><td><code>--surface-2</code> / <code>--content-bg</code></td><td><code>#F5FAFE</code> / <code>#FBFDFF</code></td></tr><tr><td><code>--border</code> / <code>--border-soft</code></td><td><code>#DCE7F2</code> / <code>#E8F1F8</code></td></tr><tr><td><code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code></td><td><code>#152B3D</code> / <code>#41637D</code> / <code>#8FA9BD</code></td></tr><tr><td><code>--primary-bg</code> / <code>--primary-hover</code></td><td><code>#2C5F8D</code> / <code>#234E75</code></td></tr><tr><td><code>--link</code> / <code>--link-hover</code></td><td><code>#2C5F8D</code> / <code>#234E75</code></td></tr><tr><td><code>--accent-soft</code> / <code>--accent-text</code></td><td><code>#E5F0F9</code> / <code>#2C5F8D</code></td></tr><tr><td>珊瑚橙（唯一暖色强调）</td><td><code>--warn: #E8845C</code>，仅用于需立即注意的操作与告警</td></tr><tr><td><code>--ok</code> / <code>--danger-text</code></td><td><code>#2E8B57</code> / <code>#C7533A</code></td></tr><tr><td>圆角</td><td><code>--radius-card: 14px</code></td></tr><tr><td>图表序列</td><td><code>#2C5F8D → #4A85B8 → #7FB3D5 → #A8CCE4 → #E8845C → #F0A882</code></td></tr></tbody></table>
+<p><strong>主题四：朱砂国风（cinnabar）</strong> — 宣纸仪式感，正式报告/宣传/人文</p>
+<table class="doc-table"><thead><tr><th>令牌组</th><th>赋值</th></tr></thead><tbody><tr><td><code>--bg</code> / <code>--panel-bg</code></td><td><code>#F5EEDC</code> / <code>#FBF6E9</code></td></tr><tr><td><code>--surface-2</code> / <code>--content-bg</code></td><td><code>#EFE6D0</code> / <code>#F8F2E2</code></td></tr><tr><td><code>--border</code> / <code>--border-soft</code></td><td><code>#DFD2B4</code> / <code>#E9DEC5</code></td></tr><tr><td><code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code></td><td><code>#2B2118</code> / <code>#5A4A3A</code> / <code>#94836E</code></td></tr><tr><td><code>--primary-bg</code> / <code>--primary-hover</code></td><td><code>#B23A2E</code> / <code>#962F25</code></td></tr><tr><td><code>--primary-text</code></td><td><code>#FBF6E9</code></td></tr><tr><td><code>--link</code> / <code>--link-hover</code></td><td><code>#8A2B21</code> / <code>#6E211A</code></td></tr><tr><td>鎏金</td><td><code>--warn: #C9A24B</code>，用于标题点缀与重要按钮</td></tr><tr><td><code>--accent-soft</code> / <code>--accent-text</code></td><td><code>#EFE6D0</code> / <code>#8A2B21</code></td></tr><tr><td><code>--ok</code> / <code>--danger-text</code></td><td><code>#5A7A3F</code> / <code>#B23A2E</code></td></tr><tr><td>圆角</td><td><code>--radius-card: 10px</code>（近古籍边框，方中带圆）</td></tr><tr><td>材质</td><td><code>--texture-opacity: 0.04</code>，宣纸纹理极淡叠加</td></tr><tr><td>图表序列</td><td>沉稳：<code>#B23A2E → #2B2118 → #C9A24B → #5A4A3A → #7A6A55 → #94836E</code></td></tr></tbody></table>
+<p><strong>主题五：城南旧事（nostalgia）</strong> — 暖调护眼，长时间阅读/文史写作</p>
+<table class="doc-table"><thead><tr><th>令牌组</th><th>赋值</th></tr></thead><tbody><tr><td><code>--bg</code> / <code>--panel-bg</code></td><td><code>#EFE6D3</code> / <code>#F5EEE0</code></td></tr><tr><td><code>--surface-2</code> / <code>--content-bg</code></td><td><code>#E3D5B8</code> / <code>#F2EAD8</code></td></tr><tr><td><code>--border</code> / <code>--border-soft</code></td><td><code>#D5C4A4</code> / <code>#DFD0B4</code></td></tr><tr><td><code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code></td><td><code>#3E2B1F</code> / <code>#6B5442</code> / <code>#9C8570</code></td></tr><tr><td><code>--primary-bg</code> / <code>--primary-hover</code></td><td><code>#5C4033</code> / <code>#4A3329</code></td></tr><tr><td><code>--primary-text</code></td><td><code>#F5EEE0</code></td></tr><tr><td><code>--link</code> / <code>--link-hover</code></td><td><code>#A0522D</code> / <code>#874426</code></td></tr><tr><td><code>--accent-soft</code> / <code>--accent-text</code></td><td><code>#E3D5B8</code> / <code>#A0522D</code></td></tr><tr><td>苔绿（次级强调）</td><td><code>--ok: #6B7A4A</code></td></tr><tr><td><code>--warn</code> / <code>--danger-text</code></td><td><code>#B8860B</code> / <code>#9C3B2E</code></td></tr><tr><td>圆角</td><td><code>--radius-card: 12px</code></td></tr><tr><td>材质</td><td><code>--texture-opacity: 0.06</code>，旧纸纹理</td></tr><tr><td>对比度说明</td><td>低对比、暖色调设计，<code>--text-1</code> 对 <code>--bg</code> 实测对比度 <strong>约 9.8:1</strong>，正文仍远高于 4.5:1 下限，长时间注视不刺眼</td></tr></tbody></table>
+<p><strong>主题六：磨砂玻璃（glass）</strong> — 毛玻璃拟态，Work 模式/成果展示</p>
+<table class="doc-table"><thead><tr><th>令牌组</th><th>赋值（浅基底）</th></tr></thead><tbody><tr><td><code>--bg</code></td><td>半透明渐变：<code>linear-gradient(135deg, #EAF0F6, #F5F7FA)</code> + 背景装饰色斑</td></tr><tr><td><code>--panel-bg</code></td><td><code>rgba(255,255,255,0.62)</code> + <code>backdrop-filter: blur(20px) saturate(140%)</code></td></tr><tr><td><code>--surface</code> / <code>--surface-2</code></td><td><code>rgba(255,255,255,0.72)</code> / <code>rgba(255,255,255,0.55)</code></td></tr><tr><td><code>--border</code></td><td><code>rgba(255,255,255,0.70)</code>（高光描边）</td></tr><tr><td><code>--text-1</code> / <code>--text-2</code> / <code>--text-3</code></td><td><code>#2C3E50</code> / <code>#5A6E80</code> / <code>#94A3B8</code></td></tr><tr><td><code>--primary-bg</code> / <code>--primary-hover</code></td><td><code>#2C3E50</code> / <code>#1F2D3B</code></td></tr><tr><td>强调色（渐变蓝紫→青）</td><td><code>--link: #6C7CE0</code>；渐变 <code>linear-gradient(135deg, #6C7CE0, #4ECDC4)</code> 用于关键按钮与品牌</td></tr><tr><td><code>--ok</code> / <code>--warn</code> / <code>--danger-text</code></td><td><code>#2E9E7E</code> / <code>#E0A03C</code> / <code>#D95555</code></td></tr><tr><td>阴影</td><td>加大扩散、降低不透明度，配合毛玻璃的柔和投影</td></tr><tr><td>圆角</td><td><code>--radius-card: 16px</code>（现代圆润）</td></tr><tr><td><strong>可读性红线</strong></td><td>正文与节点文字<strong>必须使用实色</strong>，不得使用半透明文字；代码区与图表区背景不得半透明（保持足够对比度）</td></tr></tbody></table>
+<h4>4.2.3 暗色变体</h4>
+<p>每套主题均需配套暗色变体（<code>data-theme</code> 值 + <code>-dark</code> 后缀，或 <code>data-scheme="dark"</code> 独立属性）。暗色变体遵循已实现 dark 主题的映射规律：</p>
+<ul><li>背景族：米白/浅色 → 对应的深色墨底（保持色相倾向）</li><li>文字族：反转明度，<code>--text-3</code> 保持 <code>#94A3B8</code> 中性灰不变（已实现 dark 的做法）</li><li>主按钮：明暗反转（<code>--primary-bg</code> ↔ <code>--primary-text</code>）</li></ul>
+<h4>4.2.4 自定义主题【待实现】</h4>
+<table class="doc-table"><thead><tr><th>能力</th><th>实现方案</th></tr></thead><tbody><tr><td>明暗基调调整</td><td>二选一开关</td></tr><tr><td>主色/强调色</td><td>取色器 + 预设色板，用户选色后自动派生 <code>--primary-hover</code>（明度 -8%）、<code>--accent-soft</code>（明度 +42%）</td></tr><tr><td>界面字号档位</td><td>缩放系数 0.9 / 1.0 / 1.1 / 1.25，作用于字号令牌</td></tr><tr><td>代码字体</td><td>下拉选择已实现 <code>--mono</code> 栈内的字体</td></tr><tr><td>紧凑度</td><td>舒适 / 紧凑两档，缩放间距令牌</td></tr><tr><td>导入导出与分享</td><td>输出 JSON（<code>{name, tokens: {...}, material: {...}}</code>），支持文件导入与分享码</td></tr><tr><td>团队统一下发</td><td>团队管理员配置主题为可选项，成员可选可拒绝（不强制覆盖个人偏好）</td></tr><tr><td>自动派生校验</td><td>保存自定义主题时<strong>自动校验对比度</strong>，低于 4.5:1 拒绝保存并提示具体令牌</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-5">五、字体与排版规范</h2>
+<h3>5.1 字体族【已实现】</h3>
+<table class="doc-table"><thead><tr><th>用途</th><th>字体栈</th><th>证据</th></tr></thead><tbody><tr><td>界面主字体</td><td><code>'Instrument Sans', sans-serif</code></td><td><code>01/主页面.html:114</code>，Google Fonts 加载 400/500/600/700 四字重（<code>:9</code>）</td></tr><tr><td>等宽（代码/工具名/耗时）</td><td><code>ui-monospace, SFMono-Regular, "Cascadia Mono", Consolas, "Courier New", monospace</code></td><td><code>--mono</code>（<code>:44</code>）</td></tr><tr><td>代码块</td><td><code>Consolas, 'Courier New', monospace</code></td><td><code>:386</code></td></tr><tr><td>思考块 / 阅读输入</td><td><code>"Microsoft YaHei", "微软雅黑", sans-serif</code></td><td><code>:433</code>、<code>webapp.ts:4837</code></td></tr><tr><td>笔记本代码格</td><td><code>"Consolas", "JetBrains Mono", monospace</code></td><td><code>50-notebook.js</code></td></tr></tbody></table>
+<h3>5.2 字号梯度【已实现】</h3>
+<p>实测字号共 10 档，归纳为 4 个语义层级：</p>
+<table class="doc-table"><thead><tr><th>语义层级</th><th>字号档</th><th>典型用途</th><th>字重</th><th>行高</th></tr></thead><tbody><tr><td><strong>品牌/标题层</strong></td><td>18px / 16px</td><td>页面标题 / 品牌名</td><td>700</td><td>1.3</td></tr><tr><td><strong>正文层</strong></td><td>14px</td><td>聊天正文、输入框、AI 回复正文</td><td>400/500</td><td>22px（≈1.57）</td></tr><tr><td><strong>辅助层</strong></td><td>12px / 12.5px / 13px</td><td>次要说明、字段输入、菜单项</td><td>400/500</td><td>1.5</td></tr><tr><td><strong>微型标签层</strong></td><td>10px / 10.5px / 11px / 11.5px</td><td>分组标题、tag、耗时、状态标签</td><td>600/700</td><td>1.4</td></tr></tbody></table>
+<p><strong>Markdown 正文内部层级</strong>（AI 回复渲染）：h1 18px / h2 16.5px / h3 15px / h4 14px（<code>:380</code>）。</p>
+<h3>5.3 字距与字重规范【已实现】</h3>
+<table class="doc-table"><thead><tr><th>规则</th><th>值</th><th>应用</th></tr></thead><tbody><tr><td>标题紧缩字距</td><td><code>letter-spacing: -0.02em</code></td><td><code>.brand</code>（<code>:140</code>）、<code>.page-title</code>（<code>:141</code>）</td></tr><tr><td>微型标签展开字距</td><td><code>letter-spacing: 0.09em</code> + <code>text-transform: uppercase</code></td><td><code>.label</code>（<code>:142</code>）</td></tr><tr><td>数字/等宽对齐</td><td>耗时、工具名、步骤计数一律用 <code>--mono</code></td><td>trace 时间线</td></tr></tbody></table>
+<h3>5.4 中文排版待补规范【待实现】</h3>
+<p>已实现以英文界面为主，中文排版规范尚缺，需补齐：</p>
+<table class="doc-table"><thead><tr><th>待补项</th><th>规范建议</th></tr></thead><tbody><tr><td>中文字体族</td><td>界面 <code>--font-ui</code> 增加中文回退：<code>"PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei"</code></td></tr><tr><td>中英混排间距</td><td>中英文之间自动插入 1/4 em 间隙（用 <code>text-spacing</code> 或标记层实现）</td></tr><tr><td>中文标点挤压</td><td>行首/行尾标点禁则处理</td></tr><tr><td>首行缩进</td><td>文档阅读模式下正文首行缩进 2 字符</td></tr><tr><td>中文字体字重</td><td>中文 Sint 字重有限，600/700 需回退为 500 + 字色加深，避免"伪粗体"</td></tr><tr><td>中文行高</td><td>中文正文行高提升至 1.75（当前 1.57 对中文偏紧）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-6">六、栅格、间距与圆角</h2>
+<h3>6.1 间距节奏【已实现】</h3>
+<p>实测间距值：<strong>4 / 6 / 8 / 12 / 16 / 20 / 28px</strong>。</p>
+<p><strong>归纳规范</strong>（后续统一遵循）：</p>
+<table class="doc-table"><thead><tr><th>级别</th><th>值</th><th>用途</th></tr></thead><tbody><tr><td>微间距</td><td>4px</td><td>图标与文字间隙、菜单项内部、分段控件 gap（<code>.seg { gap: 4px }</code>）</td></tr><tr><td>小间距</td><td>6px / 8px</td><td>工具栏按钮间隙（<code>.reader-toolbar { gap: 6px }</code>）、竖条栏按钮间距（8px）</td></tr><tr><td>中间距</td><td>12px</td><td>卡片内间距（<code>.card { padding: 12px }</code>）、会话项内边距</td></tr><tr><td>标准间距</td><td>16px</td><td>卡片间隙（<code>.card { gap: 12-16px }</code>）、面板内边距、页头间距</td></tr><tr><td>大间距</td><td>20px / 24px</td><td>右栏内边距（<code>.rightPanel { padding: 24px 20px }</code>）</td></tr><tr><td>区块间距</td><td>28px</td><td>左栏顶部内边距（<code>.leftPanel { padding: 28px 12px 16px }</code>）、页头</td></tr></tbody></table>
+<p><strong>与策划案的差异裁定</strong>：策划案要求"8 的倍数"，实际为<strong>4px 半栅格 + 8px 主节奏</strong>混排。裁定以实际为准，理由：4px 微调是精确对齐图标与文字基线的必要手段，纯 8px 会导致图标视觉偏移。<strong>规范表述调整为</strong>：以 8px 为主节奏，4px 为允许的最小调整单位。</p>
+<h3>6.2 圆角体系【已实现】</h3>
+<table class="doc-table"><thead><tr><th>级别</th><th>实际值</th><th>应用</th></tr></thead><tbody><tr><td>最大</td><td><code>999px</code></td><td>药丸按钮、chip、tag、toast、provider-item</td></tr><tr><td>大</td><td>20px</td><td>聊天输入框</td></tr><tr><td>中大</td><td>16px</td><td>卡片、弹窗（<code>.modal</code>）、面板</td></tr><tr><td>中</td><td>14px</td><td>下拉菜单、文件卡片、右栏卡片</td></tr><tr><td>小</td><td>12px</td><td>内嵌卡、动作菜单、数字网格</td></tr><tr><td>更小</td><td>11px / 10px / 8px / 7px / 4px</td><td>竖条栏按钮(11)、字段输入(10)、小按钮(8)、图标幽灵按钮(8)、阅读器工具栏(7)、PDF 纸面(4)</td></tr></tbody></table>
+<p><strong>待实现</strong>：将以上三级（大/中/小）抽象为 <code>--radius-card</code> / <code>--radius-btn</code> / <code>--radius-tag</code> 令牌，供主题调整圆角气质。</p>
+<h3>6.3 阴影体系【已实现】</h3>
+<table class="doc-table"><thead><tr><th>令牌</th><th>结构</th><th>语义</th></tr></thead><tbody><tr><td><code>--card-shadow</code></td><td>双层：<code>0 2px 4px</code>（贴近层）+ <code>0 12px 28px -12px</code>（扩散层）</td><td>静态卡片的轻漂浮感</td></tr><tr><td><code>--menu-shadow</code></td><td>双层：<code>0 4px 8px</code> + <code>0 16px 40px -8px</code></td><td>浮层的明确离地感</td></tr><tr><td><code>--focus-glow</code></td><td>双层，扩散更大</td><td>输入聚焦的柔和光晕</td></tr></tbody></table>
+<p><strong>暗色适配规律【已实现】</strong>：暗色下阴影不透明度显著提高（<code>0.03→0.20</code>、<code>0.16→0.50</code>），因暗背景需要更强的阴影才能被感知。后续新主题必须遵守此规律。</p>
+<div data-component="divider"></div>
+<h2 id="section-7">七、布局骨架</h2>
+<h3>7.1 三栏 + 自绘标题栏【已实现】</h3>
+<table class="doc-table"><thead><tr><th>区域</th><th>尺寸</th><th>关键实现</th></tr></thead><tbody><tr><td>自绘标题栏 <code>#winTitlebar</code></td><td>高 <strong>36px</strong>，<code>position: fixed</code>，<code>z-index: 9000</code></td><td><code>-webkit-app-region: drag</code>（可拖拽），双击最大化；<code>body</code> 以 <code>padding-top: 36px</code> 占位</td></tr><tr><td>窗口按钮 <code>.wtbtn</code></td><td>宽 <strong>46px</strong>，图标 <strong>11×11px</strong></td><td>三枚细线 SVG（最小化/最大化/关闭）；关闭键 hover <code>#E81123</code></td></tr><tr><td>左栏 <code>#leftPanel</code></td><td>宽 <strong>280px</strong>，<code>flex-shrink: 0</code>，内边距 <code>28px 12px 16px</code></td><td>三态：正常 / 隐藏（<code>margin-left: -280px</code>）/ 竖条（<strong>52px</strong>）</td></tr><tr><td>竖条栏 <code>#leftRail</code></td><td>宽 52px，按钮 <strong>36×36px</strong> 圆角 11px</td><td>顶部展开键置顶，其下与侧栏一一对应的功能图标（点击只执行动作不展开）</td></tr><tr><td>中栏</td><td><code>flex: 1 1 0; min-width: 0</code>，聊天内容 <code>max-width: 920px</code> 居中</td><td>自适应剩余宽度</td></tr><tr><td>右栏 <code>#rightPanel</code></td><td>宽 <strong>320px</strong>，内边距 <code>24px 20px</code>，间距 16px</td><td>收起态 <code>margin-right: -320px</code></td></tr><tr><td>分隔线</td><td><code>1px var(--panel-border)</code>，上下内缩 18px</td><td>细线区隔，不切割视觉</td></tr></tbody></table>
+<p><strong>窗口尺寸【已实现】</strong>：主窗 <strong>1320×880</strong>，最小 <strong>980×620</strong>；子窗 1080×760，同最小限制。背景色 <code>#F6F7F9</code>（浅色主题底）。</p>
+<h3>7.2 左栏收起/展开动效【已实现】</h3>
+<ul><li>收起为 <strong>52px 竖条</strong>：宽度 <code>280 → 52</code> 的 <strong>0.28s ease-in-out</strong> 平推；内容不 <code>display:none</code>，而是固定 280px 宽 + <code>flex-shrink: 0</code> + 面板 <code>overflow: clip</code>，过渡中内容被<strong>逐渐裁剪滑出</strong>（真实平推感）；竖条图标延迟 0.18s 淡入。</li><li><strong>关键约束</strong>：<code>transition</code> 仅在 <code>.anim</code> 类挂载时启用（按钮点击、<code>Ctrl+Alt+L</code>、阅读模式进出），普通内容更新绝不触发侧栏动画——这是防止"切会话时侧栏乱动"的核心机制。</li><li>展开：反向推回，<strong>无入场动画</strong>（避免展开时的拖沓感）。</li></ul>
+<h3>7.3 阅读模式布局【已实现】</h3>
+<p>进入 AI 阅读模式时：</p>
+<table class="doc-table"><thead><tr><th>变化</th><th>实现</th></tr></thead><tbody><tr><td>左栏</td><td><code>setLeftPanelHidden(true)</code> <strong>完全滑出</strong>，无左缘展开入口</td></tr><tr><td>右栏</td><td>强制展开，宽度 <code>320px → 30%</code></td></tr><tr><td>文档 : 消息</td><td><strong>70 : 30</strong></td></tr><tr><td>内容区动效</td><td><code>contentFloatIn</code>（放大上浮）/ <code>contentFloatBack</code>（缩放下沉），0.28s ease-in-out</td></tr><tr><td>右栏读聊 DOM</td><td>独立 <code>#readMsgScroll</code> + <code>#readChatInput</code>，不与主输入框共享状态</td></tr><tr><td>阅读输入框</td><td>Chat 化：+ 附件（多选、芯片可删）、深度思考开关、模型名、发送键；<strong>无文件芯片</strong></td></tr><tr><td>退出</td><td>恢复左栏 → 再重渲染（避免闪烁）；右栏还原 320px</td></tr></tbody></table>
+<h3>7.4 主内容区结构</h3>
+<p><strong>【已实现】</strong> 当前主区为：顶部标题栏（会话标题 + 全屏按钮）→ 内容/消息流 → 底部固定输入区。消息流右侧有 <code>#msgNav</code> 消息导航条。</p>
+<p><strong>【待实现】</strong> 策划案规划的<strong>欢迎态五段式结构</strong>（顶部标题栏 → 中央欢迎区 → 三栏卡片区 → 快捷操作按钮组 → 底部输入区）目前仅有骨架，其中：</p>
+<table class="doc-table"><thead><tr><th>段落</th><th>策划案要求</th><th>现状</th></tr></thead><tbody><tr><td>中央欢迎区</td><td>Chat：气泡图标 +「你好，欢迎」+「告诉我们你的需求，其余交给我们。」&lt;br&gt;Work：显示器图标 +「科研工作台已就绪」+「搭建智能体、连接工具，在沙箱里跑通你的实验。」</td><td><strong>待实现</strong>（按模式动态加载文案与图标）</td></tr><tr><td>三栏卡片区</td><td>深色智能体介绍卡 + 任务卡 + 建议提示词卡，等宽三列</td><td><strong>待实现</strong></td></tr><tr><td>任务卡内容</td><td>Chat：解析论文方法 / 对比模型架构 / 生成参考文献&lt;br&gt;Work：复现论文里的核心实验 / 检索并精读一篇 arXiv 论文 / 分析训练日志并画出 loss 曲线</td><td><strong>待实现</strong>（含底部「查看全部」展开）</td></tr><tr><td>快捷按钮组</td><td>Chat：上传文件 / 润色提示词 / 模型配置 / 研究笔记&lt;br&gt;Work：通用 Agent / 代码复现 / 沙箱</td><td><strong>部分实现</strong>（相关功能已在，但未聚合为居中胶囊组）</td></tr></tbody></table>
+<h3>7.5 密度两档【待实现】</h3>
+<p>策划案要求"信息密度提供舒适/紧凑两档"。实现方案：</p>
+<pre><code>html[data-density="compact"] {
+  --space-unit: 0.85;   /* 间距缩放 */
+  --font-scale: 0.94;   /* 字号缩放 */
+  --row-height: 0.88;   /* 列表行高缩放 */
+}</code></pre>
+<p>作用于：菜单项内边距、会话项行高、卡片内边距、表格行高。<strong>不作用于</strong>：输入框高度、图标尺寸、圆角（保持可点击性与视觉稳定）。</p>
+<div data-component="divider"></div>
+<h2 id="section-8">八、组件规范</h2>
+<h3>8.1 按钮体系【已实现】</h3>
+<table class="doc-table"><thead><tr><th>类型</th><th>类名/工厂</th><th>尺寸与样式</th><th>状态</th></tr></thead><tbody><tr><td>主按钮</td><td><code>.btn-primary</code></td><td>墨色底 + <code>--primary-text</code> 白字 + <code>box-shadow: 0 4px 12px -4px rgba(15,23,42,.35)</code></td><td>hover：底色转 <code>--primary-hover</code> + 阴影加深 + <code>translateY(-1px)</code>；active：<code>scale(0.95)</code></td></tr><tr><td>药丸按钮</td><td><code>pillBtn()</code></td><td>高 <strong>34px</strong>、圆角 <code>999px</code>，图标 13px</td><td>用于输入区快捷操作</td></tr><tr><td>小按钮</td><td><code>smallBtn()</code></td><td><code>padding: 5px 11px</code>、圆角 <strong>8px</strong>、字号 <strong>11.5px</strong></td><td>三态：default / danger / primary</td></tr><tr><td>图标幽灵按钮</td><td><code>.icon-ghost</code> / <code>.action-btn</code></td><td>26×26px 圆角 7-8px</td><td>hover 仅变色底，<strong>不位移</strong></td></tr></tbody></table>
+<p><strong>统一交互规范【已实现】</strong>：</p>
+<ul><li>过渡：<code>transform 0.16s</code> / <code>box-shadow 0.2s</code> / 颜色 <code>0.18s</code></li><li>hover 位移：<code>.btn:hover { translateY(-1px) }</code>（唯一位移，刻意保留的"抬升"反馈）</li><li>active：<code>translateY(0) scale(0.95)</code>（按压收缩）</li><li>禁用态：<code>cursor: default</code> + <code>--text-3</code> 色</li></ul>
+<p><strong>策划案要求四级按钮（主/次/文字/危险）</strong> — 现状已覆盖主、次、危险（<code>.btn-danger</code>）与图标按钮，<strong>文字按钮</strong>（纯文本无底色）为【待实现】，建议样式：<code>--link</code> 色 + hover 下划线 + 无底色。</p>
+<h3>8.2 输入区【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>容器 <code>.input-box</code></td><td>大圆角 <strong>20px</strong>，<code>--input-bg</code> 底，1px <code>--border</code> 描边</td></tr><tr><td>聚焦</td><td><code>border-color: #94A3B8</code> + <code>--focus-glow</code> 阴影光晕，<code>transition 0.2-0.25s</code></td></tr><tr><td>主输入 <code>#chatInput</code></td><td><code>font-size: 14px</code> / <code>line-height: 22px</code>，无边框无外轮廓，<code>resize: none</code></td></tr><tr><td>占位文字</td><td><code>--text-3</code> 色；Chat：铅笔图标 +「询问研究方法、数学边界或核心发现……」</td></tr><tr><td>左侧附加区</td><td>Chat：加号 + 「深度思考」按钮&lt;br&gt;Work：加号 + 「选择工作区」+ 「默认确认」下拉 + 智能体下拉</td></tr><tr><td>右侧固定区</td><td>模型选择下拉 + 语音输入 + 发送键</td></tr><tr><td>限宽保护</td><td>左组 <code>min-width: 0; overflow: hidden</code>；工作区标签 110px / Agent 100px / 权限 88px 限宽；右组 <code>flex-shrink: 0</code></td></tr></tbody></table>
+<p><strong>语音键录音态【已实现】</strong>：<code>.mic-btn.recording</code> → 红色 <code>#EF4444</code> + 红色 10% 底 + <code>pulse 1.4s</code> 呼吸光环。</p>
+<h3>8.3 下拉菜单【已实现 — 含重要架构决策】</h3>
+<p><strong>核心问题与解法</strong>：<code>.dropdown-menu</code> 类默认 <code>opacity: 0; pointer-events: none</code>（配合父级 <code>.open</code> 解除）。这导致两类故障：</p>
+<ol><li>智能体/权限/模型菜单由 JS 直接切 <code>display</code>、父级不挂 <code>.open</code> → 菜单"打开"后<strong>透明且不可点</strong>（表现为"点击无响应"）。<strong>修复</strong>：按 ID 特异性覆盖 <code>opacity: 1; transform: none; pointer-events: auto</code>。</li><li><code>.input-box</code> 的 <code>overflow-y: auto</code> <strong>裁剪</strong>向上弹出的绝对定位菜单（实测 <code>elementFromPoint</code> 命中 textarea）。<strong>修复</strong>：实现 <strong><code>openDropdownMenu</code> / <code>closeDropdownMenu</code> 门户（Portal）</strong>——打开时把菜单挂到 <code>body</code> 下用 <code>position: fixed</code> 动态定位（<code>left</code>/<code>width</code>/<code>bottom</code> 由 <code>getBoundingClientRect</code> 计算），关闭时归位。</li></ol>
+<p><strong>规范（后续所有下拉必须遵守）</strong>：</p>
+<ul><li>一律使用门户方案，不在有 <code>overflow</code> 的容器内做绝对定位弹层</li><li>默认隐藏态用 <code>opacity + pointer-events</code>，不用 <code>display: none</code>（保证过渡动画）</li><li><code>z-index: 300</code>（浮层）/ 9000（标题栏）</li><li>箭头 <code>.chev</code> 旋转 <code>0.22s cubic-bezier(0.22,1,0.36,1)</code></li></ul>
+<h3>8.4 弹窗（Modal）【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>值</th></tr></thead><tbody><tr><td>遮罩 <code>.modal-overlay</code></td><td><code>position: fixed; inset: 0</code>，<code>--overlay</code> 底 + <code>backdrop-filter: blur(4px)</code>，<code>z-index: 100</code></td></tr><tr><td>面板 <code>.modal</code></td><td>宽 <strong>480px</strong>（<code>max-width: calc(100vw - 40px)</code>）、<code>min-height: 560px</code>、圆角 <strong>16px</strong>、内边距 22px</td></tr><tr><td>显隐</td><td>两段式：<code>.show</code>（display: flex）→ <code>.visible</code>（opacity: 1），<code>0.2s</code>；面板 <code>translateY(10px) scale(0.98)</code> → none，<code>0.22s cubic-bezier(0.22,1,0.36,1)</code></td></tr></tbody></table>
+<p><strong>策划案要求的危险操作二次确认【部分实现】</strong>：删除消息已有确认弹窗（<code>delMsgConfirm</code>），但<strong>统一的"危险操作确认"组件需补齐</strong>——须说明后果、对象与来源：</p>
+<pre><code>统一确认弹窗结构：
+  标题（动词短语，如「删除该知识库文件？」）
+  后果说明（--danger-text 色，明确不可逆性）
+  影响对象清单（文件路径 / 任务名 / 记录数）
+  危险按钮（红底）置于右侧，默认焦点在「取消」上
+通道：删除文件、终止任务、清空知识库、清空沙箱、删除智能体</code></pre>
+<h3>8.5 芯片 / 标签【已实现】</h3>
+<table class="doc-table"><thead><tr><th>组件</th><th>样式</th><th>交互</th></tr></thead><tbody><tr><td>通用芯片 <code>.chip</code></td><td><code>--chip-bg</code> 底，圆角</td><td>hover：<code>box-shadow: 0 4px 12px -4px</code> + <code>translateY(-1px)</code></td></tr><tr><td>上下文芯片 <code>.ctx-quick-chip</code></td><td>芯片 + 删除叉</td><td>点击 × 移除</td></tr><tr><td>标签 <code>.tag</code></td><td><code>padding: 2px 8px</code>、圆角 <code>999px</code>、<code>11px/600</code></td><td>静态；builtin/custom 用灰色小字（去彩色堆砌）</td></tr><tr><td>已选文件芯片</td><td>文件夹/文件名 + × 快速取消</td><td>顶部统计「已选 N 个文件」+ 全部清除</td></tr></tbody></table>
+<h3>8.6 分段控件与开关【已实现】</h3>
+<table class="doc-table"><thead><tr><th>组件</th><th>实现</th></tr></thead><tbody><tr><td>分段 <code>.seg</code> / <code>.seg-item</code></td><td><code>gap: 4px</code>；item <code>flex: 1</code> / <code>padding: 7px 6px</code> / 圆角 9px / 12px 字号 / 500 字重；hover 变色底；<code>.selected</code> → 墨色底 + 白字 + 600 字重</td></tr><tr><td>开关 <code>.toggle</code></td><td><strong>34×20px</strong> 圆角 999px；关态 <code>#CBD5E1</code>（暗色 <code>#475569</code>），开态 <strong><code>#16A34A</code></strong>（绿）；滑块 16px 用 <code>left</code> 属性动画 <code>0.18s cubic-bezier(0.22,1,0.36,1)</code></td></tr></tbody></table>
+<h3>8.7 Toast【已实现】</h3>
+<p>底部 28px 居中，药丸形（<code>padding: 9px 18px</code> / 圆角 999px / 13px 字号 / 500 字重），墨色底白字，阴影 <code>0 10px 30px -6px rgba(15,23,42,.4)</code>；显隐 <code>opacity + translateY(16px→0)</code>，<code>0.22s</code>；<code>z-index: 200</code>。</p>
+<h3>8.8 Agent 运行时间线（trace）【已实现 — 核心专业组件】</h3>
+<p>这是产品区别于通用对话工具的关键视觉资产。</p>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>导轨</td><td><strong><code>border-left: 1px solid var(--border)</code></strong> 竖向导轨（1px，克制）</td></tr><tr><td>节点圆点</td><td><strong><code>6×6px</code></strong>，<code>left: -3.5px</code> 骑在导轨上</td></tr><tr><td>节点状态色</td><td><strong>running</strong>：<code>var(--link)</code> + <code>csPulse</code> 呼吸动画&lt;br&gt;<strong>ok</strong>：<code>var(--text-3)</code> 灰&lt;br&gt;<strong>error</strong>：<code>var(--danger-text)</code> 红</td></tr><tr><td>条目内容</td><td>等宽工具名（<code>--mono</code> / 12px / 600）+ 单行参数摘要 + <strong>右对齐耗时</strong>（10.5px mono）</td></tr><tr><td>展开</td><td>点击（含键盘 Enter/Space）展开输入/响应<strong>等宽面板</strong>；条目设 <code>tabindex="0"</code> + <code>role="button"</code></td></tr><tr><td>分组</td><td>按 step 分步，步骤间小灰标签分隔</td></tr><tr><td>顶部汇总条</td><td>「步骤 N · M 次工具调用 · T」</td></tr><tr><td>加载态</td><td>加载转圈（<code>csSpin</code>）</td></tr><tr><td>中断态</td><td><code>_pausedByUser</code> 标记 → 渲染为「已中断」（不显示裸错误）</td></tr></tbody></table>
+<p><strong>设计意图</strong>：以 IDE/CI 时间线的语言表达 Agent 执行，而非"卡片堆砌"，呼应"可追溯、可复现"的产品主张。</p>
+<h3>8.9 笔记本（Jupyter 化）【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>单元格模型</td><td><code>markdown</code> / <code>code</code> 两类</td></tr><tr><td>左侧工具 gutter</td><td><strong>30px</strong> 宽竖排：类型切换、上移、下移、删除</td></tr><tr><td>类型徽章</td><td><code>CODE</code> / <code>MD</code>，蓝/绿 <strong>10% 透明度</strong>底</td></tr><tr><td>代码格</td><td><code>In [n]:</code> 提示（10.5px / 700），等宽字体 <code>"Consolas", "JetBrains Mono"</code></td></tr><tr><td>MD 格</td><td>预览切换（marked + DOMPurify）</td></tr><tr><td>头部</td><td>标题 + 归属标签 + 保存 + 加格按钮</td></tr><tr><td>左列表</td><td>按「项目笔记本 / 对话笔记本 / 独立」分组，<code>scopeKey</code> 持久化</td></tr><tr><td>兼容</td><td>旧纯文本笔记自动降级为 markdown 格；Agent <code>note_write</code> 只写 content 时后端自动追加为 markdown 单元格</td></tr></tbody></table>
+<h3>8.10 消息导航条（msgNav）【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>位置</td><td><code>right: 10px</code>，垂直居中</td></tr><tr><td>圆点 <code>.nav-dot</code></td><td><strong>14×4px</strong> 圆角 2px；当前项 <code>--link</code> 色且宽 <strong>20px</strong></td></tr><tr><td>激活逻辑</td><td><strong>以视口底部为准</strong>——当前屏幕最下方 AI 回复所属记录的用户消息为激活项</td></tr><tr><td>hover 展开</td><td>预览面板 <code>max-width: 360px</code></td></tr><tr><td>主滚动条</td><td>聊天区隐藏原生滚动条（<code>display: none</code>），由导航条替代</td></tr></tbody></table>
+<h3>8.11 文件选择弹窗【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>层级化结构</td><td>左栏文件夹列表（宽 <strong>186px</strong>）+ 右栏文件区</td></tr><tr><td>流程约束</td><td>右栏初始被遮罩禁用，提示「请先在左侧选择文件夹，再选择文件」；点文件夹后才激活</td></tr><tr><td>多选</td><td>Ctrl/Cmd 加选、Shift 范围选择（基于最近点击行索引）、<strong>鼠标拖拽框选</strong>（橡皮筋选框 + 矩形碰撞检测；非加选模式先清当前文件夹选择；拖拽后 <code>suppressClick</code> 抑制误触）</td></tr><tr><td>跨文件夹累计</td><td>切换文件夹<strong>不清空</strong>已选，跨文件夹保留</td></tr><tr><td>视觉反馈</td><td>选中行高亮背景 + accent 边框 + 勾选标记</td></tr><tr><td>顶部统计</td><td>「已选 N 个文件」+ 芯片列表（文件夹/文件名 + ×）+ 全部清除</td></tr></tbody></table>
+<h3>8.12 文档阅读器【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>外壳 <code>.reader-root</code></td><td><code>--surface-2</code> 底</td></tr><tr><td>工具栏 <code>.reader-toolbar</code></td><td><code>padding: 7px 12px</code>，<code>--panel-bg</code> 底 + 1px 下边框；按钮 <strong>26×26px</strong> 圆角 7px</td></tr><tr><td>目录 <code>.reader-toc</code></td><td>宽 <strong>240px</strong>，左侧滑入 <code>0.24s cubic-bezier(0.22,1,0.36,1)</code>；条目 12px / 圆角 8px</td></tr><tr><td>文档页 <code>.reader-page-wrap</code></td><td><code>max-width: 780px</code> 居中，纸面恒白，圆角 4px，阴影 <code>0 2px 10px rgba(15,23,42,.10)</code></td></tr><tr><td>标注高亮 <code>.hl-anno</code></td><td><code>rgba(250,204,21,0.42)</code> 注释黄 + <code>mix-blend-mode: multiply</code></td></tr><tr><td>搜索高亮 <code>.textLayer span.hl</code></td><td><code>rgba(96,165,250,0.45)</code> 蓝</td></tr><tr><td>PDF 渲染</td><td>pdf.js；<strong>重渲染前必须清空旧 canvas/textLayer/标注层</strong>（防重影，已修）</td></tr><tr><td>文本层</td><td><code>.textLayer</code> 透明文字层支持选择与划词</td></tr></tbody></table>
+<h3>8.13 空状态与加载态【部分实现】</h3>
+<table class="doc-table"><thead><tr><th>场景</th><th>要求</th><th>现状</th></tr></thead><tbody><tr><td>空会话</td><td>引导性欢迎区（见 7.4）</td><td>待实现（五段式欢迎区）</td></tr><tr><td>空列表（智能体未就绪）</td><td>显示「正在加载智能体…」并强制重拉，失败显示可重试文案</td><td>已实现</td></tr><tr><td>空知识库</td><td>引导上传</td><td>已实现（引导文案）</td></tr><tr><td>长任务进度</td><td>进度 + 可取消 + 失败重试</td><td>部分实现（发送键变「暂停生成」，失败有错误呈现）</td></tr><tr><td>无活动会话点发送</td><td>应有反馈</td><td><strong>缺陷</strong>：当前 <code>sendMessage</code> 直接 return，无反馈。建议补 toast</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-9">九、图标体系</h2>
+<h3>9.1 内联 SVG 图标库【已实现】</h3>
+<table class="doc-table"><thead><tr><th>要素</th><th>实现</th></tr></thead><tbody><tr><td>基准网格</td><td><code>viewBox="0 0 24 24"</code>，<code>stroke="currentColor"</code>，<code>stroke-width="2"</code></td></tr><tr><td>渲染尺寸</td><td>多档 <strong>11 / 13 / 16 / 20 / 26px</strong>（按场景）</td></tr><tr><td>图标库</td><td><code>ICONS</code> 对象集中管理 <strong>30+ 条路径</strong>：返回、关闭、加号、删除、编辑、播放、停止、复制、智能体、图层、插头、盒子、书、终端、文件、搜索、警告、勾选、聊天、扳手、时钟、保存等</td></tr><tr><td>数量</td><td>主页面 <strong>26 个</strong> <code>&lt;svg class="icon"&gt;</code> 内联使用</td></tr><tr><td>安全加固</td><td><code>icon()</code> 工厂用<strong>正则白名单 <code>SVG_ICON_RE</code></strong> 校验路径，不匹配则回退 <code>ICONS.warn</code>，<strong>防 innerHTML 注入</strong></td></tr><tr><td>Unicode 使用</td><td>主页面 emoji <strong>0 个</strong>；仅少量 Unicode 符号用于迷你控件（<code>↑↓×</code> 笔记本工具、<code>×</code> 删除、<code>→</code> 流向）；箭头导航用 SVG（<code>chevronR</code> / <code>chev</code>）而非字符</td></tr></tbody></table>
+<h3>9.2 应用图标【已实现 — 权限冲突项】</h3>
+<table class="doc-table"><thead><tr><th>资产</th><th>实现</th></tr></thead><tbody><tr><td>源文件</td><td><code>app/logo.jpeg</code>（<strong>粉蓝双气泡</strong>圆角方形对话气泡 + 白色椭圆轨道，米白底）</td></tr><tr><td>生成</td><td><code>make-icons.ts</code> 手工拼装 ICO，<strong>7 尺寸：256/128/64/48/32/24/16</strong></td></tr><tr><td>托盘</td><td><code>tray.png</code>（16px）+ <code>tray@2x.png</code>（32px），自动取 2x</td></tr><tr><td>接线</td><td><code>main.ts:137</code> 窗口图标；<code>main.ts:176</code> 托盘图标；<code>pack.ts</code> rcedit 写入 PE 资源</td></tr><tr><td>验证</td><td>已从打包后 exe 提取图标渲染核对</td></tr></tbody></table>
+<h3>9.3 品牌视觉统一【待实现 — 重要风险】</h3>
+<p><strong>【关键冲突】</strong> 项目内存在<strong>两套互不相干的品牌视觉</strong>：</p>
+<table class="doc-table"><thead><tr><th>素材</th><th>内容</th><th>状态</th></tr></thead><tbody><tr><td><code>app/logo.jpeg</code> + 应用图标</td><td><strong>粉蓝双气泡</strong>（粉色渐变 SaaS 风格），与已实现的中性墨色 UI 基调<strong>严重冲突</strong></td><td>已接入产品，正在使用</td></tr><tr><td><code>inkforge-brand_assets/</code> 11 张</td><td><strong>InkForge（墨砺）</strong>完整品牌提案：6 个 Logo 概念稿（墨砾之痕 / 新墨 / 岩钛星形 / 粒子成墨 / 历史同心 / 飞弓盾）+ 定稿 + VI 手册 + 3 张场景展示</td><td>未接入产品</td></tr><tr><td><code>科研Agent宣传海报.png</code></td><td><strong>ChatScience</strong> 竖版海报（宝蓝科学风 + 3D 分子网络），文案完整</td><td>宣传物料</td></tr><tr><td>策划案</td><td>产品名 <strong>「墨台」</strong>（Work 模式智能体系统 <strong>「墨道」</strong>）</td><td>策划案文本</td></tr></tbody></table>
+<p>即：<strong>产品名（墨台）、已接入图标（粉蓝气泡）、品牌 VI 提案（墨砺 InkForge）、宣传海报（ChatScience 宝蓝）四者互不一致。</strong></p>
+<p><strong>统一方案（建议）</strong>：</p>
+<ol><li><strong>以「墨台 / 墨道」为唯一产品命名</strong>（策划案为准），InkForge 提案作为<strong>视觉基因库</strong>而非命名来源。</li><li><strong>采纳 InkForge VI 的色彩体系</strong>，因其与"墨"的定位及已实现的中性墨色 UI <strong>天然契合</strong>：</li></ol>
+<table class="doc-table"><thead><tr><th>VI 色</th><th>值</th><th>在产品中的角色</th></tr></thead><tbody><tr><td>玄黑</td><td><code>#16161D</code></td><td>对应 <code>--primary-bg</code>（墨色主按钮），与已实现 <code>#0F172A</code> 同族，微调对齐即可</td></tr><tr><td>石青</td><td><code>#2E6E8E</code></td><td>新的品牌强调色候选；与已实现 <code>--link #2563EB</code> 调和后可保留蓝链接</td></tr><tr><td>丹朱</td><td><code>#CE4928</code></td><td>品牌点缀色（印章/关键标识），谨慎使用</td></tr><tr><td>宣白</td><td>米白系</td><td>对应 <code>--bg</code> 的暖色变体（对应"朱砂国风""城南旧事"主题底色）</td></tr></tbody></table>
+<ol><li><strong>重做应用图标</strong>：以 InkForge 定稿（深墨黑 + 宝蓝双圈 + 中心青色节点环 + 朱红圆心）或"粒子成墨 M"概念为基础重绘，替换现有粉蓝气泡。必须同步更新 <code>app.ico</code> 七尺寸 + 托盘 2 尺寸 + rcedit 资源。</li><li><strong>保留 VI 辅助图形</strong>：同心墨痕、分子网络、粒子散点、方形朱印——作为品牌物料与空状态插画的图形语言。</li><li><strong>主张语统一</strong>：InkForge 提案为「格物砺知」，宣传海报为「把重复劳动交给 AI / 把思考留给研究者」，策划案为「让科研从重复劳动中解放，把精力还给思考」——需择一定为唯一主主张（详见宣传板块）。</li></ol>
+<h3>9.4 图标待补规范【待实现】</h3>
+<table class="doc-table"><thead><tr><th>待补项</th><th>建议</th></tr></thead><tbody><tr><td>图标尺寸令牌化</td><td>定义 <code>--icon-xs: 12px</code> / <code>--icon-sm: 16px</code> / <code>--icon-md: 20px</code> / <code>--icon-lg: 24px</code>，收敛当前多档散值</td></tr><tr><td>图标语义清单</td><td>建立"功能 → 图标"映射表，避免同一功能在不同页面用不同图标</td></tr><tr><td>主题化</td><td>图标一律 <code>currentColor</code>（已实现），主题切换自动跟随</td></tr><tr><td>空状态插画</td><td>用 VI 辅助图形（同心墨痕 / 粒子散点）制作成轻量 SVG 插画</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-10">十、动效规范</h2>
+<h3>10.1 缓动与时长【已实现】</h3>
+<table class="doc-table"><thead><tr><th>缓动</th><th>值</th><th>用途</th></tr></thead><tbody><tr><td>标准缓动</td><td><code>cubic-bezier(0.22, 1, 0.36, 1)</code></td><td>所有进出场、展开、菜单、modal、工具栏</td></tr><tr><td>ease</td><td><code>ease</code></td><td>颜色、背景、边框过渡（简单状态变化）</td></tr><tr><td>ease-in-out</td><td><code>ease-in-out</code></td><td>布局尺寸变化（侧栏推拉、阅读模式进出）</td></tr></tbody></table>
+<table class="doc-table"><thead><tr><th>时长档</th><th>值</th><th>用途</th></tr></thead><tbody><tr><td>极快</td><td>0.12s / 0.14s</td><td>标题栏按钮、菜单项 hover</td></tr><tr><td>快速</td><td>0.15s / 0.16s / 0.18s</td><td>图标按钮、按钮、芯片、会话项、开关</td></tr><tr><td>标准</td><td>0.2s / 0.22s</td><td>输入框聚焦、modal 出入、toast、箭头旋转</td></tr><tr><td>布局</td><td>0.24s / 0.25s</td><td>阅读器目录滑入、主题色过渡</td></tr><tr><td>大动效</td><td><strong>0.28s</strong></td><td>侧栏平推、阅读模式进出</td></tr><tr><td>进场</td><td>0.55s</td><td>首屏卡片进场（panelIn，带 0.05/0.14/0.23s 错峰延迟）</td></tr></tbody></table>
+<h3>10.2 动效清单【已实现】</h3>
+<table class="doc-table"><thead><tr><th>名称</th><th>定义</th><th>用途</th></tr></thead><tbody><tr><td><code>panelIn</code></td><td><code>opacity 0→1</code> + <code>translateY(10px)→none</code></td><td>三栏卡片进场，错峰</td></tr><tr><td><code>msgIn</code></td><td><code>opacity 0→1</code> + <code>translateY(12px) scale(0.99)→none</code></td><td>消息出现</td></tr><tr><td><code>csPulse</code></td><td><code>opacity 1 → 0.35 → 1</code></td><td>时间线 running 节点呼吸</td></tr><tr><td><code>csSpin</code></td><td><code>rotate(360deg)</code></td><td>加载转圈</td></tr><tr><td><code>csExpand</code></td><td><code>opacity 0→1</code> + <code>translateY(-6px)→none</code></td><td>项目子项展开</td></tr><tr><td><code>contentFloatIn</code> / <code>contentFloatBack</code></td><td>缩放 + 位移</td><td>阅读模式进出</td></tr><tr><td><code>thinkBounce</code></td><td>三点错峰弹跳（7px 圆点，错开 0.15/0.3s）</td><td>AI 思考中</td></tr><tr><td><code>pulse</code></td><td>红色光环扩散（<code>box-shadow</code> 0→7px）</td><td>语音录音中</td></tr></tbody></table>
+<h3>10.3 动效红线【已实现，必须遵守】</h3>
+<ol><li><strong>内容更新绝不触发容器动画</strong> — 侧栏 <code>transition</code> 仅在 <code>.anim</code> 类下启用；会话列表/项目列表用<strong>签名守卫</strong>跳过重建（内容未变零重建），激活变化仅<strong>原位切换类</strong>，不触发动画，也不触碰 <code>updatedAt</code>。</li><li><strong>hover 不引起布局位移</strong> — 统一用 <code>background</code> / <code>color</code> / <code>box-shadow</code> / <code>transform</code>；唯二例外：<code>.btn:hover translateY(-1px)</code>（按压抬升）与 <code>.menu-item:hover padding-left: 14px</code>（刻意缩进）。</li><li><strong><code>prefers-reduced-motion</code> 全量降级【已实现】</strong> — <code>:468-471</code> 对该媒体查询做了全量动画降级处理。</li></ol>
+<h3>10.4 性能约束【已实现 — 血泪教训】</h3>
+<table class="doc-table"><thead><tr><th>问题</th><th>根因</th><th>修复</th></tr></thead><tbody><tr><td>消息渲染 540ms</td><td>每条用户消息行都给 <code>img.src</code> 赋 base64 头像 → 每次 <strong>80ms</strong> 同步解码</td><td>改 <strong>Blob URL 共享</strong> → 渲染降至 <strong>50ms</strong></td></tr><tr><td>右栏重建 280ms</td><td><code>renderRightPanel</code> 无守卫反复重建</td><td><strong>签名守卫</strong>（作用域+文件+选中态+搜索+折叠+扫描时间戳）→ 常驻 <strong>0ms</strong></td></tr></tbody></table>
+<p><strong>规范</strong>：严禁对图片元素重复赋 base64 数据源；任何列表渲染必须带签名守卫。</p>
+<div data-component="divider"></div>
+<h2 id="section-11">十一、交互与可访问性规范</h2>
+<h3>11.1 全局交互【已实现】</h3>
+<table class="doc-table"><thead><tr><th>项</th><th>实现</th></tr></thead><tbody><tr><td>cursor</td><td><code>cursor: pointer</code> 在 <code>webapp.ts</code> 出现 <strong>53 次</strong>，所有可点元素均设置</td></tr><tr><td>键盘关闭</td><td>Esc 关闭下拉面板、取消重命名</td></tr><tr><td>键盘操作</td><td>时间线条目 <code>tabindex="0"</code> + <code>role="button"</code> + Enter/Space 切换展开</td></tr><tr><td>快捷键体系</td><td><code>Ctrl+Alt+C</code> 显示/隐藏窗口、<code>Ctrl+Alt+T</code> 置顶、<code>Ctrl+Alt+L</code> 切换左栏</td></tr></tbody></table>
+<h3>11.2 快捷键体系【部分实现】</h3>
+<table class="doc-table"><thead><tr><th>策划案要求</th><th>现状</th></tr></thead><tbody><tr><td>运行 / 停止 / 保存 / 界面缩放 / 消息定位 / 命令面板</td><td><strong>待实现</strong>（现有 3 个窗口级快捷键）</td></tr></tbody></table>
+<p><strong>建议快捷键规划</strong>（需避免与系统及应用内控件冲突）：</p>
+<table class="doc-table"><thead><tr><th>功能</th><th>建议键位</th></tr></thead><tbody><tr><td>发送消息</td><td><code>Enter</code>（<code>Shift+Enter</code> 换行）</td></tr><tr><td>停止生成</td><td><code>Esc</code>（生成中）</td></tr><tr><td>保存（笔记本）</td><td><code>Ctrl+S</code></td></tr><tr><td>新建对话/任务</td><td><code>Ctrl+N</code></td></tr><tr><td>界面缩放</td><td><code>Ctrl+=</code> / <code>Ctrl+-</code> / <code>Ctrl+0</code></td></tr><tr><td>消息定位</td><td><code>Ctrl+↑</code> / <code>Ctrl+↓</code>（上一/下一条用户消息）</td></tr><tr><td>命令面板</td><td><code>Ctrl+K</code></td></tr><tr><td>切换模式（Chat/Work）</td><td><code>Ctrl+1</code> / <code>Ctrl+2</code></td></tr><tr><td>切换左栏</td><td><code>Ctrl+Alt+L</code>（已实现）</td></tr><tr><td>显示/隐藏窗口</td><td><code>Ctrl+Alt+C</code>（已实现）</td></tr><tr><td>置顶窗口</td><td><code>Ctrl+Alt+T</code>（已实现）</td></tr></tbody></table>
+<h3>11.3 可访问性【部分实现】</h3>
+<table class="doc-table"><thead><tr><th>要求</th><th>现状</th><th>待办</th></tr></thead><tbody><tr><td>文字对比度 ≥ 4.5:1</td><td>已实现主题已满足</td><td>新增六主题时<strong>自动校验</strong>（见 4.2.4）</td></tr><tr><td>状态不依赖颜色</td><td>部分（时间线用色 + 形状/图标）</td><td>补齐：状态点需配图标或文字标签</td></tr><tr><td>键盘全操作</td><td>部分（时间线、Esc）</td><td>补齐：下拉菜单全键盘导航、弹窗焦点陷阱</td></tr><tr><td>屏幕阅读器</td><td>待实现</td><td>补齐 <code>aria-label</code> / <code>role</code> / <code>aria-live</code>（流式输出区域用 <code>aria-live="polite"</code>）</td></tr><tr><td>焦点可见</td><td>部分（<code>--focus-glow</code>）</td><td>补齐 <code>:focus-visible</code> 统一可见焦点环</td></tr><tr><td>界面缩放</td><td>待实现</td><td>支持字号档位（见 4.2.4）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-12">十二、主题无关性原则（硬约束）</h2>
+<p><strong>【已实现为设计意图，待实现为跨主题验证】</strong></p>
+<p>策划案第 3.6.6 条的核心原则——"主题切换是换肤而非改版"——与已实现的令牌架构完全兼容，应作为<strong>硬约束</strong>执行：</p>
+<p><strong>主题切换只允许改变</strong>：</p>
+<ul><li>背景色、面板色、文字色、主色、强调色</li><li>材质质感（磨砂玻璃的半透明与背景模糊、朱砂国风与城南旧事的极淡底纹）</li></ul>
+<p><strong>任何主题下必须保持恒定</strong>：</p>
+<ul><li>三栏骨架、左栏 280px / 竖条 52px / 右栏 320px</li><li>左栏结构、主区五段式结构、组件位置与顺序</li><li>栅格与间距、圆角层级、字号层级、图标形态与尺寸、输入区布局</li></ul>
+<p><strong>验收方式</strong>：以同一份页面截图在六套主题下逐项比对几何量（元素位置、尺寸），<strong>必须像素级一致</strong>，仅颜色与材质不同。</p>
+<div data-component="divider"></div>
+<h2 id="section-13">十三、实施优先级与任务拆解</h2>
+<h3>阶段一（基础归位，P0）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>1</td><td>硬编码颜色令牌化</td><td>见 3.3 清单，9 处归位</td></tr><tr><td>2</td><td>圆角/图标/字号令牌化</td><td>新增 <code>--radius-*</code> / <code>--icon-*</code> / <code>--font-scale</code></td></tr><tr><td>3</td><td>补齐欢迎态五段式结构</td><td>见 7.4</td></tr><tr><td>4</td><td>统一危险操作确认组件</td><td>见 8.4</td></tr><tr><td>5</td><td>补 toast 反馈（无会话点发送）</td><td>已识别缺陷</td></tr><tr><td>6</td><td>品牌视觉统一决策</td><td>见 9.3（需产品决策）</td></tr></tbody></table>
+<h3>阶段二（主题系统，P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>7</td><td>新增主题所需令牌</td><td><code>--font-serif</code> / <code>--density</code> / <code>--paper</code> / <code>--texture-opacity</code> / <code>--panel-alpha</code> / <code>--panel-blur</code> / <code>--chart-1..6</code> / <code>--hl-anno</code> / <code>--hl-search</code> / <code>--focus-border</code> / <code>--selection-*</code></td></tr><tr><td>8</td><td>实现六套主题 + 暗色变体</td><td>见 4.2.2，共 12 份令牌赋值</td></tr><tr><td>9</td><td>对比度自动校验</td><td>自定义主题保存前校验</td></tr><tr><td>10</td><td>中文排版规范落地</td><td>见 5.4</td></tr><tr><td>11</td><td>密度两档</td><td>见 7.5</td></tr><tr><td>12</td><td>主题无关性回归验收</td><td>见第十二章</td></tr></tbody></table>
+<h3>阶段三（完善，P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>任务</th><th>说明</th></tr></thead><tbody><tr><td>13</td><td>自定义主题（编辑/导入导出/分享/团队下发）</td><td>见 4.2.4</td></tr><tr><td>14</td><td>空状态插画（VI 辅助图形）</td><td>见 9.4</td></tr><tr><td>15</td><td>完整快捷键体系</td><td>见 11.2</td></tr><tr><td>16</td><td>可访问性补齐</td><td>ARIA、焦点陷阱、focus-visible</td></tr><tr><td>17</td><td>响应式适配</td><td>当前无 media query 断点（仅 prefers-reduced-motion），需补小屏/分屏适配</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-14">十四、已实现 / 待实现速查总表</h2>
+<table class="doc-table"><thead><tr><th>模块</th><th>已实现</th><th>部分实现</th><th>待实现</th></tr></thead><tbody><tr><td>设计语言</td><td>中性色 + 墨色主按钮 + 克制蓝链接；零 emoji</td><td>—</td><td>中文排版规范</td></tr><tr><td>设计令牌</td><td>全套 30+ 令牌（light/dark 成对）</td><td>9 处硬编码待归位</td><td>主题扩展令牌、圆角/图标令牌</td></tr><tr><td>主题系统</td><td>Light / Dark / 跟随系统 / 持久化 / 0.25s 过渡</td><td>—</td><td>六套主题 + 暗色变体、自定义主题、团队下发、对比度校验</td></tr><tr><td>字体排版</td><td>Instrument Sans 4 字重、10 档字号梯度、字距规范</td><td>—</td><td>中文字体族、中英混排间距、标点禁则</td></tr><tr><td>栅格间距</td><td>4px 半栅格 + 8px 主节奏、6 级间距</td><td>—</td><td>密度两档</td></tr><tr><td>圆角阴影</td><td>6 级圆角、3 类双阴影（暗色适配）</td><td>—</td><td>圆角令牌化</td></tr><tr><td>布局骨架</td><td>自绘标题栏 36px、左栏 280/52px、右栏 320px、阅读模式 70:30、0.28s 平推</td><td>主区五段式（欢迎区/卡片区未实现）</td><td>完整五段式、响应式断点</td></tr><tr><td>组件</td><td>按钮 4 类、输入区、门户式下拉、Modal、芯片、分段、开关、Toast、时间线、Jupyter 笔记本、msgNav、文件选择、阅读器</td><td>危险确认、空状态、长任务进度</td><td>文字按钮、统一确认组件、空状态插画</td></tr><tr><td>图标</td><td>30+ SVG 库（24 网格 / stroke 2 / 多档尺寸 / 安全白名单）、app.ico 七尺寸 + 托盘 2 尺寸</td><td>—</td><td>品牌视觉统一、图标令牌化、空状态插画</td></tr><tr><td>动效</td><td>8 个动画、4 档缓动、6 档时长、reduced-motion 降级、签名守卫</td><td>—</td><td>主题切换的材质过渡</td></tr><tr><td>可访问性</td><td>对比度达标、部分键盘支持、焦点光晕</td><td>状态色/键盘全操作/焦点可见</td><td>ARIA、焦点陷阱、字号缩放</td></tr><tr><td>性能</td><td>Blob URL 头像（540→50ms）、右栏签名守卫（280→0ms）</td><td>—</td><td>虚拟滚动（长列表/长消息）</td></tr></tbody></table>
+<div data-component="divider"></div>
+<h2 id="section-15">十五、修改方向与补充内容（落地清单）</h2>
+<p>本章是面向执行者的<strong>操作清单</strong>：把前面各章散落的「待实现 / 部分实现」项收拢成「改什么文件、改哪里、改成什么、如何验收」的形式，可直接照单施工。按优先级分五组，P0 为阻塞项，必须先行。</p>
+<h3>15.1 修改方向总览</h3>
+<table class="doc-table"><thead><tr><th>组</th><th>主题</th><th>影响文件</th><th>项数</th><th>前置依赖</th></tr></thead><tbody><tr><td>A（P0）</td><td>令牌收口与硬编码归位</td><td><code>01/主页面.html</code>、<code>01/webapp.js</code></td><td>9 处</td><td>无</td></tr><tr><td>B（P0）</td><td>已识别缺陷修复</td><td><code>01/webapp.js</code>、<code>01/主页面.html</code></td><td>5 项</td><td>无</td></tr><tr><td>C（P1）</td><td>主题系统扩展</td><td><code>01/主页面.html</code>、新增主题文件</td><td>12 份赋值</td><td>A 组完成</td></tr><tr><td>D（P1）</td><td>中文排版与密度</td><td><code>01/主页面.html</code></td><td>6 项</td><td>A 组完成</td></tr><tr><td>E（P2）</td><td>可访问性与响应式</td><td>全前端</td><td>8 项</td><td>C/D 组完成</td></tr></tbody></table>
+<h3>15.2 A 组：令牌收口与硬编码归位（P0）</h3>
+<p><strong>修改方向</strong>：把 3.3 节清点的 9 处硬编码颜色全部收敛为令牌引用，<strong>先新增令牌再替换引用</strong>，不得反过来。</p>
+<table class="doc-table"><thead><tr><th>#</th><th>位置</th><th>现值</th><th>动作</th><th>建议新令牌</th></tr></thead><tbody><tr><td>A1</td><td><code>.input-box:focus-within</code> 边框、<code>.field-input:focus</code></td><td><code>#94A3B8</code></td><td>新增令牌并替换</td><td><code>--focus-border</code></td></tr><tr><td>A2</td><td><code>#toast</code> 阴影</td><td><code>rgba(15,23,42,0.4)</code></td><td>复用现有令牌</td><td>复用 <code>--menu-shadow</code></td></tr><tr><td>A3</td><td><code>::selection</code> 背景 / 文字</td><td><code>#D7DEE8</code> / <code>#0F172A</code></td><td>新增一对令牌</td><td><code>--selection-bg</code> / <code>--selection-text</code></td></tr><tr><td>A4</td><td><code>.wtbtn.wt-close:hover</code></td><td><code>#E81123</code></td><td>新增令牌</td><td><code>--close-hover</code>（Windows 标准红）</td></tr><tr><td>A5</td><td><code>.toggle</code> 关态</td><td><code>#CBD5E1</code></td><td>归入既有令牌</td><td>改用 <code>--text-3</code></td></tr><tr><td>A6</td><td>阅读器注释高亮 <code>.hl-anno</code></td><td><code>rgba(250,204,21,0.42)</code></td><td>新增令牌</td><td><code>--hl-anno</code></td></tr><tr><td>A7</td><td>阅读器搜索高亮 <code>.textLayer span.hl</code></td><td><code>rgba(96,165,250,0.45)</code></td><td>新增令牌</td><td><code>--hl-search</code></td></tr><tr><td>A8</td><td><code>.reader-page-wrap</code> 纸面</td><td><code>#fff</code></td><td>新增令牌（阅读纸张恒白，可主题化为米黄）</td><td><code>--paper</code></td></tr><tr><td>A9</td><td>文件卡片图标底/字色</td><td><code>#FEE2E2</code> / <code>#DC2626</code></td><td>归入既有体系</td><td>复用 <code>--danger-bg</code> / <code>--danger-text</code></td></tr></tbody></table>
+<p><strong>验收方法</strong>：全局搜索 <code>#</code> 开头的颜色字面量（排除 <code>:root</code> 定义块与 <code>var()</code> 的 fallback 位置），命中数应为 0。</p>
+<h3>15.3 B 组：已识别缺陷修复（P0）</h3>
+<p>这些是调研中实测发现的真实缺陷，优先级高于任何新增能力。</p>
+<table class="doc-table"><thead><tr><th>#</th><th>缺陷</th><th>现象</th><th>修改方向</th></tr></thead><tbody><tr><td>B1</td><td><strong>无活动会话点发送无反馈</strong></td><td><code>sendMessage</code> 直接 <code>return</code>，用户点击后界面无任何响应，易被判定为"卡死"</td><td>在 <code>return</code> 前补 <code>toast('请先选择或创建一个会话')</code>；若当前在欢迎态，则改为新建会话后直接发送</td></tr><tr><td>B2</td><td><strong>智能体/权限/模型菜单透明不可点</strong></td><td>菜单由 JS 直接切 <code>display</code>、父级未挂 <code>.open</code>，导致 <code>opacity:0; pointer-events:none</code> 仍然生效</td><td>统一改为门户方案 <code>openDropdownMenu</code> / <code>closeDropdownMenu</code>；按 ID 特异性覆盖 <code>opacity:1; pointer-events:auto</code> 作为兜底</td></tr><tr><td>B3</td><td><strong>下拉菜单被输入框裁剪</strong></td><td><code>.input-box</code> 的 <code>overflow-y:auto</code> 裁剪向上弹出的绝对定位菜单（<code>elementFromPoint</code> 命中 textarea）</td><td>一律走门户：打开时挂到 <code>body</code> + <code>position:fixed</code>，<code>left</code>/<code>width</code>/<code>bottom</code> 由 <code>getBoundingClientRect</code> 计算，关闭时归位</td></tr><tr><td>B4</td><td><strong>PDF 重渲染重影</strong></td><td>未清空旧 canvas/textLayer/标注层</td><td>重渲染前显式清空三层 DOM，再重建</td></tr><tr><td>B5</td><td><strong>侧栏动画误触发</strong></td><td>切会话时侧栏出现无意义动画</td><td>确认 <code>transition</code> 仅挂在 <code>.anim</code> 类下；会话列表用签名守卫跳过重建</td></tr></tbody></table>
+<p><strong>验收方法</strong>：B1 手动点击验证有 toast；B2/B3 在深度较深的会话中向上弹菜单，确认可见且可点；B4 连续翻页 10 次确认无重影；B5 快速切换 20 个会话观察侧栏静止。</p>
+<h3>15.4 C 组：主题系统扩展（P1）</h3>
+<p><strong>前置</strong>：A 组必须完成，否则新增主题无法覆盖硬编码颜色，会出现"换主题后局部颜色不变"。</p>
+<p><strong>修改方向</strong>：</p>
+<ol><li><strong>新增扩展令牌</strong>（4.2.1 节清单）——<code>--font-ui</code> / <code>--font-serif</code> / <code>--radius-card</code> / <code>--radius-btn</code> / <code>--radius-tag</code> / <code>--density</code> / <code>--texture-opacity</code> / <code>--panel-alpha</code> / <code>--panel-blur</code> / <code>--chart-1..6</code>。这些是六套主题的<strong>必要条件</strong>，缺一不可。</li><li><strong>落地 12 份令牌赋值</strong>——六套主题（mono / ink-green / sky-sea / cinnabar / nostalgia / glass）各配明暗两版，按 4.2.2 节给出的完整映射表逐条写入。</li><li><strong>材质层</strong>——<code>data-material="glass"</code> 控制半透明与背景模糊、<code>data-texture="paper"</code> 控制底纹；磨砂玻璃主题的<strong>可读性红线</strong>必须遵守：正文与节点文字用实色，代码区与图表区背景不半透明。</li><li><strong>对比度自动校验</strong>——保存自定义主题前，自动计算 <code>--text-1</code> 对 <code>--bg</code>、<code>--text-2</code> 对 <code>--surface</code> 的对比度，低于 4.5:1 拒绝保存并提示具体令牌。</li><li><strong>主题无关性回归</strong>——按第十二章的验收方式，同一页面在六套主题下截图逐项比对几何量，<strong>必须像素级一致</strong>，仅颜色与材质不同。</li></ol>
+<h3>15.5 D 组：中文排版与密度（P1）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>补充内容</th><th>具体做法</th></tr></thead><tbody><tr><td>D1</td><td>中文字体族</td><td><code>--font-ui</code> 增加中文回退链：<code>"PingFang SC", "HarmonyOS Sans SC", "Microsoft YaHei"</code></td></tr><tr><td>D2</td><td>中英混排间距</td><td>中英文之间自动插入 1/4 em 间隙（标记层实现，不侵入原文）</td></tr><tr><td>D3</td><td>中文标点禁则</td><td>行首/行尾标点挤压处理</td></tr><tr><td>D4</td><td>首行缩进</td><td>文档阅读模式下正文首行缩进 2 字符（界面区不缩进）</td></tr><tr><td>D5</td><td>中文字重回退</td><td>中文 Sint 字重有限，600/700 回退为 500 + 字色加深，避免"伪粗体"</td></tr><tr><td>D6</td><td>中文行高</td><td>中文正文行高由 1.57 提升至 1.75（当前对中文偏紧）</td></tr></tbody></table>
+<p><strong>密度两档</strong>（7.5 节）：新增 <code>html[data-density="compact"]</code>，通过 <code>--space-unit: 0.85</code> / <code>--font-scale: 0.94</code> / <code>--row-height: 0.88</code> 缩放。作用于菜单项内边距、会话项行高、卡片内边距、表格行高；<strong>不作用于</strong>输入框高度、图标尺寸、圆角（保持可点击性与视觉稳定）。</p>
+<h3>15.6 E 组：可访问性与响应式（P2）</h3>
+<table class="doc-table"><thead><tr><th>#</th><th>补充内容</th><th>具体做法</th></tr></thead><tbody><tr><td>E1</td><td>状态不依赖颜色</td><td>时间线状态点补图标或文字标签，与颜色并存</td></tr><tr><td>E2</td><td>键盘全操作</td><td>下拉菜单支持全键盘导航（上下键移动、Enter 选中、Esc 关闭）</td></tr><tr><td>E3</td><td>弹窗焦点陷阱</td><td>Modal 打开时焦点锁定在弹窗内，Tab 循环不外溢，默认焦点落在「取消」</td></tr><tr><td>E4</td><td>屏幕阅读器</td><td>补 <code>aria-label</code> / <code>role</code>；流式输出区域加 <code>aria-live="polite"</code></td></tr><tr><td>E5</td><td>焦点可见</td><td>统一 <code>:focus-visible</code> 焦点环，不依赖鼠标态</td></tr><tr><td>E6</td><td>界面缩放</td><td>字号档位 0.9 / 1.0 / 1.1 / 1.25，作用于字号令牌</td></tr><tr><td>E7</td><td>响应式断点</td><td>当前<strong>无任何 media query</strong>（仅 prefers-reduced-motion），需补小屏与分屏适配：优先保证 980×620 最小窗口下三栏可用（右栏自动收起）</td></tr><tr><td>E8</td><td>虚拟滚动</td><td>长列表与长消息场景，避免全量 DOM；注意与签名守卫配合，不可破坏"内容未变零重建"</td></tr></tbody></table>
+<h3>15.7 其余补充说明</h3>
+<table class="doc-table"><thead><tr><th>补充项</th><th>说明</th></tr></thead><tbody><tr><td>文字按钮</td><td>策划案要求的四级按钮中，<strong>文字按钮</strong>（纯文本无底色）待补：<code>--link</code> 色 + hover 下划线 + 无底色</td></tr><tr><td>统一危险确认组件</td><td>当前仅删除消息有确认弹窗，需抽出通用组件：标题（动词短语）+ 后果说明（<code>--danger-text</code> 色）+ 影响对象清单 + 危险按钮置右、默认焦点在「取消」。接入通道：删除文件、终止任务、清空知识库、清空沙箱、删除智能体</td></tr><tr><td>欢迎态五段式</td><td>见 7.4：中央欢迎区（按模式动态加载文案与图标）+ 三栏卡片区（深色智能体介绍卡 + 任务卡 + 建议提示词卡）+ 快捷按钮组（功能已在，需聚合为居中胶囊组）</td></tr><tr><td>图标令牌化与语义清单</td><td>定义 <code>--icon-xs/sm/md/lg</code>，收敛当前 11/13/16/20/26px 散值；建立"功能 → 图标"映射表，避免同一功能在不同页面用不同图标</td></tr><tr><td>空状态插画</td><td>用 VI 辅助图形（同心墨痕 / 粒子散点）制作轻量 SVG 插画，替换现有纯文字空状态</td></tr><tr><td>完整快捷键体系</td><td>见 11.2 建议键位表，需注意与系统及控件冲突（<code>Ctrl+S</code> 需在笔记本内拦截）</td></tr><tr><td><strong>品牌视觉统一（需产品决策）</strong></td><td>见 9.3。当前四套品牌视觉并存：<code>app/logo.jpeg</code> 粉蓝气泡（已接入）、InkForge 墨砺 11 张提案（未接入）、ChatScience 宝蓝海报、策划案「墨台」。建议：命名以「墨台/墨道」为准，采纳 InkForge VI 色系（玄黑/石青/丹朱/宣白），重做应用图标并同步 <code>app.ico</code> 七尺寸 + 托盘 2 尺寸 + rcedit 资源</td></tr></tbody></table>
+<h3>15.8 施工顺序建议</h3>
+<pre><code>A 组（令牌归位）→ B 组（缺陷修复）→ C 组（主题扩展）→ D 组（中文与密度）→ E 组（可访问性）
+                                                      ↘ 主题无关性回归验收（C 组完成后必做）</code></pre>
+<p><strong>每完成一组必须回归验证</strong>：A/B 组回归现有 UI 无视觉变化（纯属重构）；C 组做主题无关性像素比对；D/E 组做跨主题与跨窗口尺寸验证。</p>
+<div data-component="divider"></div>
+<p><em>本策划案基于对 <code>D:\ChatScience</code> 项目源码的实测调研编制，全部"已实现"结论均以源码行号为准。编制日期：2026 年 9 月。</em></p>
+</div>
+</section>
+</body>
+</html>

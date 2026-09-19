@@ -1,0 +1,219 @@
+{
+  "at": "2026-09-15T11:46:17.471Z",
+  "total": 35,
+  "pass": 35,
+  "skip": 0,
+  "fail": 0,
+  "results": [
+    {
+      "id": "V3a",
+      "name": "七类子智能体已定义",
+      "ok": true,
+      "detail": "sub-lit-review,sub-experiment-design,sub-simulation,sub-data-analysis,sub-writing,sub-review,sub-archive"
+    },
+    {
+      "id": "V3b",
+      "name": "子智能体定义约束（whenToUse/无Agent/maxTurns/skills）",
+      "ok": true,
+      "detail": "全部满足"
+    },
+    {
+      "id": "V3c",
+      "name": "子智能体 skills 引用全部存在",
+      "ok": true,
+      "detail": "全部存在"
+    },
+    {
+      "id": "V4a",
+      "name": "5 项新技能已发现",
+      "ok": true,
+      "detail": "5/5 · research-decompose,causal-variables,simulation-assumption,stats-interpretation,academic-writing"
+    },
+    {
+      "id": "V4b",
+      "name": "内建技能总数 ≥ 17",
+      "ok": true,
+      "detail": "builtin=17 total=17"
+    },
+    {
+      "id": "V2",
+      "name": "agent-orchestrator 已播种进注册表",
+      "ok": true,
+      "detail": "tools.sdk=Read+Write+Glob+Grep+Agent"
+    },
+    {
+      "id": "V5a",
+      "name": "A3 统一错误结构（tool/type/retryable）",
+      "ok": true,
+      "detail": "[工具错误] tool=t_x type=network retryable=yes"
+    },
+    {
+      "id": "V5b",
+      "name": "A1 超时保护：挂起调用被中止且归入工具错误",
+      "ok": true,
+      "detail": "耗时=57ms · [工具错误] tool=slow_tool type=timeout retryable=yes"
+    },
+    {
+      "id": "V5c",
+      "name": "A2 熔断：连续 3 次失败后拒绝并给出冷却提示",
+      "ok": true,
+      "detail": "handler 调用=3（第 4 次未触达 handler）· 首行=[工具错误] tool=fail_tool type=circuit-open retryable=no"
+    },
+    {
+      "id": "V5d",
+      "name": "成功调用重置熔断计数",
+      "ok": true,
+      "detail": "failures=0"
+    },
+    {
+      "id": "V6a",
+      "name": "latex_check：合法公式通过",
+      "ok": true,
+      "detail": "commands=7"
+    },
+    {
+      "id": "V6b",
+      "name": "latex_check：括号/环境错误被捕获",
+      "ok": true,
+      "detail": "brace-unbalanced,brace-unbalanced,environment"
+    },
+    {
+      "id": "V6c",
+      "name": "unit_convert：GPa→MPa=1000",
+      "ok": true,
+      "detail": "1 GPa = 1000 MPa（量纲: pressure，线性因子换算）"
+    },
+    {
+      "id": "V6d",
+      "name": "unit_convert：°C→K=373.15",
+      "ok": true,
+      "detail": "373.15"
+    },
+    {
+      "id": "V6e",
+      "name": "name_normalize：多风格互转",
+      "ok": true,
+      "detail": "\"attention_dim_head_count\""
+    },
+    {
+      "id": "V6f",
+      "name": "figure_caption：图注含要素与清单",
+      "ok": true,
+      "detail": "图 X：三种方法的收敛速度对比 （折线图（对数 y 轴）） 误差条为 3 次随机种子的标准差； 显著性标注：* p<0."
+    },
+    {
+      "id": "V6g",
+      "name": "keyword_expand：同义表命中 + 布尔检索式",
+      "ok": true,
+      "detail": "query=(\"RLHF\" OR \"reinforcement learning from human feedback\" OR \"human preference ali"
+    },
+    {
+      "id": "V6h",
+      "name": "doi_cite：非法 DOI 语法被拒",
+      "ok": true,
+      "detail": "DOI 语法不合法（应形如 10.1234/abc.def）: not-a-doi"
+    },
+    {
+      "id": "V7a",
+      "name": "显式路由表：main→ultimate",
+      "ok": true,
+      "detail": "main=ultimate"
+    },
+    {
+      "id": "V7b",
+      "name": "显式路由表：task→lite",
+      "ok": true,
+      "detail": "task=lite"
+    },
+    {
+      "id": "V7c",
+      "name": "路由表缺项回落：compact→route.main=ultimate",
+      "ok": true,
+      "detail": "compact=ultimate"
+    },
+    {
+      "id": "V7d",
+      "name": "非法档位回落智能体档位（回落逻辑保留）",
+      "ok": true,
+      "detail": "model=performance"
+    },
+    {
+      "id": "V7e",
+      "name": "隐式策略=继承语义：task 跟随智能体档位（成本控制走显式 modelRoute）",
+      "ok": true,
+      "detail": "task=performance main=performance"
+    },
+    {
+      "id": "V7f",
+      "name": "空路由表：全部目的继承 lite（子智能体 inherit 语义）",
+      "ok": true,
+      "detail": "task=lite"
+    },
+    {
+      "id": "V1a",
+      "name": "隔离不回归：无本机 MCP 泄漏（新增工具后）",
+      "ok": true,
+      "detail": "泄漏="
+    },
+    {
+      "id": "V1b",
+      "name": "12 个科研工具全部注入",
+      "ok": true,
+      "detail": "12 个: arxiv_search,fetch_url,web_search,kb_search,note_write,run_code,doi_cite,latex_check,unit_convert,name_normalize,figure_caption,keyword_expand"
+    },
+    {
+      "id": "V9",
+      "name": "基础回合成功且产物正确（1.32521403e-33）",
+      "ok": true,
+      "detail": "ok=true v9.txt=1.32521403e-33 turns=8"
+    },
+    {
+      "id": "V9b",
+      "name": "流式事件与工具轨迹完整",
+      "ok": true,
+      "detail": "delta=85 tool_start=8 tool_end=8"
+    },
+    {
+      "id": "V9c",
+      "name": "N2 预留：tool_start 携带 parentToolUseId 字段",
+      "ok": true,
+      "detail": "主会话值=null"
+    },
+    {
+      "id": "V8",
+      "name": "A4 审计落盘：tool_start/tool_end 记录存在",
+      "ok": true,
+      "detail": "总条数=87 start=true end(含耗时)=true"
+    },
+    {
+      "id": "V10",
+      "name": "简单任务直接回答，不委派子智能体",
+      "ok": true,
+      "detail": "ok=true Agent 调用=0 回答片段=过拟合是指机器学习模型在训练数据上表现过于优异，以至于记住了噪声和细节，导致在未见过的测试数据上泛化"
+    },
+    {
+      "id": "V11a",
+      "name": "委派发生：Agent 工具被调用",
+      "ok": true,
+      "detail": "callId=call_0246f9030eac43a3a1c8b89a args={\"description\":\"归档注意力温度扫描实验记录\",\"prompt\":\"请将以下实验记录归档到项目笔记/知识库中：\\n\\n实验记录内容：「2026-0"
+    },
+    {
+      "id": "V11b",
+      "name": "子智能体活动可观测（subagent_start/stop 通知）",
+      "ok": true,
+      "detail": "{\"evt\":\"notice\",\"runId\":\"rmu2lv62u00w\",\"code\":\"subagent_start\",\"message\":\"子智能体启动：sub-archive\"}"
+    },
+    {
+      "id": "V11c",
+      "name": "N2：子智能体消息携带非空 parentToolUseId（或全程主会话）",
+      "ok": true,
+      "detail": "观察到嵌套 tool 事件 parent=call_0246f90"
+    },
+    {
+      "id": "V11d",
+      "name": "端到端成果：归档笔记真实落盘",
+      "ok": true,
+      "detail": "note=true ok=true 回复=归档已完成。\n\n**归档结果汇报：**\n\n- **笔记 ID**: `nmu2lvtqfz53g`\n- **标题**: "
+    }
+  ]
+}

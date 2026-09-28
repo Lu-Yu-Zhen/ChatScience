@@ -10,6 +10,7 @@ import type {
   McpServerConfig,
   PermissionMode,
 } from './qoder-sdk';
+import type { MemoryApi } from '../server/memory';
 
 /* ---------------- 沙箱策略 ---------------- */
 
@@ -451,6 +452,11 @@ export interface WorkTurnParams {
   workspaceRoot?: string | null;
   permissionMode?: string | null;
   signal?: AbortSignal;
+  /* 项目记忆（Work 项目下的任务）：有 projectId 时回合前确保项目记忆文件夹与
+     任务记忆文档就绪，并注入记忆机制 + 注册 Stop 记忆决策 hook */
+  projectId?: string | null;
+  projectName?: string | null;
+  taskTitle?: string | null;
 }
 
 export interface WorkTurnResult {
@@ -567,6 +573,8 @@ export interface WorkCtx {
   sandbox: SandboxApi;
   notes: NotesApi;
   kb: KbApi;
+  /* 项目记忆：data/projects/<id>/memory/（qoder.ts 回合注入 + routes.ts HTTP 面） */
+  memory: MemoryApi;
   qoder: QoderApi;
 }
 /* createQoder 在 ctx.qoder 赋值前调用，收到的是不含自身的依赖 */

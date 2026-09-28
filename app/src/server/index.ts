@@ -15,6 +15,7 @@ import * as storeMod from './store';
 import * as sandboxMod from './sandbox';
 import * as notesMod from './notes';
 import * as kbMod from './kb';
+import * as memoryMod from './memory';
 import * as qoderMod from './qoder';
 import * as routesMod from './routes';
 import type { WorkCtx, QoderApi, AiConfigFile, ChatStreamOptions, ChatRequestFields } from '../shared/domain';
@@ -77,6 +78,8 @@ export function startServer(
     store: store, sandbox: sandbox,
     notes: notesMod.createNotes(appRoot),
     kb: kbMod.createKb(appRoot),   /* N6：知识库 BM25 词法检索索引（前端推送文本） */
+    /* 项目记忆：data/projects/<projectId>/memory/（任务 md + Stop 决策 hook） */
+    memory: memoryMod.createMemory(appRoot, function (line) { log(appRoot, line); }),
     qoder: undefined as unknown as QoderApi
   };
   /* Qoder Agent SDK：Work 模式的 Agent 底座（循环/工具调用/MCP/模型均由 SDK 承担） */

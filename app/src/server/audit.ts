@@ -11,7 +11,7 @@ import * as path from 'path';
 
 export interface AuditEntry {
   ts: string;
-  event: 'tool_start' | 'tool_end' | 'tool_error' | 'permission_denied' | 'subagent' | 'model_policy';
+  event: 'tool_start' | 'tool_end' | 'tool_error' | 'permission_denied' | 'subagent' | 'model_policy' | 'memory_decision';
   tool?: string;
   toolUseId?: string;
   callId?: string;

@@ -103,6 +103,9 @@ Work.runTurn = function (conv, aiMsg) {
   const proj = (typeof projects !== 'undefined' && conv.projectId)
     ? projects.find(function (p) { return p.id === conv.projectId; }) : null;
   const workspaceRoot = (proj && proj.mode === 'work' && proj.folder) ? proj.folder : null;
+  /* 项目记忆：Work 项目下的任务带 projectId——后端据此就绪项目记忆文件夹与
+     任务记忆文档，并注册 Stop 记忆决策 hook（模型自主决定是否更新） */
+  const memProject = (proj && proj.mode === 'work') ? proj : null;
 
   /* 语言跟随设置 */
   var lang = (typeof getLang === 'function') ? getLang() : 'zh';
@@ -136,6 +139,9 @@ Work.runTurn = function (conv, aiMsg) {
     resumeSessionId: conv.sdkSessionId || null,
     workspaceRoot: workspaceRoot,
     permissionMode: conv.permissionMode || null,
+    projectId: memProject ? memProject.id : null,
+    projectName: memProject ? memProject.name : null,
+    taskTitle: conv.title || null,
     prompt: buildPrompt()
   }, {
     onEvent: function (evt, d) {

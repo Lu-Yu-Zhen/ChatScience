@@ -1,0 +1,5 @@
+{
+  "name": "research-robotics",
+  "version": "1.0.0",
+  "description": "机器人工程领域科研外挂：仿真与真机部署智能体、URDF 核查与 ROS2 排查技能、安全检查命令、重力矩估算 MCP 工具"
+}

@@ -116,7 +116,7 @@
     ]
   },
   "qoderN1": {
-    "at": "2026-09-05T02:59:02.880Z",
+    "at": "2026-09-22T14:13:39.285Z",
     "total": 12,
     "pass": 12,
     "results": [
@@ -124,19 +124,19 @@
         "id": "1a",
         "name": "隔离生效：工具列表不含本机 MCP（settingSources:[] + strictMcpConfig）",
         "ok": true,
-        "detail": "工具数=10 泄漏="
+        "detail": "工具数=26 泄漏="
       },
       {
         "id": "1b",
         "name": "科研工具已注入",
         "ok": true,
-        "detail": "mcp__chatscience__arxiv_search,mcp__chatscience__fetch_url,mcp__chatscience__web_search,mcp__chatscience__kb_search,mcp__chatscience__note_write,mcp__chatscience__run_code"
+        "detail": "mcp__chatscience__arxiv_search,mcp__chatscience__fetch_url,mcp__chatscience__web_search,mcp__chatscience__kb_search,mcp__chatscience__note_write,mcp__chatscience__run_code,mcp__chatscience__doi_cite,mcp__chatscience__latex_check,mcp__chatscience__unit_convert,mcp__chatscience__name_normalize,mcp__chatscience__figure_caption,mcp__chatscience__keyword_expand"
       },
       {
         "id": "1c",
         "name": "回合成功",
         "ok": true,
-        "detail": "turns=4 dur=8815ms"
+        "detail": "turns=5 dur=19502ms"
       },
       {
         "id": "1d",
@@ -148,7 +148,7 @@
         "id": "1e",
         "name": "流式事件与工具轨迹完整",
         "ok": true,
-        "detail": "delta=12 tool_start=3 tool_end=3 名称=Read,Bash,Write"
+        "detail": "delta=16 tool_start=4 tool_end=4 名称=Read,Bash,Write,Read"
       },
       {
         "id": "2a",
@@ -160,7 +160,7 @@
         "id": "2b",
         "name": "canUseTool 拦截越界写入",
         "ok": true,
-        "detail": "路径超出沙箱工作目录，禁止写入：D:\\ChatScience\\app\\server\\qoder.json（产物请写到 cwd 内，图片建议 out/ 子目录）"
+        "detail": "路径超出沙箱工作目录，禁止写入：D:\\ChatScience\\app\\server\\qoder.json（产物请写到 cwd 内，图片建议 out/ 子目录；项目记忆请写记忆目录）"
       },
       {
         "id": "2c",
@@ -178,7 +178,7 @@
         "id": "3a",
         "name": "第一回合返回 sessionId",
         "ok": true,
-        "detail": "session=93eb721e-92a3-4d3e-9e3b-6cf2fb7eb567"
+        "detail": "session=f4d34e4a-6034-4770-a6de-9398f3c02482"
       },
       {
         "id": "3b",
@@ -450,8 +450,8 @@
     ]
   },
   "agentE2E": {
-    "at": "2026-09-05T08:04:17.406Z",
-    "totalMs": 26630,
+    "at": "2026-09-22T14:14:43.299Z",
+    "totalMs": 52187,
     "total": 7,
     "pass": 7,
     "results": [
@@ -459,7 +459,7 @@
         "id": "1a",
         "name": "任务成功",
         "ok": true,
-        "detail": "turns=4 toolCalls=4 dur=11887ms"
+        "detail": "turns=4 toolCalls=4 dur=23767ms"
       },
       {
         "id": "1b",
@@ -477,7 +477,7 @@
         "id": "1d",
         "name": "最终文本报告了均值",
         "ok": true,
-        "detail": "两步均已完成：scaled dot-product attention 输出张量的均值为 **-0.1572**，实验笔记已写入笔记本。"
+        "detail": "两步均已完成：\n\n1. **代码执行**：scaled dot-product attention 在 seed(0)、shape=(2,4,8) 下的输出均值为 **-0.1572**。\n2. **实验笔记**：已写入「最小注意力实验」（"
       },
       {
         "id": "1e",
@@ -537,5 +537,152 @@
         "detail": "MoE.py,README.md"
       }
     ]
+  },
+  "projectMemory": {
+    "at": "2026-09-22T14:26:34.537Z",
+    "totalMs": 52099,
+    "total": 23,
+    "pass": 23,
+    "results": [
+      {
+        "id": "a1",
+        "name": "ensureProject 生成项目记忆文件夹 + README.md",
+        "ok": true,
+        "detail": "D:\\ChatScience\\app\\data\\projects\\verify-mem-mucrnz1i\\memory"
+      },
+      {
+        "id": "a2",
+        "name": "ensureTask 生成任务记忆 md + 登记进 README 任务清单",
+        "ok": true,
+        "detail": "D:\\ChatScience\\app\\data\\projects\\verify-mem-mucrnz1i\\memory\\tasks\\verify-task-mucrnz1i.md"
+      },
+      {
+        "id": "a3",
+        "name": "ensureTask 幂等（二次创建不覆盖）",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "id": "a4",
+        "name": "syncTaskTitle 同步 md 标题（draft→正题）",
+        "ok": true,
+        "detail": "随机种子约定"
+      },
+      {
+        "id": "a5",
+        "name": "readTask / readProject 读回",
+        "ok": true,
+        "detail": "tasks=verify-task-mucrnz1i"
+      },
+      {
+        "id": "a6",
+        "name": "ensureContext 就绪 + buildPromptSection 含机制与路径",
+        "ok": true,
+        "detail": "section 1049 chars"
+      },
+      {
+        "id": "a7",
+        "name": "Stop hook 首触返回 block + 决策指令（含任务记忆路径）",
+        "ok": true,
+        "detail": "【记忆更新决策】本轮任务对话已结束。请判断本轮是否产生了值得长期记忆的信息：\n- 值得记：关键决策与依据、重要结果/数据/结论、用户明确的偏好或反馈、错误与教训"
+      },
+      {
+        "id": "a8",
+        "name": "stop_hook_active=true 时放行（防循环）",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "id": "a9",
+        "name": "单回合双保险：已阻断过一次后放行",
+        "ok": true,
+        "detail": ""
+      },
+      {
+        "id": "a10",
+        "name": "决策触发落审计 memory_decision + 发 notice",
+        "ok": true,
+        "detail": "audit=1 notice=1"
+      },
+      {
+        "id": "a11",
+        "name": "ID 安全化防目录穿越（../../ 前缀被清洗）",
+        "ok": true,
+        "detail": "D:\\ChatScience\\app\\data\\projects\\______evil-mucrnz2v\\memory"
+      },
+      {
+        "id": "b1",
+        "name": "POST /memory/project 创建项目记忆文件夹",
+        "ok": true,
+        "detail": "D:\\ChatScience\\app\\data\\projects\\verify-mem-http-mucrnzv7\\memory"
+      },
+      {
+        "id": "b2",
+        "name": "POST /memory/task 创建任务记忆 md",
+        "ok": true,
+        "detail": "D:\\ChatScience\\app\\data\\projects\\verify-mem-http-mucrnzv7\\memory\\tasks\\verify-task-http-mucrnzv7.md"
+      },
+      {
+        "id": "b3",
+        "name": "GET /memory/task 读回内容",
+        "ok": true,
+        "detail": "chars=136"
+      },
+      {
+        "id": "b4",
+        "name": "GET /memory/project 索引含任务清单",
+        "ok": true,
+        "detail": "verify-task-http-mucrnzv7"
+      },
+      {
+        "id": "b5",
+        "name": "缺 taskId 返回 400",
+        "ok": true,
+        "detail": "HTTP 400"
+      },
+      {
+        "id": "c0",
+        "name": "BYOK 模型就绪（e2e 前置）",
+        "ok": true,
+        "detail": "qwen3.8-flash-pg,glm5.3-flash-pg,deepseek-flash-pg"
+      },
+      {
+        "id": "c1",
+        "name": "e2e 回合成功（带项目记忆链路）",
+        "ok": true,
+        "detail": "turns=5 toolCalls=3 dur=20904ms err="
+      },
+      {
+        "id": "c2",
+        "name": "回合前记忆就绪：项目文件夹 + 任务 md 已生成",
+        "ok": true,
+        "detail": "D:\\ChatScience\\app\\data\\projects\\verify-mem-e2e-mucro5sh\\memory\\tasks\\mem-e2e-1.md"
+      },
+      {
+        "id": "c3",
+        "name": "Stop 记忆决策 hook 每轮必触发（audit + SSE notice）",
+        "ok": true,
+        "detail": "notice=1 auditDelta=1"
+      },
+      {
+        "id": "c4",
+        "name": "模型自主决策写入任务记忆（md 含约定事实 seed 42）",
+        "ok": true,
+        "detail": "# 任务记忆：随机种子约定 |  | - 任务 ID：`mem-e2e-1` | - 创建时间：2026-09-22T14:25:51.195Z |  | ## 记忆条目 | （每轮对话结束后由 Agent 自主决策是否追加；格式：`### 日期` + 要点） |  | ### 2026-09-22 | - 用户确认：所有实验随机种子固定为 42，生成随机数据必须 seed(42) | "
+      },
+      {
+        "id": "c5",
+        "name": "决策 hook 未造成循环（turns 有界 < maxTurns）",
+        "ok": true,
+        "detail": "turns=5"
+      },
+      {
+        "id": "c6",
+        "name": "无 projectId 回合不触发记忆决策（负面对照）",
+        "ok": true,
+        "detail": "ok=true notice=0"
+      }
+    ],
+    "note": "C 组为真实 SDK 回合（BYOK）；Stop hook 决策 + 模型自主写入"
   }
 }

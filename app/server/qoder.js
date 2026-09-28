@@ -449,8 +449,10 @@ function buildScienceServer(sciCtx, sdk) {
 /* canUseTool 沙箱策略：deny 的原因会回给模型，模型通常下一轮自行调整。
    B6/D3：options.agentID 标识「本次工具调用由哪个子智能体发起」——在权限层按
    agentID 落审计，即是「主智能体唯一网关」语义的最小落地（网关审计点）。
-   audit 参数可选（sdk-verify.js 以三参调用本函数，行为不变）。 */
-function makeCanUseTool(cwd, policy, log, audit) {
+   audit 参数可选（sdk-verify.js 以三参调用本函数，行为不变）。
+   extraWriteRoots：cwd 之外的额外可写根（项目记忆目录 data/projects/<id>/memory）——
+   模型经 Stop 记忆决策 hook 自主更新项目记忆的写入口径，只放开这一个目录。 */
+function makeCanUseTool(cwd, policy, log, audit, extraWriteRoots) {
     return async function (toolName, input, options) {
         const agentId = (options && options.agentID) || null;
         try {
@@ -466,14 +468,27 @@ function makeCanUseTool(cwd, policy, log, audit) {
             if (toolName === 'Write' || toolName === 'Edit') {
                 const p = String((input && (input.file_path || input.notebook_path)) || '');
                 if (p) {
+                    let inside = false;
                     try {
                         policyMod.assertInside(cwd, p);
+                        inside = true;
                     }
                     catch (e) {
-                        log('canUseTool deny ' + toolName + (agentId ? ' [agent:' + agentId + ']' : '') + ': ' + e.message);
+                        /* 额外可写根（项目记忆目录）内的写入放行，其余照旧拦截 */
+                        for (const root of (extraWriteRoots || [])) {
+                            try {
+                                policyMod.assertInside(root, p);
+                                inside = true;
+                                break;
+                            }
+                            catch (e2) { /* 不在该根内，继续试下一个 */ }
+                        }
+                    }
+                    if (!inside) {
+                        log('canUseTool deny ' + toolName + (agentId ? ' [agent:' + agentId + ']' : '') + ': ' + p);
                         if (audit)
-                            audit.append({ ts: new Date().toISOString(), event: 'permission_denied', tool: toolName, toolUseId: options && options.toolUseID, agentId: agentId, argsSummary: (0, audit_1.auditArgsSummary)({ file_path: p }), resultStatus: 'denied', detail: (0, audit_1.auditDetail)(e.message) });
-                        return { behavior: 'deny', message: '路径超出沙箱工作目录，禁止写入：' + p + '（产物请写到 cwd 内，图片建议 out/ 子目录）' };
+                            audit.append({ ts: new Date().toISOString(), event: 'permission_denied', tool: toolName, toolUseId: options && options.toolUseID, agentId: agentId, argsSummary: (0, audit_1.auditArgsSummary)({ file_path: p }), resultStatus: 'denied', detail: (0, audit_1.auditDetail)('路径超出沙箱工作目录与额外可写根：' + p) });
+                        return { behavior: 'deny', message: '路径超出沙箱工作目录，禁止写入：' + p + '（产物请写到 cwd 内，图片建议 out/ 子目录；项目记忆请写记忆目录）' };
                     }
                 }
             }
@@ -948,6 +963,19 @@ function createQoder(appRoot, ctx) {
         const policy = ctx.sandbox.policy();
         /* 设置页偏好：记忆 scope 开关 + Git/Worktree 约束（真实消费点，见 options 构建处） */
         const prefs = ctx.store.section('prefs');
+        /* --- 项目记忆就绪（Work 项目下的任务）---
+           有 projectId：回合前确保项目记忆文件夹 + 任务记忆文档（幂等），
+           标题同步（draft→正题后 md 的 H1 跟随）；失败不阻断会话（降级为无记忆）。 */
+        let memCtx = null;
+        if (params.projectId && typeof params.projectId === 'string') {
+            try {
+                memCtx = ctx.memory.ensureContext(params.projectId, params.projectName || '', params.convId || null, params.taskTitle || null);
+            }
+            catch (e) {
+                ctx.log('memory ensure failed: ' + e.message);
+                memCtx = null;
+            }
+        }
         /* --- 工具可见集：SDK 内建（白名单交集）+ 科研工具 + MCP 白名单 ---
            语义：tools.sdk 未设置 = 默认全集；[] = 显式不给任何内建工具（纯 MCP 智能体） */
         const wantSdk = agentDef.tools ? agentDef.tools.sdk : undefined;
@@ -1084,6 +1112,10 @@ function createQoder(appRoot, ctx) {
             '- 诚实汇报：不夸大完成度；失败的尝试如实计入总结。',
             agentDef.systemPrompt ? '# 本智能体的专属定位\n' + String(agentDef.systemPrompt) : ''
         ].filter(Boolean).join('\n\n');
+        /* 项目记忆注入：机制说明 + 当前任务/项目记忆内容（截断）；无项目上下文时不变 */
+        const systemPromptAppend = agentSystemPrompt
+            + (memCtx ? '\n\n' + ctx.memory.buildPromptSection(memCtx) : '')
+            + (0, userdata_1.gitPrefsPrompt)(prefs);
         /* --- 墨道主智能体调度（E2/E3）---
            主会话委派前提（SDK 机制）：tools 含 Agent 工具 + options.agents 注册子智能体。
            七类科研子智能体仅注册给主智能体；其余智能体行为完全不变。 */
@@ -1108,7 +1140,7 @@ function createQoder(appRoot, ctx) {
             /* 官方推荐（system-prompt 文档）：preset+append 保留 CLI 预设的工具规范、
                任务规划与安全约束，仅追加业务规则；完全替换会连带丢失这些行为。
                Git/Worktree 偏好（设置页）一并注入，作为墨道 git 行为约束。 */
-            systemPrompt: { type: 'preset', preset: 'qodercli', append: agentSystemPrompt + (0, userdata_1.gitPrefsPrompt)(prefs) },
+            systemPrompt: { type: 'preset', preset: 'qodercli', append: systemPromptAppend },
             /* BYOK 直连：options.model = 已注册 BYOK 模型 id（凭据存 Qoder 服务端） */
             model: byokModelId,
             /* 权限模式：请求覆盖 > 智能体定义 > 全局配置 > default（SDK 五档） */
@@ -1123,7 +1155,7 @@ function createQoder(appRoot, ctx) {
             strictMcpConfig: true,
             tools: tools,
             allowedTools: tools.slice(),
-            canUseTool: makeCanUseTool(workDir, policy, log, auditLog),
+            canUseTool: makeCanUseTool(workDir, policy, log, auditLog, memCtx ? [memCtx.dir] : undefined),
             mcpServers: mcpServers,
             includePartialMessages: true
         };
@@ -1154,7 +1186,14 @@ function createQoder(appRoot, ctx) {
         };
         /* A4：工具调用审计 hooks（旁路，写 data/work-audit.jsonl） */
         const runId = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-        options.hooks = makeAuditHooks(auditLog, function (e, d) { emit(e, Object.assign({}, d, { runId: runId })); }, runId);
+        const runHooks = makeAuditHooks(auditLog, function (e, d) { emit(e, Object.assign({}, d, { runId: runId })); }, runId);
+        /* 项目记忆：Stop 事件注册「记忆更新决策」hook——每轮对话结束必触发，
+           模型自主决定是否写入项目记忆（stop_hook_active 防循环，见 memory.ts）。 */
+        if (memCtx && runHooks) {
+            const stopHooks = ctx.memory.makeStopHook(memCtx, auditLog, function (e, d) { emit(e, Object.assign({}, d, { runId: runId })); });
+            runHooks.Stop = stopHooks.Stop;
+        }
+        options.hooks = runHooks;
         if (process.env.CS_DEBUG) {
             console.log('[qoder][debug] cwd=' + workDir);
             console.log('[qoder][debug] options=' + JSON.stringify(Object.assign({}, options, { auth: '<redacted>' })).slice(0, 800));

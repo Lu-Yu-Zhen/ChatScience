@@ -242,7 +242,12 @@ function mountRoutes(app, ctx) {
             scopeId: body.scopeId || 'global',
             workspaceRoot: body.workspaceRoot || null,
             permissionMode: body.permissionMode || null,
-            signal: abortCtl.signal
+            signal: abortCtl.signal,
+            /* 项目记忆：Work 项目下的任务带 projectId——回合前确保记忆就绪 +
+               注册 Stop 记忆决策 hook（模型自主决定是否更新） */
+            projectId: body.projectId || null,
+            projectName: body.projectName || null,
+            taskTitle: body.taskTitle || null
         }, function (evt, data) { sse.send(evt, data); }).then(function (result) {
             runFinished = true;
             sse.send('run_result', { result: result });
@@ -256,6 +261,69 @@ function mountRoutes(app, ctx) {
             sse.end({ ok: false });
             ctx.log && ctx.log('qoder run failed conv=' + body.convId + ' err=' + e.message);
         });
+    });
+    /* ---------------- 项目记忆（data/projects/<id>/memory/） ----------------
+       前端在项目创建 / 任务创建时调用（幂等）；agent/run 侧也有就绪保障，
+       两端任一失败都不阻断——记忆是增强不是闸门。 */
+    app.post('/api/work/memory/project', function (req, res) {
+        const body = req.body || {};
+        const projectId = String(body.projectId || '');
+        if (!projectId) {
+            res.status(400).json({ error: 'projectId required' });
+            return;
+        }
+        try {
+            const r = ctx.memory.ensureProject(projectId, String(body.name || ''));
+            res.json({ ok: true, projectId: projectId, dir: r.dir, readme: r.readme, created: r.created });
+        }
+        catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+    app.post('/api/work/memory/task', function (req, res) {
+        const body = req.body || {};
+        const projectId = String(body.projectId || '');
+        const taskId = String(body.taskId || '');
+        if (!projectId || !taskId) {
+            res.status(400).json({ error: 'projectId & taskId required' });
+            return;
+        }
+        try {
+            const r = ctx.memory.ensureTask(projectId, taskId, String(body.title || ''), String(body.projectName || ''));
+            res.json({ ok: true, projectId: projectId, taskId: taskId, file: r.file, created: r.created });
+        }
+        catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+    app.get('/api/work/memory/task', function (req, res) {
+        const projectId = String(req.query.projectId || '');
+        const taskId = String(req.query.taskId || '');
+        if (!projectId || !taskId) {
+            res.status(400).json({ error: 'projectId & taskId required' });
+            return;
+        }
+        try {
+            const r = ctx.memory.readTask(projectId, taskId);
+            res.json({ ok: true, projectId: projectId, taskId: taskId, exists: r.exists, content: r.content, path: r.path });
+        }
+        catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+    app.get('/api/work/memory/project', function (req, res) {
+        const projectId = String(req.query.projectId || '');
+        if (!projectId) {
+            res.status(400).json({ error: 'projectId required' });
+            return;
+        }
+        try {
+            const r = ctx.memory.readProject(projectId);
+            res.json({ ok: true, projectId: projectId, exists: r.exists, content: r.content, path: r.path, tasks: r.tasks });
+        }
+        catch (e) {
+            res.status(500).json({ error: e.message });
+        }
     });
     /* SDK 状态与连通性自检 */
     app.get('/api/work/qoder/config', function (req, res) { res.json(ctx.qoder.config()); });

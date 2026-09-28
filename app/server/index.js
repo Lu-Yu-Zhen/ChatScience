@@ -53,6 +53,7 @@ const storeMod = __importStar(require("./store"));
 const sandboxMod = __importStar(require("./sandbox"));
 const notesMod = __importStar(require("./notes"));
 const kbMod = __importStar(require("./kb"));
+const memoryMod = __importStar(require("./memory"));
 const qoderMod = __importStar(require("./qoder"));
 const routesMod = __importStar(require("./routes"));
 function log(appRoot, line) {
@@ -107,6 +108,8 @@ function startServer(portCandidates, token, appRoot, onPort) {
         store: store, sandbox: sandbox,
         notes: notesMod.createNotes(appRoot),
         kb: kbMod.createKb(appRoot), /* N6：知识库 BM25 词法检索索引（前端推送文本） */
+        /* 项目记忆：data/projects/<projectId>/memory/（任务 md + Stop 决策 hook） */
+        memory: memoryMod.createMemory(appRoot, function (line) { log(appRoot, line); }),
         qoder: undefined
     };
     /* Qoder Agent SDK：Work 模式的 Agent 底座（循环/工具调用/MCP/模型均由 SDK 承担） */

@@ -2069,6 +2069,9 @@ function startDraft(projectId) {
     const draftMode = proj ? (proj.mode || sidebarMode) : sidebarMode;
     const defAgent = (draftMode === 'work' && typeof window.defaultAgentId === 'function') ? window.defaultAgentId() : null;
     draft = { id: 'draft-' + now, title: t('newConvName'), messages: [], isNew: true, projectId: projectId || null, createdAt: now, updatedAt: now, star: false, pinned: false, mode: draftMode, agentId: defAgent, localFiles: [], kbFiles: [], dbs: [], docCtx: null };
+    /* Work 项目下的新任务：即时生成本任务记忆文档（后端幂等） */
+    if (proj)
+        csMemoryEnsureTask(proj, draft.id, draft.title);
     activeConvId = 'draft';
     view = 'chat';
     renderConversations();
@@ -2319,6 +2322,31 @@ function openWorkPage(page) {
     playSwap();
 }
 /* ---- Work 工作区（本地文件夹）与 Agent 切换 ---- */
+/* 项目记忆就绪（尽力而为）：项目创建/任务创建时通知后端生成记忆文件夹与任务
+   md；后端 agent/run 侧也有幂等就绪保障，这里失败静默忽略（记忆是增强不是闸门）。 */
+function csMemoryPost(p, body) {
+    try {
+        if (!window.CS_BACKEND)
+            return;
+        fetch(window.CS_BACKEND.base + p, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + window.CS_BACKEND.token },
+            body: JSON.stringify(body)
+        }).catch(function () { });
+    }
+    catch (e) { /* 忽略 */ }
+}
+function csMemoryEnsureProject(proj) {
+    if (!proj || proj.mode !== 'work')
+        return;
+    csMemoryPost('/api/work/memory/project', { projectId: proj.id, name: proj.name });
+}
+function csMemoryEnsureTask(proj, taskId, title) {
+    if (!proj || proj.mode !== 'work' || !taskId)
+        return;
+    csMemoryEnsureProject(proj);
+    csMemoryPost('/api/work/memory/task', { projectId: proj.id, projectName: proj.name, taskId: taskId, title: title || '' });
+}
 function currentWorkspaceProject() {
     const conv = currentConv();
     if (!conv || !conv.projectId)
@@ -2546,11 +2574,13 @@ function pickWorkspace() {
         const name = dir.split(/[\\/]/).filter(Boolean).pop() || dir;
         const project = { id: 'p' + Date.now(), name: name, mode: 'work', folder: dir, files: [], kbFiles: [], dbs: [] };
         projects.push(project);
+        csMemoryEnsureProject(project);
         const conv = currentConv();
         if (conv) {
             conv.projectId = project.id;
             conv.mode = 'work';
             conv.agentId = (typeof window.defaultAgentId === 'function') ? window.defaultAgentId() : conv.agentId;
+            csMemoryEnsureTask(project, conv.id, conv.title);
         }
         renderProjects();
         renderConversations();
@@ -4317,7 +4347,10 @@ function buildNewProjectForm() {
             dbs: pickedDbs.map(function (n) { return { name: n, on: false, pinned: false }; })
         };
         projects.push(project);
+        csMemoryEnsureProject(project);
         draft = { id: 'draft-' + Date.now(), title: t('newConvName'), messages: [], isNew: true, projectId: project.id, mode: projMode, agentId: (projMode === 'work' && typeof window.defaultAgentId === 'function') ? window.defaultAgentId() : null, localFiles: [], kbFiles: [], dbs: [], docCtx: null };
+        if (projMode === 'work')
+            csMemoryEnsureTask(project, draft.id, draft.title);
         activeConvId = 'draft';
         view = 'chat';
         renderConversations();

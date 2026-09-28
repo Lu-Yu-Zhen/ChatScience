@@ -6,6 +6,7 @@
   "scripts": {
     "typecheck": "tsc --noEmit && tsc -p tsconfig.webapp.json --noEmit && tsc -p tsconfig.verify.json --noEmit",
     "build:ts": "tsc && tsc -p tsconfig.webapp.json && tsc -p tsconfig.verify.json",
+    "verify": "node verify/verify-suite.js",
     "start": "npm run build:ts && electron ."
   },
   "license": "MIT",

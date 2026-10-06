@@ -1,61 +1,67 @@
 ---
-type: concept
-title: 墨台项目总览
-tags: [overview, 导航]
-sources: [全部]
-updated: 2026-09-18
+type: synthesis
+title: 墨台 Wiki · 项目总览
+tags: [总览, 导航, 墨台, ChatScience, Wiki]
+sources: [AGENTS.md, app/package.json, wiki/SCHEMA.md, app/src/server/qoder.ts]
+updated: 2026-10-06
+status: stable
 ---
 
-# 墨台（ChatScience）项目总览
+# 墨台 Wiki · 项目总览
 
-> 入门页：整个项目的全景导航。深入任何主题请从链接进入对应页面；完整目录见 [index.md](index.md)。
+> 一句话摘要：墨台（工程名 ChatScience）是一台本地优先的桌面科研工作台——Electron 壳内跑本地 HTTP 后端，由主智能体墨道编排子智能体、科研插件与沙箱；本 Wiki 是它沉淀下来的、可核验的第二份真相。
 
-## 一句话定位
+读法：本页只做导航。要找某个模块 → 下面的分层地图；要知道"为什么这样设计/踩过什么坑" → [索引](index.md) 里的 concepts；要查某份策划案讲了什么 → sources；要横向比结论 → syntheses。操作规范一律看 [SCHEMA 契约](SCHEMA.md)。
 
-**墨台**（工程代号 ChatScience）是一个 Electron 桌面科研智能体应用：Chat 模式做轻对话，Work 模式由主智能体**墨道**驱动深度科研。主张语「轻对话用 Chat，深科研交给墨道」。详见 [墨台产品](entities/墨台产品.md)。
+## 分层地图
 
-## 系统分层
+| 层 | 页面 |
+|---|---|
+| 产品整体 | [墨台产品](entities/motai-product.md) |
+| 桌面壳与渲染层 | [Electron 桌面壳](entities/electron-shell.md)、[前端渲染层](entities/frontend-renderer.md)、[Work 模块群](entities/work-modules.md) |
+| 外观 | [主题系统](entities/theme-system.md)、[设置页](entities/settings-page.md)、[主题令牌契约](concepts/theme-token-contract.md)、[动效与布局约定](concepts/ui-motion-layout.md)、[对话区与输入区不变式](concepts/chat-input-invariants.md) |
+| 本地后端 | [后端服务](entities/backend-server.md)、[沙箱与工作台](entities/sandbox-workspace.md)、[记忆与知识库](entities/memory-knowledge.md)、[账本与计费](entities/ledger-billing.md) |
+| 智能体 | [墨道运行时](entities/agent-runtime.md)、[子智能体体系](entities/subagent-system.md)、[科研领域插件](entities/research-plugins.md)、[BYOK 认证与额度打回](concepts/byok-auth.md)、[Agent 委派模式](concepts/agent-delegation.md)、[领域路由与角色](concepts/domain-routing.md)、[沙箱边界](concepts/sandbox-boundaries.md)、[智能体可观测性](concepts/agent-observability.md) |
+| 工程 | [构建与打包体系](entities/build-pack-system.md)、[验证套件](entities/verification-suite.md)、[构建产物同步纪律](concepts/artifact-sync.md)、[UI 验证方法论](concepts/verification-method.md)、[开发环境与命令约束](concepts/dev-environment.md)、[踩坑实录](concepts/pitfalls-log.md) |
+| 对外与知识 | [墨台产品页站点](entities/motai-site.md)、[品牌与命名纪律](concepts/brand-naming.md)、[宣传合规红线](concepts/promo-compliance.md)、[Wiki 系统](entities/wiki-system.md)、[MCP 凭据带外化](concepts/mcp-credentials.md) |
+| 横向结论 | [策划案与源码偏差清单](syntheses/plan-vs-code-gaps.md)、[有意保留的已知缺陷](syntheses/known-defects.md)、[验证脚本与功能矩阵](syntheses/verify-feature-matrix.md) |
 
-| 层 | 内容 | 入口页 |
-|---|---|---|
-| 桌面壳 | Electron main/preload、单实例锁、托盘、通知 | [Electron 桌面层](entities/Electron桌面层.md) |
-| 前端 | webapp.ts + 14 个 work/ 数字模块，编译进单文件 | [前端架构](entities/前端架构.md) · [主题系统](entities/主题系统.md) · [设置页](entities/设置页.md) |
-| 后端 | 纯 Node/Express，仅绑 127.0.0.1 + 随机 token 鉴权 | [后端服务](entities/后端服务.md) |
-| 智能体 | 墨道（agent-orchestrator）+ 墨析 + 七类子智能体 | [墨道](entities/墨道.md) · [子智能体体系](entities/子智能体体系.md) |
-| 领域扩展 | research-ai / robotics / math 三插件（9 个领域工具） | [领域插件](concepts/领域插件.md) |
+## 规模事实（可复算）
 
-## 当前状态快照（2026-09-18）
+- 手写源：`app/src` 下 61 个 `.ts`；其中渲染层主脚本 `app/src/webapp/webapp.ts`、Agent 编排 `app/src/server/qoder.ts` 是两个最大的单文件。
+- 模块：Work 模块 14 个（`app/src/webapp/work/`）、领域插件 4 个（`app/server/plugins/`）、插件技能目录 18 个 + 底座内建技能 14 个（`app/server/skills-plugin/skills/`）。
+- 验证：`app/verify` 38 个 `.js`（37 个可跑），23 手写 / 14 编译，分五层，见[验证脚本与功能矩阵](syntheses/verify-feature-matrix.md)。
+- 资料：策划案七份 markdown 对应六份 `.docx`（`墨台实现策划案/_src/`、`墨台实现策划案/`）。
+- 身份：包名 `chatscience-desktop`、产物 `ChatScience.exe`（`app/src/pack.ts:90`），界面里的智能体名是墨道与墨析（`app/src/server/qoder.ts:148`、`:172`）。
 
-- **已落地**：Work 模式 Agent 链路（BYOK-only）、十二套主题、设置页真实数据对接、trace 思考分组、输入框「+」资源菜单、验证体系（exe-verify 34 项 + 12 脚本 69+ 项）。
-- **规划态**：[计费体系](entities/计费体系.md)（⚠️ 实质性零实现）、团队版（架构级缺失）、宣传物料多数能力。
-- **有意保留的已知问题**：Chat 深度思考开关无效、sandbox runtimes force 参数被忽略、沙箱错误文案缺右括号（见 [TS 迁移摘要](sources/ts-migration.md) 第七节）。
+## 当前已知的冲突与缺口
 
-## 五条核心设计决策
+- ⚠️ 冲突：宣传红线把"七类子智能体"列为上线前不得宣传的待实现能力（`墨台实现策划案/_src/05-宣传.md:379`），而运行时已注册七类（`app/src/server/qoder.ts:182`），见[子智能体体系](entities/subagent-system.md)。
+- ⚠️ 冲突：订阅计费板块自判实质零实现（`墨台实现策划案/_src/06-订阅预付费.md:9`），产品页却已出现档位与算力话术（`墨台产品页.html:1237`、`:1400`），见[账本与计费](entities/ledger-billing.md)（本页 status: disputed）。
+- ⚠️ 冲突：仓库文档的手写 JS 清单停在 14 个（`AGENTS.md:10`、`app/src/verify/verify-suite.ts:14`），动态判据实测 23 个，见[验证套件](entities/verification-suite.md)。
+- ⚠️ 冲突：技能正文里的硬约束只在技能被显式加载的那一回合生效——2026-10-05 验收两次复现"模型不读数据就编造数据画出专业样子的图"，加了 SKILL.md 约束仍复现（`app/verify/全功能验证报告.md:220-224`），见[科研领域插件](entities/research-plugins.md)与[有意保留的已知缺陷](syntheses/known-defects.md)。
+- 尚未核验收口：[BYOK 认证与额度打回](concepts/byok-auth.md) 与[算力与权限解耦](concepts/billing-quota-decoupling.md) 仍是 draft——前者的服务端拒绝文案需要真实凭据才能复现，后者只有设计不变式没有实现。
+- 已知缺陷 9 组（思考开关不进上游请求体、子智能体提示不落界面、force 参数被吞、约束放错层等）：[有意保留的已知缺陷](syntheses/known-defects.md)。
 
-1. **BYOK-only 模型通道**：Work 模式模型调用走用户第三方 API Key，`options.model` 直填 BYOK 模型 id；**禁止设置 resolveModel**（一旦设置，服务端把整个会话打回平台额度通道）。→ [BYOK 认证机制](concepts/byok-auth.md)
-2. **子智能体委派**：七类科研子智能体经 `options.agents` 注册给墨道，经 Agent 工具委派，不进 UI 选择器。→ [Agent 委派模式](concepts/agent-委派模式.md)
-3. **构建产物纪律**：`01/` 与 `app/renderer/index.html` 是编译产物，前端修复必须落在 `app/src/webapp/`，否则静默丢失。→ [构建产物同步陷阱](concepts/构建产物同步陷阱.md)
-4. **每步必重打包验证**：用户硬约定——每完成一步改动必须重新打包并由 explorer 代理启动 exe（沙箱内唯一可靠启动路）。→ [开发环境约束](concepts/开发环境约束.md)
-5. **诚实边界**：沙箱是「防误操作」非绝对隔离；宣传不得越过未上线能力红线。→ [宣传合规红线](concepts/宣传合规红线.md) · [沙箱机制](concepts/沙箱机制.md)
+## 常用命令（全部在 `app/` 目录）
 
-## 已知矛盾与待复核（Lint 线索）
+| 命令 | 作用 |
+|---|---|
+| `npm run typecheck` | 三套 tsconfig 一起查类型 |
+| `npm run build:ts` | 把 `app/src/**` 传播到 JS 产物 |
+| `npm run start` | 编译后拉起 Electron |
+| `npm run verify` / `verify <name>` / `verify -- --all` | 列脚本 / 单跑 / 全量 |
+| `npm run wiki:lint` | Wiki 健康检查，非零退出即不通过 |
+| `npm run wiki:lint -- --fix` | 重生成 [index.md](index.md) |
+| `npm run wiki:lint -- --add concept/<id> --title "标题" --sources 路径1,路径2` | 生成合规骨架页 |
+| `npm run wiki:lint -- --log ingest --title "资料标题"` | 向 [log.md](log.md) 追加一条 |
 
-- 左栏宽度：策划案 280px vs MEMORY `--left-w` 256px（以现状为准，待复核）。
-- 宣白色值：05 策划案 #F6F7F9/#F7F5EE vs MEMORY #F4F0E5（以 MEMORY 为准）。
-- 01-UI 策划案「双主题+六套待实现」已被十二套现状取代；04 策划案「4 内置智能体」已收敛为 2 个。
-- TS 迁移说明「前端有意保持 JS」已被 src/webapp TS 化落地推翻。
-- ⚠️ 待补：PowerShell 单元素数组自动解包坑（PUT 全列表变非数组清空分区）在工程日志簇无记录，详情见 MEMORY 项目记忆。
+## 三个动作怎么触发
 
-## 推荐阅读路径
-
-- 想了解**产品是什么** → [墨台产品](entities/墨台产品.md) → [计费体系](entities/计费体系.md) → [宣传合规红线](concepts/宣传合规红线.md)
-- 想改**前端/UI** → [前端架构](entities/前端架构.md) → [构建产物同步陷阱](concepts/构建产物同步陷阱.md) → [主题系统](entities/主题系统.md) → [动效与布局约定](concepts/动效与布局约定.md)
-- 想改**智能体/模型链路** → [墨道](entities/墨道.md) → [BYOK 认证机制](concepts/byok-auth.md) → [子智能体体系](entities/子智能体体系.md) → [领域插件](concepts/领域插件.md)
-- 想跑**构建与验证** → [构建打包体系](entities/构建打包体系.md) → [验证体系](concepts/验证体系.md) → [踩坑实录](concepts/踩坑实录.md)
-- 想查**历史决策过程** → [日记忆摘要](sources/workbuddy-daily-logs.md) → [验证报告](sources/verification-report.md) → 各策划案摘要页
+用户丢来新资料要沉淀 → **Ingest**（先查 SCHEMA §二 登记表，再 `--add`，然后回头改被触及的实体/概念页）。用户问项目知识 → **Query**（先读 index，再顺链接；有价值的对比与结论回填成 syntheses）。定期或改动后 → **Lint**（`npm run wiki:lint`，warning 也要进下一轮维护）。完整流程与规则码表在 [SCHEMA 契约](SCHEMA.md)。
 
 ## 关联
 
-- 操作规范：[SCHEMA.md](SCHEMA.md)
-- 全量目录：[index.md](index.md)
-- 时间线：[log.md](log.md)
+- 契约与流水：[SCHEMA 契约](SCHEMA.md)、[索引](index.md)、[操作日志](log.md)
+- 实体：[墨台产品](entities/motai-product.md)、[Wiki 系统](entities/wiki-system.md)
+- 综合：[策划案与源码偏差清单](syntheses/plan-vs-code-gaps.md)

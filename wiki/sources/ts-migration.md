@@ -1,35 +1,52 @@
 ---
 type: source
-title: TypeScript 迁移说明（摘要）
-tags: [TypeScript, 迁移, 构建, 行为不变, 已知问题]
-sources: [app/TypeScript迁移说明.md]
-updated: 2026-09-18
+title: TypeScript 迁移说明
+tags: [迁移, typescript, 构建, 工程约束]
+sources: [app/TypeScript迁移说明.md, app/tsconfig.json, app/package.json, app/start.bat]
+updated: 2026-10-06
+status: stable
 ---
 
-# TypeScript 迁移说明（摘要）
+# TypeScript 迁移说明
 
-2026-09-13 完成的 JS→TS 迁移记录：19 个源文件迁入 `app/src/`，产物落回原路径实现下游零改动，以 renderer/index.html SHA256 一致 + 21 项冒烟验证"行为不变"承诺，并如实记录迁移中发现但未修改的三处历史缺陷。
+> 一句话摘要：这份 Raw 记录了 2026-09-13 把 19 个源文件改写为 TypeScript 的取舍、编译配置与踩坑，核心承诺是「产物落回原路径、对外行为不变」。
 
-## 关键结论
+## 资料是什么
 
-1. **迁移范围**：`shared/domain.ts`（全项目业务类型集中地）+ `shared/qoder-sdk.ts`（官方类型重导出 + `loadSdk()` 动态加载器）+ Electron 壳（main/preload）+ 后端 12 模块 + 构建工具（build/pack/make-icons），共 19 文件。
-2. **产物落位策略**：`rootDir=src、outDir=.` —— 编译产物回到迁移前 exact 路径（main.js / server/*.js / build.js / pack.js），故 Electron 入口、pack 复制清单、verify 脚本、start.bat **全部无需改动**。
-3. **有意保持 JS**（非遗漏）：`01/` 前端（单文件内联 IIFE 模型，转 TS 需先模块化，属独立改造）、`verify/*.js`（迁移的行为安全网，同步改写会削弱验证能力）、`_cdp_eval.js`、config/qoder.json（运行时配置）。
-4. **类型策略**：SDK 类型以官方包 d.ts 为准、业务不直接 import SDK；strict 全开无隐式 any；边界输入统一 `Record<string, any>` 收口。
-5. **踩坑六条（第五节）**：① tsc 在 CJS 输出中把一切 `import()`（含变量指示符）改写回 `require()`，重新引入 `ERR_REQUIRE_ESM`——解法 Function 间接层 `new Function('s','return import(s);')`；② `outDir="."` 必须显式 `exclude`，否则 TS18003；③ zod 从 SDK peer 提升为显式 dependencies；④ SDK 消息类型用最小形状断言收窄；⑤ `noEmitOnError:true` 落实"编译失败绝不覆盖可用产物"；⑥ @types/node 20 的 `Buffer<ArrayBuffer>` 泛型。
-6. **验证全绿**：tsc 0 错误、产物 node --check ×19、renderer SHA256 一致（510,972 bytes）、`ts-migration-smoke.js` 21 项 ALL PASS（鉴权/bootstrap/技能/qoder config/笔记/知识库/沙箱真实执行/危险拦截）。
+- 单文件迁移史文档，位于 `app/TypeScript迁移说明.md`（188 行），迁移日期与原则写在开头 `app/TypeScript迁移说明.md:3-5`：功能与对外行为不变，所有 HTTP 路由、SSE 事件、文件布局、启动链路与打包产物结构均保持原样。
+- 依据是 Qoder Agent SDK 官方 TypeScript 参考页，见 `app/TypeScript迁移说明.md:4`。
+- 文末记录基线提交 `app/TypeScript迁移说明.md:188`（迁移前基线 `a31f729`）。
 
-## 第七节：有意保留的已知问题（行为不变原则，未修改仅记录）
+## 改写范围（§一）
 
-| # | 问题 | 根因 | 修复成本 |
-|---|---|---|---|
-| 1 | **Chat 深度思考开关实际无效** | `applyThinking` 写入 `chatOpts`，但 `chatStream` 组装上游请求体时不读取这些字段——注入从未到达上游 | 在 `chatStream` 内把 `opts.thinking / enable_thinking / reasoning` 复制进 `body` 即可 |
-| 2 | **`/api/work/sandbox/runtimes?force=1` 不生效** | `detectRuntimes` 包装函数一直忽略参数（走 TTL 缓存），迁移按原行为保留、源码有注释标记 | 包装改为透传 `force` 一行 |
-| 3 | **沙箱"运行时未安装"错误文案缺右括号** | `+ join(...) || '无' + '）'` 运算符优先级导致 `||` 分支永不生效且丢失闭合括号 | 修正表达式优先级（提示性文案，不影响功能） |
+- 已迁移 19 个源文件到 `app/src/`，逐层列表见 `app/TypeScript迁移说明.md:11-27`（共享类型、SDK 接入、Electron 壳、后端 12 个模块、构建工具三个）；壳与后端各自的现状见 [Electron 壳](../entities/electron-shell.md) 与 [后端服务](../entities/backend-server.md)。
+- 产物落位策略：rootDir=src、outDir=. —— 编译产物回到迁移前的确切路径，因此 Electron 入口、build 注入路径、pack 复制清单、verify 脚本、start.bat 调用路径全部无需改动，见 `app/TypeScript迁移说明.md:29-32`。
+- 有意保持 JavaScript 的部分（非遗漏）：前端拼接模型、verify 脚本、调试辅助脚本、两份运行时配置，理由逐条见 `app/TypeScript迁移说明.md:36-41`。
+- 配置与脚本变更清单（package.json 依赖与 scripts、start.bat 增加 tsc、pack 增加编译步骤、.gitignore）见 `app/TypeScript迁移说明.md:45-51`。
 
-⚠️ 这三处与 [backend-策划案](backend-策划案.md) 7.8/5.3 节记载一致，两处资料互相印证；修复在 backend 策划案阶段一 P0 任务清单中（#1/#2/#3）。
+## 类型与编译配置（§二 §三）
+
+- 类型策略四条：SDK 类型以官方包 d.ts 为准并统一经 `app/src/shared/qoder-sdk.ts` 重导出；模块值类型用 `typeof import(...)` 获取；业务域类型集中在 `app/src/shared/domain.ts`；strict 全开，见 `app/TypeScript迁移说明.md:57-73`。
+- tsconfig 逐项注释见 `app/TypeScript迁移说明.md:77-95`，与实际配置文件一致：`app/tsconfig.json:14-16`（rootDir/outDir/strict）、`app/tsconfig.json:21`（noEmitOnError）、`app/tsconfig.json:29-30`（include 与显式 exclude）。
+- ⚠️ 冲突：文档 §三 只讲一份 tsconfig，实际仓库现在是三套（核心 / 前端 / verify），文档撰写时前端尚未 TS 化；见 `app/tsconfig.webapp.json:15-16` 与 `app/tsconfig.verify.json:12-13`，取舍细节在 [构建与打包体系](../entities/build-pack-system.md)。
+- 文档 §1.2 记的「13 个 work 模块」「主脚本 38 万字符」是当时快照 `app/TypeScript迁移说明.md:38`；现在前端已 TS 化，源码是 `app/src/webapp/webapp.ts`（7275 行）与 14 个 `app/src/webapp/work/` 模块。
+
+## 构建与运行链路（§四 §五）
+
+- 开发链路与打包链路的原文顺序见 `app/TypeScript迁移说明.md:97-113`；便携包内 `resources/app/` 是编译后的明文 JS，「重新构建.bat」只跑 build.js，包内无需 TS 工具链（`app/TypeScript迁移说明.md:111-112`，实际脚本由 `app/src/pack.ts:144-158` 生成）。
+- 六条踩坑（§五）是本页最有复用价值的部分：动态 import 被 tsc 改写成 require、`outDir: "."` 与默认 exclude 触发 TS18003、zod 需显式声明、SDK 消息类型最小断言、noEmitOnError 落实行为不变、@types/node 20 的 Buffer 泛型，见 `app/TypeScript迁移说明.md:117-143`；逐条已核实的事实归档在 [踩坑实录](../concepts/pitfalls-log.md)。
+- 其中最重要的一条是 SDK 纯 ESM 与 Electron 33 内置 Node 20 无 `require(esm)` 的冲突，解法用 Function 间接层保留真实 `import()`：`app/TypeScript迁移说明.md:117-127`。
+
+## 验证与遗留（§六 §七 §八）
+
+- 行为保持验证表：tsc 零错误、编译产物语法全过、renderer 产物新旧 SHA256 一致（510,972 bytes）、21 项行为冒烟 ALL PASS，见 `app/TypeScript迁移说明.md:147-153`；未覆盖项（/api/chat、agent/run、pack 全流程）见 `app/TypeScript迁移说明.md:161`。
+- §七 记录三条迁移中发现但按「行为不变」原则未修的历史问题：Chat 深度思考开关未注入上游、`runtimes?force=1` 被忽略、沙箱错误文案缺右括号，见 `app/TypeScript迁移说明.md:165-174`。
+- §八 后续建议（前端二期 TS 化、修 §七 两处、跑完整 pack）见 `app/TypeScript迁移说明.md:178-184`；其中前两条已落地——`app/tsconfig.webapp.json` 与 `app/package.json:7-8` 的 typecheck/build:ts 现已包含前端与 verify 两套配置。
 
 ## 关联
-- 实体：[后端服务](../entities/后端服务.md)、[构建打包体系](../entities/构建打包体系.md)
-- 概念：[验证体系](../concepts/验证体系.md)、[沙箱机制](../concepts/沙箱机制.md)（force 参数与错误文案问题所在）
-- 资料：[backend-策划案](backend-策划案.md)（同一批缺陷的策划案视角 + 修复优先级）
+
+- 产物落位与三套编译配置：[构建与打包体系](../entities/build-pack-system.md)
+- 源与产物的同步纪律：[构建产物同步纪律](../concepts/artifact-sync.md)
+- 命令入口与执行目录：[开发环境与命令约束](../concepts/dev-environment.md)
+- 验证脚本为何保持 JS：[验证套件](../entities/verification-suite.md)
+- 结论归档：[验证报告簇](verify-reports.md)

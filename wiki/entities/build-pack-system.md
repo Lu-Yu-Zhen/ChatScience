@@ -3,7 +3,7 @@ type: entity
 title: 构建与打包体系
 tags: [构建, 打包, typescript, electron, 墨台]
 sources: [app/src/build.ts, app/src/pack.ts, app/tsconfig.json, app/tsconfig.webapp.json, app/tsconfig.verify.json, app/package.json, AGENTS.md]
-updated: 2026-10-04
+updated: 2026-10-06
 status: stable
 ---
 

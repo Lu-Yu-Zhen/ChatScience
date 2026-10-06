@@ -5,7 +5,7 @@
  *   npm run wiki:lint                                            全量检查
  *   npm run wiki:lint -- --fix                                   重写 index.md
  *   npm run wiki:lint -- --add <type>/<id> --title T [--sources a,b]   生成合规骨架页
- *   npm run wiki:lint -- --log <op> "<标题>" [--author 名字]       追加 log.md 条目
+ *   npm run wiki:lint -- --log <op> --title "<标题>" [--author 名字]  追加 log.md 条目
  * 退出码：0 = 无 error（允许 warning）｜1 = 有 error｜2 = 无法执行
  *
  * 规则变更须同步改 wiki/SCHEMA.md §二/§四/§七，并向 wiki/log.md 记一条 schema 记录。

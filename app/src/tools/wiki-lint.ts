@@ -1,10 +1,12 @@
 /**
  * 墨台 Wiki 工具 —— 实现 wiki/SCHEMA.md §七 承诺的机械校验与维护动作。
+ * Wiki 已迁出代码库、托管在 GitHub Wiki；本工具留在代码库侧运行，
+ * 用 CS_WIKI_DIR 指向 wiki 检出（未设置时仍找仓库内的 wiki/）。
  * 用法（在 app/ 目录执行）：
- *   npm run wiki:lint                                            全量检查
- *   npm run wiki:lint -- --fix                                   重写 index.md
- *   npm run wiki:lint -- --add <type>/<id> --title T [--sources a,b]   生成合规骨架页
- *   npm run wiki:lint -- --log <op> --title "<标题>" [--author 名字]  追加 log.md 条目
+ *   CS_WIKI_DIR=<wiki 检出> node tools/wiki-lint.js                         全量检查
+ *   CS_WIKI_DIR=<wiki 检出> node tools/wiki-lint.js --fix                    重写 index.md
+ *   ... --add <type>/<id> --title T [--sources a,b]                          生成合规骨架页
+ *   ... --log <op> --title "<标题>" [--author 名字]                           追加 log.md 条目
  * 退出码：0 = 无 error（允许 warning）｜1 = 有 error｜2 = 无法执行
  *
  * 规则变更须同步改 wiki/SCHEMA.md §二/§四/§七，并向 wiki/log.md 记一条 schema 记录。
@@ -50,7 +52,9 @@ interface EvidenceRef {
 }
 
 const REPO_DIR = path.resolve(__dirname, '..', '..');
-const WIKI_DIR = path.join(REPO_DIR, 'wiki');
+/* Wiki 已迁出代码库、托管在 GitHub Wiki：默认仍找仓库内的 wiki/，
+   也可用 CS_WIKI_DIR 指向任意 wiki 检出（例如克隆下来的 <repo>.wiki.git）。 */
+const WIKI_DIR = process.env.CS_WIKI_DIR ? path.resolve(process.env.CS_WIKI_DIR) : path.join(REPO_DIR, 'wiki');
 
 const CONTENT_DIRS: ContentDir[] = ['sources', 'entities', 'concepts', 'syntheses'];
 const DIR_TO_TYPE: Record<string, string> = { sources: 'source', entities: 'entity', concepts: 'concept', syntheses: 'synthesis' };
@@ -69,7 +73,9 @@ const FRONTMATTER_FIELDS = ['type', 'title', 'tags', 'sources', 'updated', 'stat
 /** SCHEMA §二 Raw 登记表的前缀镜像；新增资料簇先改 SCHEMA 再改这里。 */
 const RAW_PREFIXES = [
   'AGENTS.md',
-  '墨台实现策划案/_src/',
+  'README.md',
+  'LICENSE',
+  'docs/plans/_src/',
   'app/src/',
   'app/verify/',
   'app/server/plugins/',
@@ -77,13 +83,13 @@ const RAW_PREFIXES = [
   'app/tsconfig',
   'app/start.bat',
   'app/TypeScript迁移说明.md',
-  '01/主页面.html',
-  'motai-site/',
-  '墨台产品页.html',
-  'inkforge-brand_assets/',
-  '主题壁纸/',
-  'agentsview-report/',
-  'SDK应用/',
+  'webapp/主页面.html',
+  'sites/motai/',
+  'assets/brand/',
+  'assets/wallpapers/',
+  'assets/marketing/',
+  'docs/research/',
+  'examples/qoder-agent-sdk/',
   '测试文件夹/',
   'wiki/',
   '.gitattributes',
@@ -241,11 +247,20 @@ function isUnderRegisteredPrefix(rel: string): boolean {
 
 const statCache = new Map<string, { exists: boolean; isFile: boolean; lines: number }>();
 
+/** `wiki/` 前缀属于 Wiki 自身（已迁出代码库），按 WIKI_DIR 解析；其余按代码库根解析。 */
+function splitBase(rel: string): { dir: string; rel: string } {
+  const p = normalizeRepoPath(rel);
+  if (p === 'wiki') return { dir: WIKI_DIR, rel: '.' };
+  if (p.startsWith('wiki/')) return { dir: WIKI_DIR, rel: p.slice('wiki/'.length) };
+  return { dir: REPO_DIR, rel: p };
+}
+
 function statRepo(rel: string): { exists: boolean; isFile: boolean; lines: number } {
   const key = normalizeRepoPath(rel);
   const hit = statCache.get(key);
   if (hit) return hit;
-  const abs = path.join(REPO_DIR, key);
+  const base = splitBase(key);
+  const abs = path.join(base.dir, base.rel);
   let out = { exists: false, isFile: false, lines: 0 };
   if (fs.existsSync(abs)) {
     const st = fs.statSync(abs);
@@ -262,14 +277,14 @@ function statRepo(rel: string): { exists: boolean; isFile: boolean; lines: numbe
 
 /**
  * 构建产物判定（SCHEMA §二 禁引清单）：
- * `01/**.js` 与 `app/renderer/` 恒为产物；`app/**.js` 当 `app/src/` 存在同名 `.ts` 时是产物，
+ * `webapp/**.js` 与 `app/renderer/` 恒为产物；`app/**.js` 当 `app/src/` 存在同名 `.ts` 时是产物，
  * 否则是 AGENTS.md 记录的手写 JS 例外。
  */
 function isProductPath(rel: string): boolean {
   const p = normalizeRepoPath(rel);
   if (p.startsWith('app/renderer/') || p.startsWith('app/dist/')) return true;
-  if (/^01\/.*\.js$/.test(p)) return true;
-  if (/^01\/work\/.*\.js$/.test(p)) return true;
+  if (/^webapp\/.*\.js$/.test(p)) return true;
+  if (/^webapp\/work\/.*\.js$/.test(p)) return true;
   if (p.startsWith('app/') && p.endsWith('.js')) {
     return fs.existsSync(path.join(REPO_DIR, 'app', 'src', p.slice('app/'.length).replace(/\.js$/, '.ts')));
   }
@@ -291,7 +306,8 @@ function lastCommitDate(relToRepo: string): string | null {
   if (gitDateCache.has(key)) return gitDateCache.get(key) ?? null;
   let date: string | null = null;
   try {
-    const out = execFileSync('git', ['-C', REPO_DIR, 'log', '-1', '--format=%cs', '--', key], { encoding: 'utf8' as const, timeout: 8000 }).trim();
+    const base = splitBase(relToRepo);
+    const out = execFileSync('git', ['-C', base.dir, 'log', '-1', '--format=%cs', '--', base.rel], { encoding: 'utf8' as const, timeout: 8000 }).trim();
     date = ISO_DATE.test(out) ? out : null;
   } catch {
     date = null;
@@ -676,6 +692,10 @@ function main(): number {
   const flags = parseFlags(argv);
   if (!fs.existsSync(WIKI_DIR)) {
     process.stderr.write(`找不到 wiki 目录：${WIKI_DIR}\n`);
+    return 2;
+  }
+  if (!fs.existsSync(path.join(WIKI_DIR, 'SCHEMA.md'))) {
+    process.stderr.write(`wiki 目录缺少 SCHEMA.md（${WIKI_DIR}）——知识库已迁往 GitHub Wiki，请设 CS_WIKI_DIR 指向 wiki 检出\n`);
     return 2;
   }
   if (flags.add) {

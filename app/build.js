@@ -38,21 +38,21 @@ Object.defineProperty(exports, "__esModule", { value: true });
    用法：node build.js （由 start.bat 自动执行；源码为 src/build.ts，经 tsc 编译）
 
    产物 renderer/index.html 是单文件，包含三段脚本，顺序不可调换：
-     1. 主脚本（源文件 01/主页面.html 内联）
-     2. Work 模块 bundle（源目录 01/work/*.js，本脚本内联）
+     1. 主脚本（源文件 webapp/主页面.html 内联）
+     2. Work 模块 bundle（源目录 webapp/work/*.js，本脚本内联）
      3. 桌面桥接脚本（本脚本注入）
    顺序原因：Work bundle 要读主脚本的顶层 const（WORK_HOOKS / PROVIDERS / i18n），
    桥接的 boot() 会触发渲染，此时 Work 页面必须已注册进 WORK_HOOKS。 */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const child_process_1 = require("child_process");
-const SRC = path.join(__dirname, '..', '01', '主页面.html');
+const SRC = path.join(__dirname, '..', 'webapp', '主页面.html');
 const OUT = path.join(__dirname, 'renderer', 'index.html');
-const WORK_DIR = path.join(__dirname, '..', '01', 'work');
-const MAIN_JS = path.join(__dirname, '..', '01', 'webapp.js');
+const WORK_DIR = path.join(__dirname, '..', 'webapp', 'work');
+const MAIN_JS = path.join(__dirname, '..', 'webapp', 'webapp.js');
 /* 标记本身 + 其后紧跟的说明注释一起替换掉，产物里不残留源码注释 */
 const WORK_MARK = /<!--CS_WORK_MODULES-->\s*(?:<!--[\s\S]*?-->\s*)?/;
-/* 主脚本标记：源文件已不含内联 JS（TS 源在 src/webapp/webapp.ts，tsc 编译为 01/webapp.js） */
+/* 主脚本标记：源文件已不含内联 JS（TS 源在 src/webapp/webapp.ts，tsc 编译为 webapp/webapp.js） */
 const MAIN_MARK = /<!--CS_MAIN_SCRIPT-->\s*/;
 const BRIDGE = `
 <!--CS_DESKTOP_BRIDGE-->
@@ -236,7 +236,7 @@ function buildWorkBundle() {
         throw new Error('[build] work 模块末个必须是 90-boot.js，实际为 ' + files[files.length - 1]);
     checkSyntax(files);
     const parts = files.map(function (f) {
-        return '/* ===== 01/work/' + f + ' ===== */\n' + fs.readFileSync(path.join(WORK_DIR, f), 'utf8').trim();
+        return '/* ===== webapp/work/' + f + ' ===== */\n' + fs.readFileSync(path.join(WORK_DIR, f), 'utf8').trim();
     });
     /* 单个 IIFE：模块间共享顶层 const（Work / WORK_I18N 等），且不污染全局。
        对主脚本全局（WORK_HOOKS / t / chatScroll / getModels）的引用只在函数体内发生，
@@ -288,10 +288,10 @@ if (!WORK_MARK.test(html))
     throw new Error('[build] 源文件缺少 <!--CS_WORK_MODULES--> 注入标记');
 if (!MAIN_MARK.test(html))
     throw new Error('[build] 源文件缺少 <!--CS_MAIN_SCRIPT--> 注入标记');
-/* 主脚本注入（tsc 产物 01/webapp.js，源为 src/webapp/webapp.ts）。
+/* 主脚本注入（tsc 产物 webapp/webapp.js，源为 src/webapp/webapp.ts）。
    必须用函数式替换：字符串替换会把 $$ / $& / $' / $` 当特殊模式。 */
 if (!fs.existsSync(MAIN_JS))
-    throw new Error('[build] 缺少 01/webapp.js——请先运行 tsc -p tsconfig.webapp.json');
+    throw new Error('[build] 缺少 webapp/webapp.js——请先运行 tsc -p tsconfig.webapp.json');
 const mainBundle = fs.readFileSync(MAIN_JS, 'utf8').trim();
 html = html.replace(MAIN_MARK, function () { return '<script>\n' + mainBundle + '\n</scr' + 'ipt>\n\n'; });
 const built = buildWorkBundle();
@@ -303,7 +303,7 @@ if (built) {
 else {
     /* 没有 work 模块时也要吃掉标记，保证产物不含字面量 */
     html = html.replace(WORK_MARK, '');
-    console.warn('[build] 01/work/ 为空或不存在，Work 模式将显示"模块未加载"');
+    console.warn('[build] webapp/work/ 为空或不存在，Work 模式将显示"模块未加载"');
 }
 /* 桥接插在 </html> 之前（源文件可能没有 </body> 闭合标签） */
 if (/<\/html>/i.test(html)) {
@@ -334,5 +334,5 @@ assert(html.indexOf('<title>ChatScience</title>') > -1, '源文件标题被改�
 fs.mkdirSync(path.dirname(OUT), { recursive: true });
 fs.writeFileSync(OUT, html, 'utf8');
 console.log('[build] renderer/index.html 已写出，bytes=' + html.length
-    + '，主脚本=01/webapp.js（' + mainBundle.length + ' 字符），work 模块=' + (built ? built.files.length + ' 个（' + built.files.join(' ') + '）' : '无')
+    + '，主脚本=webapp/webapp.js（' + mainBundle.length + ' 字符），work 模块=' + (built ? built.files.length + ' 个（' + built.files.join(' ') + '）' : '无')
     + '，bridge=ok，断言=通过');

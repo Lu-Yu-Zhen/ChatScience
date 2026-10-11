@@ -7,7 +7,8 @@
     "typecheck": "tsc --noEmit && tsc -p tsconfig.webapp.json --noEmit && tsc -p tsconfig.verify.json --noEmit",
     "build:ts": "tsc && tsc -p tsconfig.webapp.json && tsc -p tsconfig.verify.json",
     "verify": "node verify/verify-suite.js",
-    "guard:artifacts": "npm run build:ts && git -C .. diff --exit-code --name-only -- 01 \":(glob)app/**/*.js\" app/renderer/index.html",
+    "wiki:lint": "node tools/wiki-lint.js",
+    "guard:artifacts": "npm run build:ts && git -C .. diff --exit-code --name-only -- webapp \":(glob)app/**/*.js\" app/renderer/index.html",
     "start": "npm run build:ts && electron ."
   },
   "license": "MIT",

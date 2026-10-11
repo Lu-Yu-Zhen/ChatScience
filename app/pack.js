@@ -42,12 +42,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
      ChatScience.exe            ← electron.exe 改名（双击即用）
      *.dll / locales/ ...       ← Electron 运行时
      resources/app/             ← 编译后的应用代码（asar 关闭，明文可改）
-     01/                        ← 前端源文件（主页面.html + work/）
+     webapp/                    ← 前端源文件（主页面.html + work/）
      重新构建.bat / 使用说明.txt
 
    源码工程：TypeScript 源在 app/src/，打包前先 tsc 编译回原路径
    （main.js / preload.js / server/*.js / build.js 等），再复制进产物。
-   修改流程：改 src/ 或 01/ → node pack.js（或重新构建.bat）→ 重启 exe。
+   修改流程：改 src/ 或 webapp/ → node pack.js（或重新构建.bat）→ 重启 exe。
    ================================================================== */
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
@@ -180,17 +180,17 @@ async function main() {
         copyTree(path.join(APP, 'node_modules'), path.join(APPDIR, 'node_modules'), [/^electron(\/|$)/, /^electron-packager(\/|$)/, /^typescript(\/|$)/, /^@types(\/|$)/]);
     }
     /* 4. 前端源文件 + 辅助脚本 + 说明 */
-    const src01 = path.join(APP, '..', '01');
-    fs.mkdirSync(path.join(STAGE, '01'), { recursive: true });
-    fs.copyFileSync(path.join(src01, '主页面.html'), path.join(STAGE, '01', '主页面.html'));
-    fs.copyFileSync(path.join(src01, 'webapp.js'), path.join(STAGE, '01', 'webapp.js'));
-    fs.cpSync(path.join(src01, 'work'), path.join(STAGE, '01', 'work'), { recursive: true });
+    const srcWebapp = path.join(APP, '..', 'webapp');
+    fs.mkdirSync(path.join(STAGE, 'webapp'), { recursive: true });
+    fs.copyFileSync(path.join(srcWebapp, '主页面.html'), path.join(STAGE, 'webapp', '主页面.html'));
+    fs.copyFileSync(path.join(srcWebapp, 'webapp.js'), path.join(STAGE, 'webapp', 'webapp.js'));
+    fs.cpSync(path.join(srcWebapp, 'work'), path.join(STAGE, 'webapp', 'work'), { recursive: true });
     fs.writeFileSync(path.join(STAGE, '重新构建.bat'), [
         '@echo off',
         'chcp 65001 >nul',
         'title ChatScience 重新构建',
         'cd /d %~dp0resources\\app',
-        'echo [ChatScience] 重建 renderer（修改 01/ 或 server/ 源码后执行）...',
+        'echo [ChatScience] 重建 renderer（修改 webapp/ 或 server/ 源码后执行）...',
         'node build.js',
         'if errorlevel 1 (',
         '  echo 构建失败，请检查上方错误。',
@@ -208,7 +208,7 @@ async function main() {
         '      用户数据写在 resources\\app\\data\\，删除该文件夹即重置应用。',
         '',
         '【修改源码】本目录即完整可运行代码（明文，无 asar，已编译）：',
-        '  - 前端界面:  01\\主页面.html + 01\\webapp.js + 01\\work\\*.js',
+        '  - 前端界面:  webapp\\主页面.html + webapp\\webapp.js + webapp\\work\\*.js',
         '  - 后端服务:  resources\\app\\server\\*.js',
         '  - Electron:  resources\\app\\main.js / preload.js',
         '  改完后双击「重新构建.bat」（需电脑装有 Node.js），再启动 ChatScience.exe。',
@@ -238,8 +238,8 @@ async function main() {
         path.join(APPDIR, 'node_modules', '@qodercn-ai', 'qodercn-agent-sdk'),
         path.join(APPDIR, 'node_modules', 'express'),
         path.join(APPDIR, 'node_modules', 'zod'),
-        path.join(STAGE, '01', 'webapp.js'),
-        path.join(STAGE, '01', 'work', '90-boot.js'),
+        path.join(STAGE, 'webapp', 'webapp.js'),
+        path.join(STAGE, 'webapp', 'work', '90-boot.js'),
         path.join(STAGE, '重新构建.bat')
     ];
     const missing = must.filter(function (p) { return !fs.existsSync(p); });

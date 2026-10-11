@@ -4,7 +4,7 @@
        build.ts 拼接进同一个 IIFE、共享一个作用域——因此这里按无模块全局脚本
        （module: none）编译，各文件顶层 const 经全局声明合并互相可见，
        与运行时拼接语义严格一致。
-     - 产物落回 01/：webapp.ts → 01/webapp.js；work/*.ts → 01/work/*.js
+     - 产物落回 webapp/：webapp.ts → webapp/webapp.js；work/*.ts → webapp/work/*.js
        （build.ts / pack.js 的既有路径全部不变）。
      - 前端体量大（主脚本 ~30 万字符）且无对外类型面，采用宽松检查
        （strict 关闭、允许隐式 any）；语法与类型错误仍然阻断产出。 */
@@ -13,7 +13,7 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "none",
     "rootDir": "src/webapp",
-    "outDir": "../01",
+    "outDir": "../webapp",
     "strict": false,
     "noImplicitAny": false,
     "skipLibCheck": true,

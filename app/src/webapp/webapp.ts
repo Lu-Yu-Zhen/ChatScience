@@ -2101,7 +2101,7 @@
   });
 
   /* ---- Work 模式扩展点 ----
-     Work 功能实现在 01/work/*.js（build.js 内联为本文件之后的独立 script）。
+     Work 功能实现在 webapp/work/*.js（build.js 内联为本文件之后的独立 script）。
      主脚本只声明挂载点：页面构建器把节点注册进 WORK_HOOKS.pages，侧栏/发送链路/
      消息渲染各处按 hook 是否存在决定走 Work 实现还是原 Chat 逻辑。
      未构建（直接双击打开源文件）时 hook 为空，页面显示"模块未加载"而非报错。 */

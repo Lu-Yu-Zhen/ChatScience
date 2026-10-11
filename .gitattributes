@@ -1,4 +1,4 @@
-# Wiki 契约（wiki/SCHEMA.md §五）：markdown 统一 LF，避免跨平台整文件改写
-# 只约束 wiki/，不动仓库其余目录的换行策略。
-wiki/*.md text eol=lf
-wiki/**/*.md text eol=lf
+# 源码与文档统一 LF：tsc 产物本身就是 LF，文档需跨平台一致；
+# 固定 eol=lf 可消除 autocrlf 往返造成的伪修改（git status 噪声）。
+*.js text eol=lf
+*.md text eol=lf

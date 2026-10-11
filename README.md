@@ -2,6 +2,14 @@
 
 墨台（Motai）产品线的工程仓。主体是 **ChatScience 桌面应用**——一个 Electron 前后端分离的科研智能体客户端：前端是单文件渲染层，后端是绑定在 `127.0.0.1` 的本地 Express 服务，通过 Qoder Agent SDK 驱动智能体、技能、MCP 工具与沙箱执行。仓内同时容纳产品页站点、SDK 样例、七份实现策划案、品牌与壁纸资产，以及一份迁往 GitHub Wiki 的项目知识库。
 
+<div align="center">
+
+**[⬇️ 下载 ChatScience 桌面版 · Windows 便携版，解压即用](https://lu-yu-zhen.github.io/ChatScience/)**
+
+[Releases 备用入口](https://github.com/Lu-Yu-Zhen/ChatScience/releases/latest) · [项目知识库](https://github.com/Lu-Yu-Zhen/ChatScience/wiki) · [系统要求](https://lu-yu-zhen.github.io/ChatScience/#req)
+
+</div>
+
 - 平台：Windows（打包脚本按 win32-x64 产出便携版）
 - 许可：[MIT](LICENSE)
 - 知识库：[本仓库 Wiki 页签](https://github.com/Lu-Yu-Zhen/ChatScience/wiki)
@@ -17,6 +25,7 @@
 - [配置与密钥](#配置与密钥)
 - [验证体系](#验证体系)
 - [打包便携版](#打包便携版)
+- [下载页（web/）](#下载页web)
 - [各子项目说明](#各子项目说明)
 - [知识库（GitHub Wiki）](#知识库github-wiki)
 - [注意事项与常见问题](#注意事项与常见问题)
@@ -48,6 +57,7 @@ ChatScience/
 │   └── main.js 等              # tsc 原位编译产物（勿手改）
 │
 ├── webapp/                     # 渲染层输入与产物：主页面.html 模板 + webapp.js、work/*.js
+├── web/                        # 公开站点目录（GitHub Pages 唯一源）：应用下载页 index.html
 ├── sites/motai/                # 墨台产品页站点
 ├── examples/qoder-agent-sdk/   # Qoder Agent SDK 样例工程
 ├── docs/
@@ -196,6 +206,15 @@ node pack.js
 产物在 `app/dist/ChatScience-win32-x64/`：`ChatScience.exe`（electron.exe 改名，双击即用）+ Electron 运行时 + `resources/app/`（编译后的应用代码，**asar 关闭、明文可改**），并附 `重新构建.bat` 与 `使用说明.txt`。整个文件夹可拷贝到其他 Windows 机器使用；用户数据写在 `resources/app/data/`，删掉该目录即重置应用。
 
 包内自检会核对可执行文件、主进程入口、渲染层、后端入口、图标、依赖与 Work 模块末文件等关键路径，缺一项即非零退出。换图标后重跑 `node make-icons.js` 再打包。
+
+## 下载页（web/）
+
+`web/index.html` 是应用下载页，自包含（内联 CSS、零外部请求、支持深色模式），通过 GitHub Pages 发布：
+
+- 地址：<https://lu-yu-zhen.github.io/ChatScience/>
+- Pages 源：`master` 分支的 `/web` 目录——**这是全仓唯一会被公开的目录**，`docs/`（内部策划案）、`assets/`、`app/` 等均不对外
+- 页面主按钮指向 Releases（首个版本发布前会 404，页面内已给出"自行打包"的备选步骤）
+- 修改页面只动 `web/index.html`，推送后等约一分钟 Pages 自动重建
 
 ## 各子项目说明
 

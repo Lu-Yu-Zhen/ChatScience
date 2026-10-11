@@ -16,6 +16,7 @@ ChatScience/
 │   ├── package.json / tsconfig*.json / start.bat
 │   └── main.js 等              # tsc 原位编译产物（勿手改）
 ├── webapp/                     # 渲染层：主页面.html 模板 + webapp.js、work/*.js（tsc 产物）
+├── web/                        # 公开站点（GitHub Pages 源，master:/web）：应用下载页 index.html
 ├── sites/motai/                # 墨台产品页站点（public / functions / dev）+ 旧版单页
 ├── examples/qoder-agent-sdk/   # Qoder Agent SDK 样例工程
 ├── docs/
@@ -37,6 +38,7 @@ ChatScience/
   - `app/renderer/index.html`：由 `app/src/build.ts` 组装——读入 `webapp/主页面.html`，内联 `webapp/webapp.js` 与 `webapp/work/*.js` 并注入桌面适配层后写出。
 - **`webapp/主页面.html` 是构建输入，不是产物**：它是 build.ts 的源模板（含 `<!--CS_MAIN_SCRIPT-->`、`<!--CS_WORK_MODULES-->` 注入标记），可手改。
 - **知识库不在本仓**：`wiki/` 已迁至 GitHub Wiki（`<仓库>.wiki.git`），契约是其中的 `SCHEMA.md`；本仓只留 `wiki/README.md` 作指引。Raw 层仍是本仓资料，Wiki 页内路径相对本仓根解析。
+- **`web/` 是全仓唯一对外公开的目录**：GitHub Pages 以 `master:/web` 为源发布（<https://lu-yu-zhen.github.io/ChatScience/>），里面只放应用下载页，内容与链接一律按"互联网可见"对待；内部策划案、调研报告、资产、源码与密钥都不进这个目录。
 - **换行策略**：`.gitattributes` 把 `*.js` / `*.md` 固定为 LF——与 tsc 产出一致，消除 autocrlf 往返造成的伪修改（`git status` 噪声）。
 - **不入库的敏感/生成物**：`app/server/qoder.json` 与 `app/server/config.json`（含 Qoder PAT 与 AI API Key）、`app/data/`、`sites/motai/.墨台产品页.qoder.site`（站点发布描述符，随部署再生）、`examples/qoder-agent-sdk/njs/`（本机 Node 发行版软链）。
 

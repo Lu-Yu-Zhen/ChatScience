@@ -4,9 +4,9 @@
 
 <div align="center">
 
-**[⬇️ 下载 ChatScience 桌面版 · Windows 便携版，解压即用](https://lu-yu-zhen.github.io/ChatScience/)**
+**[⬇️ 下载 ChatScience 桌面版 · 墨台产品页下载入口](https://lu-yu-zhen.github.io/ChatScience/#/download)**
 
-[Releases 备用入口](https://github.com/Lu-Yu-Zhen/ChatScience/releases/latest) · [项目知识库](https://github.com/Lu-Yu-Zhen/ChatScience/wiki) · [系统要求](https://lu-yu-zhen.github.io/ChatScience/#req)
+[产品页首页](https://lu-yu-zhen.github.io/ChatScience/) · [Releases 备用入口](https://github.com/Lu-Yu-Zhen/ChatScience/releases/latest) · [项目知识库](https://github.com/Lu-Yu-Zhen/ChatScience/wiki)
 
 </div>
 
@@ -25,7 +25,7 @@
 - [配置与密钥](#配置与密钥)
 - [验证体系](#验证体系)
 - [打包便携版](#打包便携版)
-- [下载页（web/）](#下载页web)
+- [下载页（sites/motai/public）](#下载页sitesmotaipublic)
 - [各子项目说明](#各子项目说明)
 - [知识库（GitHub Wiki）](#知识库github-wiki)
 - [注意事项与常见问题](#注意事项与常见问题)
@@ -57,8 +57,7 @@ ChatScience/
 │   └── main.js 等              # tsc 原位编译产物（勿手改）
 │
 ├── webapp/                     # 渲染层输入与产物：主页面.html 模板 + webapp.js、work/*.js
-├── web/                        # 公开站点目录（GitHub Pages 唯一源）：应用下载页 index.html
-├── sites/motai/                # 墨台产品页站点
+├── sites/motai/                # 墨台产品页站点（public=GitHub Pages 源 / functions / dev）+ 旧版单页
 ├── examples/qoder-agent-sdk/   # Qoder Agent SDK 样例工程
 ├── docs/
 │   ├── plans/                  # 七份实现策划案（源 + 生成链 + .docx 产物）
@@ -207,18 +206,20 @@ node pack.js
 
 包内自检会核对可执行文件、主进程入口、渲染层、后端入口、图标、依赖与 Work 模块末文件等关键路径，缺一项即非零退出。换图标后重跑 `node make-icons.js` 再打包。
 
-## 下载页（web/）
+## 下载页（sites/motai/public）
 
-`web/index.html` 是应用下载页，自包含（内联 CSS、零外部请求、支持深色模式），通过 GitHub Pages 发布：
+下载页就是项目里原有的**墨台产品页**，不自建额外页面：
 
-- 地址：<https://lu-yu-zhen.github.io/ChatScience/>
-- Pages 源：`master` 分支的 `/web` 目录——**这是全仓唯一会被公开的目录**，`docs/`（内部策划案）、`assets/`、`app/` 等均不对外
-- 页面主按钮指向 Releases（首个版本发布前会 404，页面内已给出"自行打包"的备选步骤）
-- 修改页面只动 `web/index.html`，推送后等约一分钟 Pages 自动重建
+- 首页：<https://lu-yu-zhen.github.io/ChatScience/>
+- 下载页（直达「壹 · 下载」）：<https://lu-yu-zhen.github.io/ChatScience/#/download>
+- Pages 源：由 `.github/workflows/pages.yml` 只上传 `sites/motai/public`——**这是全仓唯一会被公开的目录**，`docs/`（内部策划案）、`assets/`、`app/`、旧版单页 `墨台产品页.html` 均不对外
+- 产品页是 hash 路由单页（`#/product`、`#/pricing`、`#/download`、`#/feedback`），下载章节含 Windows / macOS / Linux 入口、系统要求、安装后三步与 FAQ；中英文案由页面内的 i18n 字典驱动
+- 下载按钮目前是占位（页面自己声明"即将开放"）——首个 Release 发布后可把入口换成真实资产地址
+- 修改页面只动 `sites/motai/public/index.html`，推送后约一分钟 Pages 自动重建
 
 ## 各子项目说明
 
-**`sites/motai/`** —— 墨台产品页站点。`public/index.html` 是当前线上页；`functions/` 是"提交与读取"的匿名反馈接口（`index.ts` 入口，`adapter.mjs` / `handler.mjs` 适配）；`dev/feedback-local.mjs` 是本地开发桩；根目录的 `墨台产品页.html` 是旧版单页（保留备查）。发布描述符 `.墨台产品页.qoder.site` 不入库。
+**`sites/motai/`** —— 墨台产品页站点。`public/index.html` 是线上页（hash 路由单页，含下载/订阅/反馈章节）；`functions/` 是"提交与读取"的匿名反馈接口（`index.ts` 入口，`adapter.mjs` / `handler.mjs` 适配）；`dev/feedback-local.mjs` 是本地开发桩；根目录的 `墨台产品页.html` 是旧版单页（保留备查，不发布）。发布描述符 `.墨台产品页.qoder.site` 不入库。
 
 **`examples/qoder-agent-sdk/`** —— Qoder Agent SDK 样例工程，独立 `package.json`。仓库不内置 Node 发行版，克隆后需自备 `node`。
 

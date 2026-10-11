@@ -1,12 +1,13 @@
 name: Deploy Pages
 
-# 只把 web/ 发布为 GitHub Pages 站点。全仓其它目录（docs/、app/、assets/ 等）不进入产物，
+# 只把 sites/motai/public 发布为 GitHub Pages 站点（墨台产品页，含「壹 · 下载」页）。
+# 全仓其它目录（docs/、app/、assets/、旧版单页 墨台产品页.html 等）不进入产物，
 # 因此内部策划案、调研报告与源码都不会被公开。
 on:
   push:
     branches: [master]
     paths:
-      - "web/**"
+      - "sites/motai/public/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -32,7 +33,7 @@ jobs:
 
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: web
+          path: sites/motai/public
 
       - id: deployment
         uses: actions/deploy-pages@v4

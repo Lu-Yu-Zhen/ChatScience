@@ -44,7 +44,7 @@ ChatScience/
 ## 规则
 
 - 代码改动只能落在 `app/src/**`（渲染层模板改 `webapp/主页面.html`），随后用 `npm run build:ts` 传播到上述 JS 产物；`app/renderer/index.html` 再经 `node build.js` 更新。命令均在 `app/` 目录执行。
-- 提交前运行 `npm run typecheck`（覆盖 tsconfig.json / tsconfig.webapp.json / tsconfig.verify.json 三套配置），并用 `npm run guard:artifacts` 确认产物与最后一次提交一致。
+- 提交前运行 `npm run typecheck`（覆盖 tsconfig.json / tsconfig.webapp.json / tsconfig.verify.json 三套配置），并用 `npm run guard:artifacts` 确认产物与最后一次提交一致。上述两步已由 `.github/workflows/app-quality.yml` 在 CI 固化（push master / PR 触及 `app/**`、`webapp/**` 时自动跑 typecheck → build:ts → guard:artifacts，任一失败即红灯）；`npm run verify` 依赖打包 exe / CDP / NPU / SDK PAT 与外网，不纳入 CI，保持本地人工执行。
 - 验证脚本统一入口：`npm run verify`（app/ 目录）按层列出全部 `app/verify/*.js` 并标注手写/编译；`npm run verify <name>` 单跑（透传退出码），`npm run verify -- --all` 全量。
 - **Wiki 维护**：知识库在 GitHub Wiki。本地先克隆 `<仓库>.wiki.git`，设 `CS_WIKI_DIR` 指向该检出，即可在 `app/` 目录跑 `npm run wiki:lint`（`--fix` 重生成 `index.md`，`--add` 产骨架页，`--log` 记时间线）。契约变更必须同步改 Wiki 里的 `SCHEMA.md` 与 `app/src/tools/wiki-lint.ts` 的 `RAW_PREFIXES`，并在 `log.md` 记一条 `schema`。
 - **Wiki 边界**：Raw 层（`docs/plans/_src/`、`app/src/**`、`app/verify/`、`app/server/plugins/`、`AGENTS.md`、各站点与品牌资产）对 Wiki 侧只读；Wiki 页面不得写入密钥，不得引用 `.qoder/`、`.qoder-cn/`、`.trae/`、`.qoder-plugin/`、`.workbuddy/`、`.verify-tmp/`、`.verify-shots/`、`memory/` 等不随 git 共享的本机路径，也不得引用 `sites/motai/.墨台产品页.qoder.site` 这类不入库的生成物。

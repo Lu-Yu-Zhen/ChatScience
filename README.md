@@ -114,6 +114,12 @@ npm start       # 编译三套 TypeScript → 启动 Electron
 | `node pack.js` | 打出便携版到 `app/dist/` |
 | `node make-icons.js` | 重新生成应用图标 |
 
+## CI 质量门禁
+
+`.github/workflows/app-quality.yml` 在 push 到 master 或 PR 触及 `app/**`、`webapp/**`、工作流自身时触发（windows-latest，Node 20 固定）：`npm ci` → `npm run typecheck` → `npm run build:ts` → `npm run guard:artifacts`，任一失败即红灯——与本地提交前要求完全一致，不再依赖人工记得跑。与 `Deploy Pages`（只传 `sites/motai/public/**`）触发路径不重叠，互不干扰。
+
+`npm run verify` 暂不纳入 CI：验证套件依赖打包产物 exe、CDP、NPU、SDK PAT 与外网（分层见 `app/src/verify/verify-suite.ts` 顶部登记表），CI 中不可行，保留为本地与发版前人工执行。
+
 ## 桌面应用功能概览
 
 **Chat 模式**：多会话对话、项目（工作区）管理、模型与供应商管理（含 BYOK 密钥）、右侧栏（阅读模式、文献库、文件与图片预览）。会话、项目、模型、文献库状态由后端落盘，前端以 180ms 差量同步（大字段与二进制会被剥离或截断，避免写风暴）。

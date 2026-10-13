@@ -281,12 +281,14 @@ function agentEditModal(existing) {
                 Work.toast(tt('wAgentNameBad'));
                 return;
             }
-            /* MCP 白名单：只保留勾选的 server（全选 server 时记录为空数组=全部） */
+            /* MCP 白名单：只保留勾选的 server（全选 server 时记录为空数组=全部）。
+               空数组是合法取值（后端按 key 存在判定放行，[] = 该 server 全部工具），
+               因此这里只能判断键是否存在，不能按 arr.length 过滤——否则勾选保存后
+               白名单被整体丢弃，界面提示"已保存"但 MCP 一个都不生效。 */
             const mcpWanted = {};
             mcpList.forEach(function (s) {
-                const arr = a.tools.mcp && a.tools.mcp[s.key];
-                if (arr && arr.length)
-                    mcpWanted[s.key] = arr;
+                if (a.tools.mcp && s.key in a.tools.mcp)
+                    mcpWanted[s.key] = a.tools.mcp[s.key];
             });
             a.tools.mcp = mcpWanted;
             a.updatedAt = Date.now();

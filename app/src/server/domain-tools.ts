@@ -314,27 +314,58 @@ function dhTransform(args: { dh: number[][]; unit?: string }) {
   if (!Array.isArray(rows) || !rows.length || rows.length > 6) throw new Error('dh 需为 1~6 行的 [theta, d, a, alpha] 数组');
   const deg = String(args.unit || 'rad').toLowerCase() === 'deg';
   const toRad = function (x: number) { return deg ? x * Math.PI / 180 : x; };
-  let T = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
+  /* 4×4 齐次矩阵相乘（A·B） */
+  const matMul = function (A: number[][], B: number[][]): number[][] {
+    const out: number[][] = [];
+    for (let i = 0; i < 4; i++) {
+      out.push([0, 0, 0, 0]);
+      for (let j = 0; j < 4; j++) {
+        let s = 0;
+        for (let k = 0; k < 4; k++) s += A[i][k] * B[k][j];
+        out[i][j] = Number(s.toFixed(6));
+      }
+    }
+    return out;
+  };
+  /* T 为累积位姿：从基座开始逐行右乘单关节变换；perJoint 仍存单关节矩阵。
+     曾经这里把 T 直接覆盖为单关节矩阵，多关节时末端位姿只等于最后一行——已修。 */
+  let T: number[][] = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]];
   const per: string[] = [];
   rows.forEach(function (r, idx) {
     if (!Array.isArray(r) || r.length !== 4) throw new Error('第 ' + (idx + 1) + ' 行需为 [theta, d, a, alpha]');
     const th = toRad(Number(r[0])), d = Number(r[1]), a = Number(r[2]), al = toRad(Number(r[3]));
     const ct = Math.cos(th), st = Math.sin(th), ca = Math.cos(al), sa = Math.sin(al);
-    /* 标准 DH：T = Rz(θ)·Tz(d)·Tx(a)·Rx(α) */
-    T = [
-      [ct * ca, -st, ct * sa, a * ct],
-      [st * ca, ct, st * sa, a * st],
-      [-sa, 0, ca, d],
+    /* 标准 DH：T_i = Rz(θ)·Tz(d)·Tx(a)·Rx(α)。
+       曾经这里把矩阵按 [ct·ca, -st, ct·sa; …; -sa, 0, ca] 手工拼装，等价于把
+       扭转角 α 作用到了 Y 轴（Ry）而非 X 轴（Rx）——与注释公式不符，α≠0 时
+       单关节旋转即错，多关节累积后位置与姿态全错。现按公式连乘的标准结果：
+         [[ cθ,        -sθ·cα,        sθ·sα,       a·cθ ],
+          [ sθ,         cθ·cα,       -cθ·sα,       a·sθ ],
+          [ 0,          sα,           cα,          d    ],
+          [ 0,          0,            0,           1    ]] */
+    const Ti = [
+      [ct, -st * ca, st * sa, a * ct],
+      [st, ct * ca, -ct * sa, a * st],
+      [0, sa, ca, d],
       [0, 0, 0, 1]
     ].map(function (row) { return row.map(function (x) { return Number(x.toFixed(6)); }); });
-    per.push('T' + (idx + 1) + '=[' + T.map(function (row) { return row.join(' '); }).join(' | ') + ']');
+    T = matMul(T, Ti);
+    per.push('T' + (idx + 1) + '=[' + Ti.map(function (row) { return row.join(' '); }).join(' | ') + ']');
   });
   const px = T[0][3], py = T[1][3], pz = T[2][3];
-  /* ZYX 欧拉（RPY）反解 */
-  const pitch = Math.asin(Math.max(-1, Math.min(1, -T[2][0])));
-  const roll = Math.atan2(T[2][1], T[2][2]);
-  const yaw = Math.atan2(T[1][0], T[0][0]);
+  /* ZYX 欧拉（RPY）反解。万向锁（pitch=±90°）处 R[2][1]=R[2][2]=0，
+     atan2(0,0)=0 会给出不能重建原矩阵的 (0,±90,0)——按常规约定取 roll=0，
+     yaw 由矩阵元素解算：sp=∓1 且 r=0 时 R[0][1]=-sin(yaw)、R[1][1]=cos(yaw)。 */
   const r2d = 180 / Math.PI;
+  const pitch = Math.asin(Math.max(-1, Math.min(1, -T[2][0])));
+  let roll: number, yaw: number;
+  if (Math.abs(T[2][0]) > 0.999999) {
+    roll = 0;
+    yaw = Math.atan2(-T[0][1], T[1][1]);
+  } else {
+    roll = Math.atan2(T[2][1], T[2][2]);
+    yaw = Math.atan2(T[1][0], T[0][0]);
+  }
   return {
     ok: true,
     convention: '标准 DH：T=Rz(θ)Tz(d)Tx(a)Rx(α)' + (deg ? '，角度输入已按度转弧度' : ''),

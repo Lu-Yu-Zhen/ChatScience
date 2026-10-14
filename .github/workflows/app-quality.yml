@@ -1,0 +1,65 @@
+name: App Quality Gate
+
+# app/ 主应用的质量门禁：typecheck / build:ts / guard:artifacts 三道关卡。
+# 与 Deploy Pages（.github/workflows/pages.yml）触发路径不同，互不干扰：
+#   pages.yml     → sites/motai/public/**
+#   app-quality   → app/**、webapp/**、本工作流自身
+#
+# 为何不含 npm run verify：验证套件依赖打包产物 exe、CDP、NPU、SDK PAT 与外网
+# （见 app/src/verify/verify-suite.ts 的分层登记表：沙箱/SDK/技能/UI/Chat 管线），
+# CI 环境中不可行，保留为本地/发版前人工执行，后续如有条件可拆独立跟进。
+#
+# 为何选 windows-latest：项目按 win32-x64 打包（app/src/pack.ts），选最贴近
+# 目标平台的 runner；三道关卡本身均为跨平台的 tsc / git 操作。
+#
+# Node 版本固定 20：app/package.json 未声明 engines，@types/node 为 ^20，
+# 与 Electron 33 内置 Node 20 运行时对齐；本地开发亦建议使用 Node 20 LTS。
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "app/**"
+      - "webapp/**"
+      - ".github/workflows/app-quality.yml"
+  pull_request:
+    paths:
+      - "app/**"
+      - "webapp/**"
+      - ".github/workflows/app-quality.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: typecheck / build:ts / guard:artifacts
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+
+      - name: Install dependencies (npm ci)
+        working-directory: app
+        run: npm ci --no-audit --no-fund
+
+      - name: Typecheck (三套 tsconfig)
+        working-directory: app
+        run: npm run typecheck
+
+      - name: Build TypeScript (三套 tsconfig)
+        working-directory: app
+        run: npm run build:ts
+
+      - name: Guard artifacts (产物与提交一致)
+        working-directory: app
+        run: npm run guard:artifacts

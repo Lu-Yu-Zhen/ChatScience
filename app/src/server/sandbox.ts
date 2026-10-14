@@ -173,7 +173,7 @@ export function createSandbox(appRoot: string, opts: { log?: (line: string) => v
       return {
         ok: false, exitCode: null, timedOut: false, blocked: false,
         stdout: '', stderr: '运行时未安装或未在 PATH 中找到：' + need
-          + '（已探测：' + Object.keys(rt.runtimes).join(', ') || '无' + '）',
+          + '（已探测：' + (Object.keys(rt.runtimes).join(', ') || '无') + '）',
         durationMs: 0, files: [], usage: { peakRssKb: null }, diagnostics: rt.errors
       };
     }
@@ -255,7 +255,7 @@ export function createSandbox(appRoot: string, opts: { log?: (line: string) => v
       const accOut = { buf: '', dropped: false }, accErr = { buf: '', dropped: false };
       let done = false, timedOut = false;
       let killedInfo: KillInfo | null = null;
-      let flushTimer: NodeJS.Timeout | null = null, pendingOut = '', pendingErr = '';
+      let flushTimer: NodeJS.Timeout | null = null, forceTimer: NodeJS.Timeout | null = null, pendingOut = '', pendingErr = '';
 
       function pushRaw(acc: { buf: string; dropped: boolean }, s: string): void {
         if (acc.buf.length + s.length <= rawCap) { acc.buf += s; return; }
@@ -292,14 +292,29 @@ export function createSandbox(appRoot: string, opts: { log?: (line: string) => v
         timedOut = true;
         killedInfo = proc.killTree(child.pid, 'timeout ' + policyReq.timeoutMs + 'ms');
         log('sandbox timeout pid=' + child.pid + ' scope=' + req.scopeId + ' kill=' + JSON.stringify(killedInfo));
+        /* 兜底强杀：killTree 可能失败（taskkill 自身超时 / POSIX 进程组逃逸），
+           且只要还有孙进程继承着 stdout/stderr 管道，Node 的 'close' 就永不触发——
+           唯一 resolve 点收不到，release() 永不执行，并发槽位耗尽后所有 exec 挂死。
+           因此强杀后再给 5 秒宽限：仍未 close 就销毁管道并强制收尾（见 finalize）。 */
+        forceTimer = setTimeout(function () {
+          if (done) return;
+          log('sandbox force-finalize pid=' + child.pid + ' scope=' + req.scopeId + '（close 未在强杀后到达，强制收尾并释放并发槽位）');
+          accErr.buf += '\n[sandbox] 超时强杀后进程仍未退出（可能有子进程占用输出管道），已强制收尾；请检查该代码是否派生了后台进程。';
+          try { child.stdout && child.stdout.destroy(); } catch (e) { /* 忽略 */ }
+          try { child.stderr && child.stderr.destroy(); } catch (e) { /* 忽略 */ }
+          finalize(null, null);
+        }, 5000);
       }, policyReq.timeoutMs);
 
       const before = walkSnapshot(runCwd, '', diffDepth);
 
-      child.on('close', function (code: number | null, signal: NodeJS.Signals | null) {
+      /* 收尾（正常 close 与超时强制收尾共用）：done 哨兵保证只 resolve 一次，
+         release() 无论从哪条路径到达都必须执行——否则并发信号量泄漏。 */
+      function finalize(code: number | null, signal: NodeJS.Signals | null): void {
         if (done) return;
         done = true;
         clearTimeout(timer);
+        if (forceTimer) { clearTimeout(forceTimer); forceTimer = null; }
         if (flushTimer) { clearTimeout(flushTimer); }
         if (pendingOut) emitLive('stdout', pendingOut);
         if (pendingErr) emitLive('stderr', pendingErr);
@@ -337,6 +352,10 @@ export function createSandbox(appRoot: string, opts: { log?: (line: string) => v
           networkPolicy: policyReq.network === 'declared' ? 'declared-only' : 'open',
           scope: normScope(req.scopeId)
         });
+      }
+
+      child.on('close', function (code: number | null, signal: NodeJS.Signals | null) {
+        finalize(code, signal);
       });
     });
   }
@@ -400,6 +419,7 @@ export function createSandbox(appRoot: string, opts: { log?: (line: string) => v
       catch (e) { resolve({ ok: false, error: (e as Error).message, output: '' }); return; }
       activeChildren.add(child);
       let acc = '';
+      let settled = false, forceTimer: NodeJS.Timeout | null = null;
       const grab = function (b: Buffer): void {
         const s = b.toString('utf8');
         acc += s;
@@ -407,11 +427,25 @@ export function createSandbox(appRoot: string, opts: { log?: (line: string) => v
       };
       child.stdout!.on('data', grab);
       child.stderr!.on('data', grab);
+      /* 超时强杀 + 兜底收尾：与 execCode 同型——killTree 失败或孙进程占着
+         输出管道时 'close' 永不触发，请求会永久挂起；宽限 30 秒后强制 resolve。 */
       const timer = setTimeout(function () {
         proc.killTree(child.pid, 'install timeout');
+        forceTimer = setTimeout(function () {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timer);
+          activeChildren.delete(child);
+          try { child.stdout && child.stdout.destroy(); } catch (e) { /* 忽略 */ }
+          try { child.stderr && child.stderr.destroy(); } catch (e) { /* 忽略 */ }
+          resolve({ ok: false, error: '安装超时且进程未能在强杀后退出，已强制收尾（可能有子进程占用输出管道）', output: capOutput(cleanOutput(acc), 65536).text });
+        }, 30000);
       }, 10 * 60 * 1000);
       child.on('close', function (code) {
+        if (settled) return;
+        settled = true;
         clearTimeout(timer);
+        if (forceTimer) clearTimeout(forceTimer);
         activeChildren.delete(child);
         resolve({ ok: code === 0, exitCode: code, output: capOutput(cleanOutput(acc), 65536).text });
       });

@@ -1315,9 +1315,12 @@ export function createQoder(appRoot: string, ctx: QoderDeps): QoderApi {
 
   /* 连通性自检：1 回合最小查询（供连接器/设置页"测试"按钮） */
   async function ping(): Promise<{ ok: true; ms: number; reply: string } | { ok: false; ms: number; error: string }> {
-    const sdk = await loadSdk();
     const t0 = Date.now();
     try {
+      /* loadSdk 必须在 try 内：动态 import 失败（模块缺失 / ERR_REQUIRE_ESM）时
+         返回 rejected promise，放在 try 外会逃逸成 unhandled rejection——
+         Node 20 默认据此终止进程，整个应用被一次"测试连接"拖垮。 */
+      const sdk = await loadSdk();
       /* BYOK-only：诊断连通性也走用户自有 API Key 模型，不消耗平台订阅 */
       await byokModelsReady(8000);
       const byokModelId = resolveByokModelId({} as AgentDefRecord);
@@ -1365,7 +1368,12 @@ export function createQoder(appRoot: string, ctx: QoderDeps): QoderApi {
         const obj = Object.assign({}, (cur || {}) as Record<string, boolean>);
         obj[key] = !!enabled;
         return obj;
-      }).then(function () { return listDomainPlugins(); });
+      }).then(function (ok) {
+        /* 写盘失败（flush resolve(false)）必须上抛：否则路由返回 200，
+           用户看到"已保存"但开关状态重启后丢失 */
+        if (ok === false) throw new Error('持久化失败：work.json 写入失败（磁盘满或文件被占用）');
+        return listDomainPlugins();
+      });
     },
     /* 用户在 Qoder 注册的 BYOK 模型（启动异步缓存；未就绪返回 null） */
     byokModels: function () { return byokCache; },

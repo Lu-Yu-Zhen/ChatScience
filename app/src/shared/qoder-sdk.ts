@@ -135,6 +135,12 @@ export function loadSdk(): Promise<QoderSdkModule> {
     sdkPromise = dynamicImport(SDK_PACKAGE_SPEC).then(function (m) {
       const mod = m as QoderSdkModule & { default?: QoderSdkModule };
       return mod.default || mod;
+    }).catch(function (e) {
+      /* 失败不缓存：曾经 rejected promise 被永久留存，之后每次调用都立即
+         以同一错误拒绝，"下次自动重试"名不副实（打包版首启 node_modules
+         抽取竞态等瞬时失败永无恢复机会）。重置后下次调用重新 import。 */
+      sdkPromise = null;
+      throw e;
     });
   }
   return sdkPromise;

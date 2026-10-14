@@ -189,9 +189,15 @@ function mountRoutes(app, ctx) {
     app.put('/api/work/sandbox/policy', function (req, res) {
         try {
             const merged = ctx.sandbox.setPolicy(req.body || {});
-            ctx.store.setSection('sandboxPolicy', merged).then(function () {
+            ctx.store.setSection('sandboxPolicy', merged).then(function (ok) {
+                /* flush 失败时 setSection resolve(false)：必须让前端看到真实错误，
+                   不能返回 200 让 toast 显示"已保存"而数据静默丢失 */
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
                 res.json(merged);
-            });
+            }).catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });
@@ -327,7 +333,10 @@ function mountRoutes(app, ctx) {
     });
     /* SDK 状态与连通性自检 */
     app.get('/api/work/qoder/config', function (req, res) { res.json(ctx.qoder.config()); });
-    app.post('/api/work/qoder/ping', function (req, res) { ctx.qoder.ping().then(function (r) { res.json(r); }); });
+    app.post('/api/work/qoder/ping', function (req, res) {
+        ctx.qoder.ping().then(function (r) { res.json(r); })
+            .catch(function (e) { res.status(500).json({ ok: false, error: e.message }); });
+    });
     /* ---------------- 技能（SDK local plugin 承载） ---------------- */
     app.get('/api/work/skills', function (req, res) {
         try {
@@ -364,7 +373,13 @@ function mountRoutes(app, ctx) {
     });
     app.put('/api/work/skills/states', function (req, res) {
         try {
-            ctx.store.setSection('skills', req.body || {}).then(function () { res.json({ ok: true }); });
+            ctx.store.setSection('skills', req.body || {}).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true });
+            }).catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });
@@ -377,7 +392,13 @@ function mountRoutes(app, ctx) {
     app.put('/api/work/mcp/servers', function (req, res) {
         try {
             const list = Array.isArray(req.body && req.body.servers) ? req.body.servers : [];
-            ctx.store.setSection('mcpServers', list).then(function () { res.json({ ok: true, servers: list }); });
+            ctx.store.setSection('mcpServers', list).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true, servers: list });
+            }).catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });
@@ -390,7 +411,13 @@ function mountRoutes(app, ctx) {
     app.put('/api/work/agents', function (req, res) {
         try {
             const list = Array.isArray(req.body && req.body.agents) ? req.body.agents : [];
-            ctx.store.setSection('agents', list).then(function () { res.json({ ok: true, agents: list }); });
+            ctx.store.setSection('agents', list).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true, agents: list });
+            }).catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });
@@ -432,7 +459,13 @@ function mountRoutes(app, ctx) {
                 else
                     arr.push(item);
                 return arr;
-            }).then(function () { res.json({ ok: true, subagents: ctx.store.section('subagents') }); })
+            }).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true, subagents: ctx.store.section('subagents') });
+            })
                 .catch(function (e) { res.status(400).json({ error: e.message }); });
         }
         catch (e) {
@@ -455,7 +488,13 @@ function mountRoutes(app, ctx) {
             }
             ctx.store.update('subagents', function (list) {
                 return (list || []).filter(function (s) { return s.id !== id; });
-            }).then(function () { res.json({ ok: true, deleted: id, subagents: ctx.store.section('subagents') }); })
+            }).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true, deleted: id, subagents: ctx.store.section('subagents') });
+            })
                 .catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
@@ -481,7 +520,7 @@ function mountRoutes(app, ctx) {
             }
             ctx.qoder.setDomainPluginEnabled(key, b.enabled !== false)
                 .then(function (plugins) { res.json({ ok: true, plugins: plugins }); })
-                .catch(function (e) { res.status(400).json({ error: e.message }); });
+                .catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });
@@ -558,7 +597,13 @@ function mountRoutes(app, ctx) {
     app.put('/api/work/run-history', function (req, res) {
         try {
             const hist = Array.isArray(req.body && req.body.runHistory) ? req.body.runHistory.slice(0, 20) : [];
-            ctx.store.setSection('runHistory', hist).then(function () { res.json({ ok: true }); });
+            ctx.store.setSection('runHistory', hist).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true });
+            }).catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });
@@ -610,7 +655,13 @@ function mountRoutes(app, ctx) {
         try {
             const cur = ctx.store.section('prefs');
             const next = (0, userdata_1.normalizePrefs)(req.body || {}, cur);
-            ctx.store.setSection('prefs', next).then(function () { res.json({ ok: true, prefs: next }); });
+            ctx.store.setSection('prefs', next).then(function (ok) {
+                if (ok === false) {
+                    res.status(500).json({ error: '持久化失败：work.json 写入失败（磁盘满或文件被占用）' });
+                    return;
+                }
+                res.json({ ok: true, prefs: next });
+            }).catch(function (e) { res.status(500).json({ error: e.message }); });
         }
         catch (e) {
             res.status(400).json({ error: e.message });

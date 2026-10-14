@@ -148,10 +148,28 @@ const BRIDGE = `
     return v;
   }
   /* 循环引用 / DOM 引用兜底：宁可丢轨迹，也不能让整个快照写失败 */
-  function snapshot() {
+  function snapshot(opts) {
     const w = work();
+    /* 体积降级（keepSteps）：conversations 最新在前（unshift），只保留最近 N 个
+       会话的完整轨迹（_calls 工具调用步骤 / _reasonings 思考分段），更早的会话
+       仅留正文——轨迹可丢，对话内容不能丢。曾经这里传了 { keepSteps: 3 } 但
+       snapshot 不接收参数，降级是空操作，超 6MB 时每 180ms 全量写盘形成写风暴。 */
+    let convs = conversations;
+    const keep = opts && opts.keepSteps;
+    if (keep && conversations.length > keep) {
+      convs = conversations.map(function (c, i) {
+        if (i < keep || !c || !Array.isArray(c.messages)) return c;
+        const msgs = c.messages.map(function (m) {
+          if (!m || (m._calls === undefined && m._reasonings === undefined && m._reasoning === undefined)) return m;
+          const slim = Object.assign({}, m);
+          delete slim._calls; delete slim._reasonings; delete slim._reasoning;
+          return slim;
+        });
+        return Object.assign({}, c, { messages: msgs });
+      });
+    }
     const payload = {
-      conversations: conversations,
+      conversations: convs,
       projects: projects,
       readThreads: readThreads,
       papersDbState: { tab: papersDbState.tab, kbs: papersDbState.kbs, dbs: papersDbState.dbs, tabState: null },
